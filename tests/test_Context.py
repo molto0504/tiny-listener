@@ -14,14 +14,14 @@ class TestJob(TestCase):
 
 class TestJobs(TestCase):
     def test_ok(self):
-        jobs = Jobs("job_1", "job_2")
-        self.assertEqual(["job_1", "job_2"], list(jobs._jobs.keys()))
+        jobs = Jobs("job.foo", "job.bar")
+        self.assertEqual(["job.foo", "job.bar"], list(jobs._jobs.keys()))
 
     def test_add(self):
         jobs = Jobs()
         self.assertEqual({}, jobs._jobs)
-        jobs.add("job_1")
-        self.assertEqual(["job_1"], list(jobs._jobs.keys()))
+        jobs.add("job.foo")
+        self.assertEqual(["job.foo"], list(jobs._jobs.keys()))
 
     def test_get(self):
         jobs = Jobs("job.foo.bar")
@@ -33,7 +33,18 @@ class TestJobs(TestCase):
         self.assertEqual("job.foo.bar", jobs.first("job.foo.bar").name)
         self.assertEqual("job.foo.bar", jobs.first("job.foo*").name)
         self.assertEqual("job.foo.bar", jobs.first().name)
-        self.assertRaises(PyEventError, jobs.first, "_not_exist_")
+
+        jobs.first().done()
+        self.assertIsNone(jobs.first())
+
+    def test_all(self):
+        jobs = Jobs("job.foo", "job.bar")
+        self.assertEqual([jobs.get("job.foo"), jobs.get("job.bar")], jobs.all("job*"))
+        self.assertEqual([jobs.get("job.foo"), jobs.get("job.bar")], jobs.all())
+        self.assertEqual([jobs.get("job.foo")], jobs.all("job.f.*"))
+
+        jobs.get("job.foo").done()
+        self.assertEqual([jobs.get("job.bar")], jobs.all())
 
     def test_done(self):
         jobs = Jobs("job.foo", "job.bar")

@@ -2,7 +2,7 @@ import re
 import asyncio
 import signal
 from collections import namedtuple
-from typing import Optional, Dict, Callable, Generator, Any
+from typing import Optional, Dict, Callable, Generator, Any, List, Union
 
 
 class PyEventError(Exception):
@@ -37,6 +37,9 @@ class Job:
     async def wait(self) -> Any:
         return await self.trigger.wait()
 
+    def __repr__(self) -> str:
+        return "{}(name={}, done={})".format(self.__class__.__name__, self.name, self.is_done)
+
 
 class Jobs:
     def __init__(self, *names) -> None:
@@ -56,6 +59,9 @@ class Jobs:
         for job in self.__match(pattern):
             if not job.is_done:
                 return job
+
+    def all(self, pattern: str = ".*") -> List[Job]:
+        return [job for job in self.__match(pattern) if not job.is_done]
 
     def get(self, name: str) -> Job:
         if name not in self._jobs:
@@ -92,6 +98,8 @@ class Context(metaclass=__UniqueCTX):
         return self.scope.update(scope) or self
 
 
+current_context = Context(None)
+
 Listener = namedtuple("Listener", ["fn", "opts"])
 
 
@@ -100,18 +108,20 @@ class PyEvent:
         self.loop = asyncio.new_event_loop()
         self.listeners: Dict[str, Listener] = {}
         for sig in [signal.SIGINT, signal.SIGTERM]:
-            self.loop.add_signal_handler(sig, self.exit)
+            self.loop.add_signal_handler(sig, self.__exit)
 
-    def exit(self) -> None:
+    def __exit(self) -> None:
         for t in asyncio.Task.all_tasks(self.loop):
             t.cancel()
 
     def send(self, kind: str, ctx: Context, message: Optional[Dict] = None) -> None:
         async def _send():
             listener = self.listeners[kind]
-            for name in listener.opts["must_done"]:
-                job = ctx.jobs.first(name)
-                if job:
+            must_done = listener.opts["must_done"]
+            if isinstance(must_done, Callable):
+                must_done: List[str] = must_done(ctx)
+            for name in must_done:
+                for job in ctx.jobs.all(name):
                     await job.wait()
             await listener.fn(ctx(app=self), message or {})
         self.loop.create_task(_send())
@@ -128,7 +138,7 @@ class PyEvent:
     def run(self):
         self.loop.run_until_complete(self.main_loop())
 
-    def listen(self, name, must_done: Optional[list] = None, **kwargs):
+    def listen(self, name, must_done: Union[None, List[str], Callable] = None, **kwargs):
         must_done = must_done or []
 
         def _decorator(fn):
