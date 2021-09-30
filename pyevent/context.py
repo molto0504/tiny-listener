@@ -41,6 +41,13 @@ class Context(metaclass=__UniqueCTX):
     def __call__(self, **scope) -> 'Context':
         return self.scope.update(scope) or self
 
+    def __repr__(self) -> str:
+        return "{}(cid={}, jobs_count={}, scope={}, errors={})".format(self.__class__.__name__,
+                                                                       self.cid,
+                                                                       len(self.jobs),
+                                                                       self.scope,
+                                                                       self.errors)
+
 
 class Message(Dict):
     pass

@@ -52,3 +52,7 @@ class TestJobs(TestCase):
         self.assertFalse(jobs.is_done("job*"))
         jobs.first().done()
         self.assertTrue(jobs.is_done("job*"))
+
+    def test_len(self):
+        jobs = Jobs("job.foo", "job.bar")
+        self.assertEqual(2, len(jobs))

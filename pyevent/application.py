@@ -1,6 +1,6 @@
 import asyncio
 import signal
-from typing import Optional, Dict, Callable, List, Union, Awaitable, NamedTuple, Any
+from typing import Optional, Dict, Callable, List, Awaitable, NamedTuple, Any, Union
 from inspect import signature, Parameter
 from functools import wraps
 
@@ -34,6 +34,13 @@ class Listener(NamedTuple):
     opts: Dict[str, Any]
 
 
+class Event:
+    def __init__(self, kind: str, cid: Optional[str] = None, msg: Optional[Dict] = None):
+        self.kind = kind
+        self.cid = cid
+        self.msg = Message({"_kind_": kind, **(msg or {})})
+
+
 class PyEvent:
     def __init__(self):
         self.loop = asyncio.new_event_loop()
@@ -58,15 +65,9 @@ class PyEvent:
     def error_raise(self, handler: _EventHandler) -> None:
         self._error_raise.append(inject(handler))
 
-    def send(
-            self,
-            kind: str,
-            cid: Optional[str] = None,
-            message: Optional[Dict] = None,
-    ) -> None:
-        ctx = Context(cid, _app_=self)
-        listener = self.listeners[kind]
-        message = Message({"_kind_": kind, **(message or {})})
+    def send(self, event: Event) -> None:
+        ctx = Context(event.cid, _app_=self)
+        listener = self.listeners[event.kind]
 
         async def _send():
             must_done = listener.opts["must_done"]
@@ -76,19 +77,19 @@ class PyEvent:
                 for job in ctx.jobs.all(name):
                     await job.wait()
 
-            [await fn(ctx, message) for fn in self._pre_send]
+            [await fn(ctx, event.msg) for fn in self._pre_send]
             try:
-                await listener.fn(ctx, message)
+                await listener.fn(ctx, event.msg)
             except BaseException as e:
                 if not self._error_raise:
                     raise e
                 ctx.errors.append(e)
-                [await fn(ctx, message) for fn in self._error_raise]
-            [await fn(ctx, message) for fn in self._post_send]
+                [await fn(ctx, event.msg) for fn in self._error_raise]
+            [await fn(ctx, event.msg) for fn in self._post_send]
 
         self.loop.create_task(_send())
 
-    async def listen(self, send: Callable):
+    async def listen(self, send: Callable[[Event], None]):
         raise NotImplementedError()
 
     async def main_loop(self) -> None:
@@ -112,3 +113,6 @@ class PyEvent:
             assert name not in self.listeners
             self.listeners[name] = Listener(fn=inject(fn), opts={"name": name, "must_done": must_done, **kwargs})
         return _decorator
+
+    def __repr__(self) -> str:
+        return "{}(listener_count={})".format(self.__class__.__name__, len(self.listeners))

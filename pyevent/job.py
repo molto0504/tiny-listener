@@ -55,3 +55,6 @@ class Jobs:
 
     def is_done(self, pattern: str = ".*") -> bool:
         return all(job.is_done for job in self.__match(pattern))
+
+    def __len__(self) -> int:
+        return len(self._jobs)
