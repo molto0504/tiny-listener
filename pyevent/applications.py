@@ -42,7 +42,7 @@ class Job:
 
 
 class Jobs:
-    def __init__(self, *names) -> None:
+    def __init__(self, *names: str) -> None:
         self._jobs: Dict[str, Job] = {}
         self.add(*names)
 
@@ -98,8 +98,6 @@ class Context(metaclass=__UniqueCTX):
         return self.scope.update(scope) or self
 
 
-current_context = Context(None)
-
 Listener = namedtuple("Listener", ["fn", "opts"])
 
 
@@ -114,16 +112,40 @@ class PyEvent:
         for t in asyncio.Task.all_tasks(self.loop):
             t.cancel()
 
-    def send(self, kind: str, ctx: Context, message: Optional[Dict] = None) -> None:
+    async def pre_send(self, ctx: Context, message: Optional[Dict], **kwargs) -> None:
+        pass
+
+    async def post_send(self, ctx: Context, message: Optional[Dict], **kwargs) -> None:
+        pass
+
+    async def error_handler(self, ctx: Context, message, exc: BaseException) -> None:
+        raise exc
+
+    def send(
+            self,
+            kind: str,
+            ctx: Context,
+            message: Optional[Dict] = None,
+            **kwargs
+    ) -> None:
+
         async def _send():
             listener = self.listeners[kind]
             must_done = listener.opts["must_done"]
+
             if isinstance(must_done, Callable):
                 must_done: List[str] = must_done(ctx)
             for name in must_done:
                 for job in ctx.jobs.all(name):
                     await job.wait()
-            await listener.fn(ctx(app=self), message or {})
+
+            await self.pre_send(ctx, message, **kwargs)
+            try:
+                await listener.fn(ctx(app=self), message or {})
+            except BaseException as e:
+                await self.error_handler(ctx, message, e)
+            await self.post_send(ctx, message, **kwargs)
+
         self.loop.create_task(_send())
 
     async def __call__(self, send: Callable):
@@ -138,7 +160,7 @@ class PyEvent:
     def run(self):
         self.loop.run_until_complete(self.main_loop())
 
-    def listen(self, name, must_done: Union[None, List[str], Callable] = None, **kwargs):
+    def listen(self, name, must_done: Union[None, List[str], Callable] = None, **kwargs) -> Callable:
         must_done = must_done or []
 
         def _decorator(fn):
