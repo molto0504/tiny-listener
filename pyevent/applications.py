@@ -3,23 +3,30 @@ import asyncio
 import signal
 from collections import namedtuple
 from typing import Optional, Dict, Callable, Generator, Any, List, Union
+from inspect import signature, Parameter
+from functools import wraps
 
 
 class PyEventError(Exception):
     pass
 
 
-class __UniqueCTX(type):
-    ctxs: Dict[str, 'Context'] = {}
-
-    def __call__(cls, req_id: Optional[str], **scope) -> 'Context':
-        if req_id is None:
-            return super().__call__(req_id, **scope)
-        if req_id not in cls.ctxs:
-            cls.ctxs[req_id] = super().__call__(req_id, **scope)
-        ctx = cls.ctxs[req_id]
-        ctx.scope.update(scope)
-        return ctx
+def inject(fn) -> Callable:
+    @wraps(fn)
+    def f(ctx: Context, msg: Message):
+        args = []
+        kwargs = {}
+        for name, param in signature(fn).parameters.items():
+            if param.kind == Parameter.KEYWORD_ONLY:
+                kwargs[name] = None
+            elif param.annotation is Context:
+                args.append(ctx)
+            elif param.annotation is Message:
+                args.append(msg)
+            else:
+                args.append(None)
+        return fn(*args, **kwargs)
+    return f
 
 
 class Job:
@@ -76,26 +83,44 @@ class Jobs:
         return all(job.is_done for job in self.__match(pattern))
 
 
+class __UniqueCTX(type):
+    ctxs: Dict[str, 'Context'] = {}
+
+    def __call__(cls, cid: Optional[str] = None, **scope) -> 'Context':
+        if cid is None:
+            return super().__call__(cid, **scope)
+        if cid not in cls.ctxs:
+            cls.ctxs[cid] = super().__call__(cid, **scope)
+        ctx = cls.ctxs[cid]
+        ctx.scope.update(scope)
+        return ctx
+
+
 class Context(metaclass=__UniqueCTX):
-    def __init__(self, req_id: Optional[str], **scope) -> None:
-        self.req_id = req_id
-        self.scope = scope
+    def __init__(self, cid: Optional[str] = None, **scope) -> None:
+        self.cid = cid
+        self.scope: Dict[str, Any] = {"_app_": None, **scope}
         self.jobs = Jobs()
+        self.errors: List[BaseException] = []
 
     @property
     def app(self) -> 'PyEvent':
-        return self.scope["app"]
+        return self.scope["_app_"]
 
     @classmethod
-    def exist(cls, req_id: str):
-        return req_id in cls.ctxs
+    def exist(cls, cid: str):
+        return cid in cls.ctxs
 
     @classmethod
-    def drop(cls, req_id) -> 'Context':
-        return cls.ctxs.pop(req_id)
+    def drop(cls, cid) -> 'Context':
+        return cls.ctxs.pop(cid)
 
     def __call__(self, **scope):
         return self.scope.update(scope) or self
+
+
+class Message(Dict):
+    pass
 
 
 Listener = namedtuple("Listener", ["fn", "opts"])
@@ -107,63 +132,67 @@ class PyEvent:
         self.listeners: Dict[str, Listener] = {}
         for sig in [signal.SIGINT, signal.SIGTERM]:
             self.loop.add_signal_handler(sig, self.__exit)
+        self._pre_send: List[Callable] = []
+        self._post_send: List[Callable] = []
+        self._error_raise: List[Callable] = []
 
     def __exit(self) -> None:
         for t in asyncio.Task.all_tasks(self.loop):
             t.cancel()
 
-    async def pre_send(self, ctx: Context, message: Optional[Dict], **kwargs) -> None:
-        pass
+    def pre_send(self, fn):
+        self._pre_send.append(inject(fn))
 
-    async def post_send(self, ctx: Context, message: Optional[Dict], **kwargs) -> None:
-        pass
+    def post_send(self, fn):
+        self._post_send.append(inject(fn))
 
-    async def error_handler(self, ctx: Context, message, exc: BaseException) -> None:
-        raise exc
+    def error_raise(self, fn):
+        self._error_raise.append(inject(fn))
 
     def send(
             self,
             kind: str,
-            ctx: Context,
+            cid: Optional[str] = None,
             message: Optional[Dict] = None,
-            **kwargs
     ) -> None:
+        ctx = Context(cid, _app_=self)
+        listener = self.listeners[kind]
+        message = {"_kind_": kind, **(message or {})}
 
         async def _send():
-            listener = self.listeners[kind]
             must_done = listener.opts["must_done"]
-
             if isinstance(must_done, Callable):
                 must_done: List[str] = must_done(ctx)
             for name in must_done:
                 for job in ctx.jobs.all(name):
                     await job.wait()
 
-            await self.pre_send(ctx, message, **kwargs)
+            [await fn(ctx, message) for fn in self._pre_send]
             try:
-                await listener.fn(ctx(app=self), message or {})
+                await listener.fn(ctx, message)
             except BaseException as e:
-                await self.error_handler(ctx, message, e)
-            await self.post_send(ctx, message, **kwargs)
+                ctx.errors.append(e)
+                [await fn(ctx, message) for fn in self._error_raise]
+            [await fn(ctx, message) for fn in self._post_send]
 
         self.loop.create_task(_send())
 
-    async def __call__(self, send: Callable):
+    async def listen(self, send: Callable):
         raise NotImplementedError()
 
-    async def main_loop(self):
+    async def main_loop(self) -> None:
         try:
-            await self(self.send)
+            await self.listen(self.send)
         except asyncio.CancelledError:
             pass
 
     def run(self):
         self.loop.run_until_complete(self.main_loop())
 
-    def listen(self, name, must_done: Union[None, List[str], Callable] = None, **kwargs) -> Callable:
+    def event(self, name, must_done: Union[None, List[str], Callable] = None, **kwargs) -> Callable:
         must_done = must_done or []
 
         def _decorator(fn):
             assert name not in self.listeners
-            self.listeners[name] = Listener(fn=fn, opts={"name": name, "must_done": must_done, **kwargs})
+            self.listeners[name] = Listener(fn=inject(fn), opts={"name": name, "must_done": must_done, **kwargs})
         return _decorator
