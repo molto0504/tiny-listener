@@ -1,4 +1,6 @@
-"""privpy sdk"""
+"""pyevent
+"""
+
 
 __version__ = "0.0.1"
 
