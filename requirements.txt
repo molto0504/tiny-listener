@@ -1,0 +1,12 @@
+# Packaging
+setuptools
+wheel
+
+# Testing
+pytest
+pytest-asyncio
+coverage
+
+# Dependencies
+click>=8.0.1
+
