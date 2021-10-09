@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from pyevent import Context, inject, Message
+from listener import Context, inject, Message
 
 
 class TestContext(TestCase):

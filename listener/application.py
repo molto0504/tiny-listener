@@ -29,7 +29,7 @@ def inject(handler: _EventHandler) -> EventHandler:
     return f
 
 
-class Listener(NamedTuple):
+class Handler(NamedTuple):
     fn: EventHandler
     opts: Dict[str, Any]
 
@@ -41,10 +41,10 @@ class Event:
         self.msg = Message({"_kind_": kind, **(msg or {})})
 
 
-class PyEvent:
+class Listener:
     def __init__(self):
         self.loop = asyncio.new_event_loop()
-        self.listeners: Dict[str, Listener] = {}
+        self.handlers: Dict[str, Handler] = {}
         for sig in [signal.SIGINT, signal.SIGTERM]:
             self.loop.add_signal_handler(sig, self.__exit)
 
@@ -67,7 +67,7 @@ class PyEvent:
 
     def send(self, event: Event) -> None:
         ctx = Context(event.cid, _app_=self)
-        listener = self.listeners[event.kind]
+        listener = self.handlers[event.kind]
 
         async def _send():
             must_done = listener.opts["must_done"]
@@ -110,9 +110,9 @@ class PyEvent:
         must_done = must_done or []
 
         def _decorator(fn: _EventHandler) -> None:
-            assert name not in self.listeners
-            self.listeners[name] = Listener(fn=inject(fn), opts={"name": name, "must_done": must_done, **kwargs})
+            assert name not in self.handlers
+            self.handlers[name] = Handler(fn=inject(fn), opts={"name": name, "must_done": must_done, **kwargs})
         return _decorator
 
     def __repr__(self) -> str:
-        return "{}(listener_count={})".format(self.__class__.__name__, len(self.listeners))
+        return "{}(listener_count={})".format(self.__class__.__name__, len(self.handlers))

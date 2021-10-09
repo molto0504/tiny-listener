@@ -3,7 +3,7 @@ from typing import Dict, Optional, Any, List, TYPE_CHECKING
 from .job import Jobs
 
 if TYPE_CHECKING:
-    from .application import PyEvent
+    from .application import Listener
 
 
 class __UniqueCTX(type):
@@ -27,7 +27,7 @@ class Context(metaclass=__UniqueCTX):
         self.errors: List[BaseException] = []
 
     @property
-    def app(self) -> 'PyEvent':
+    def app(self) -> 'Listener':
         return self.scope["_app_"]
 
     @classmethod

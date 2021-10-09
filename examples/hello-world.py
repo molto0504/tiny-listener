@@ -1,7 +1,7 @@
-from pyevent.application import PyEvent, Event
+from listener import Listener, Event
 
 
-class App(PyEvent):
+class App(Listener):
     async def listen(self, send):
         send(Event("event.foo"))
         send(Event("event.bar"))

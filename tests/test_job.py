@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from pyevent import Job, Jobs
+from listener import Job, Jobs
 
 
 class TestJob(TestCase):

@@ -1,9 +1,9 @@
 import asyncio
 
-from pyevent.application import PyEvent, Event, Context
+from listener import Listener, Event, Context
 
 
-class App(PyEvent):
+class App(Listener):
     async def listen(self, send):
         Context(cid="1").jobs.add("job.1", "job.2")
         send(Event("event.step_3", cid="1"))
