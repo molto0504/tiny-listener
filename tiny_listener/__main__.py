@@ -2,11 +2,13 @@ import sys
 
 import click
 
-import pyevent
+import tiny_listener
 
 
-def show_version(ctx, *_) -> None:
-    click.echo(f"pyevent {pyevent.__version__}")
+def show_version(ctx, _, value) -> None:
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo(f"tiny-listener {tiny_listener.__version__}")
     ctx.exit()
 
 
@@ -30,7 +32,7 @@ def show_version(ctx, *_) -> None:
 def main(app_dir, app):
     sys.path.insert(0, app_dir)
     try:
-        app = pyevent.import_from_string(app)
+        app = tiny_listener.import_from_string(app)
     except BaseException as e:
         click.echo(e)
         sys.exit(1)

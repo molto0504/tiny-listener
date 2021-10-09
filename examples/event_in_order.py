@@ -1,6 +1,6 @@
 import asyncio
 
-from listener import Listener, Event, Context
+from tiny_listener import Listener, Event, Context
 
 
 class App(Listener):

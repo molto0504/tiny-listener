@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from listener import Context, inject, Message
+from tiny_listener import Context, inject, Message
 
 
 class TestContext(TestCase):

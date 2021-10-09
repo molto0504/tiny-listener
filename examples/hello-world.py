@@ -1,4 +1,4 @@
-from listener import Listener, Event
+from tiny_listener import Listener, Event
 
 
 class App(Listener):

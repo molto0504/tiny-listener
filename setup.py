@@ -13,19 +13,19 @@ def get_version(package):
 
 
 setup(
-    name="pyevent",
-    version=get_version("pyevent"),
-    description="pyevent",
+    name="tiny-listener",
+    version=get_version("tiny_listener"),
+    description="tiny listener",
     author="molto",
     author_email="wy6269@gmail.com",
     packages=[
-        'pyevent',
+        'tiny_listener',
     ],
     zip_safe=False,
     install_requires=[
         "click>=8.0.1",
     ],
     entry_points={
-        "console_scripts": ["pyevent=pyevent.__main__:main"],
+        "console_scripts": ["tiny-listener=tiny_listener.__main__:main"],
     }
 )

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from listener import Job, Jobs
+from tiny_listener import Job, Jobs
 
 
 class TestJob(TestCase):
