@@ -15,7 +15,7 @@ def get_version(package):
 setup(
     name="tiny-listener",
     version=get_version("tiny_listener"),
-    description="tiny listener",
+    description="lightning-fast, high-performance event handle framework",
     author="molto",
     author_email="wy6269@gmail.com",
     packages=[
@@ -25,6 +25,7 @@ setup(
     install_requires=[
         "click>=8.0.1",
     ],
+    license="MIT",
     entry_points={
         "console_scripts": ["tiny-listener=tiny_listener.__main__:main"],
     }
