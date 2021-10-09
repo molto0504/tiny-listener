@@ -100,8 +100,10 @@ class Listener:
 
     def run(self) -> None:
         self.loop.run_until_complete(self.main_loop())
+        tasks = asyncio.gather(*asyncio.Task.all_tasks(self.loop))
+        self.loop.run_until_complete(tasks)
 
-    def event(
+    def do(
             self,
             name: str,
             must_done: Union[None, List[str], Callable[[Context], List[str]]] = None,
