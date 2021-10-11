@@ -45,7 +45,7 @@ async def do_something():
     print("Hello baz!")
 ```
 
-Then run the application using Uvicorn:
+Then run the application using tiny-listener command:
 
 ```shell
 $ tiny-listener example:app
