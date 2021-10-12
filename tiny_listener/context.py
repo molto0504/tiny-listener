@@ -6,7 +6,7 @@ from itertools import chain
 
 
 if TYPE_CHECKING:
-    from .application import Listener
+    from .listener import Listener
 
 
 class Event:
@@ -25,7 +25,7 @@ class Event:
         self.parents.update(chain(*(self.ctx.get_events(pat) for pat in patterns)))
         return self
 
-    def with_detail(self, **detail: str) -> 'Event':
+    def with_detail(self, **detail: Any) -> 'Event':
         self.detail.update(detail)
         return self
 
@@ -51,7 +51,7 @@ class Event:
 class __UniqueCTX(type):
     ctxs: Dict[str, 'Context'] = {}
 
-    def __call__(cls, cid: Optional[str] = None, **scope) -> 'Context':
+    def __call__(cls, cid: str = "_global_", **scope) -> 'Context':
         if cid not in cls.ctxs:
             cls.ctxs[cid] = super().__call__(cid, **scope)
         ctx = cls.ctxs[cid]
@@ -67,7 +67,7 @@ class Context(metaclass=__UniqueCTX):
         if self.listener:  # TODO init by `after` arg
             self.events: Dict[str, Event] = {t: Event(t, self) for t in self.listener.__todos__}
         else:
-            self.events = {}
+            self.events: Dict[str, Event] = {}
 
     def get_events(self, pat: str = ".*") -> List[Event]:
         return [event for name, event in self.events.items() if re.match(pat, name)]
