@@ -1,19 +1,20 @@
+import re
 import asyncio
 import signal
 from typing import Optional, Dict, Callable, List, Awaitable, NamedTuple, Any, Union
 from inspect import signature, Parameter
 from functools import wraps
 
-from .context import Context, Message
+from .context import Context, Event
 
 
 _EventHandler = Callable[..., Awaitable[None]]
-EventHandler = Callable[[Context, Message], Awaitable[None]]
+EventHandler = Callable[[Context, Event], Awaitable[None]]
 
 
 def inject(handler: _EventHandler) -> EventHandler:
     @wraps(handler)
-    async def f(ctx: Context, msg: Message) -> None:
+    async def f(ctx: Context, event: Event) -> None:
         args = []
         kwargs = {}
         for name, param in signature(handler).parameters.items():
@@ -21,8 +22,8 @@ def inject(handler: _EventHandler) -> EventHandler:
                 kwargs[name] = None
             elif param.annotation is Context:
                 args.append(ctx)
-            elif param.annotation is Message:
-                args.append(msg)
+            elif param.annotation is Event:
+                args.append(event)
             else:
                 args.append(None)
         return await handler(*args, **kwargs)
@@ -34,14 +35,9 @@ class Handler(NamedTuple):
     opts: Dict[str, Any]
 
 
-class Event:
-    def __init__(self, kind: str, cid: Optional[str] = None, msg: Optional[Dict] = None):
-        self.kind = kind
-        self.cid = cid
-        self.msg = Message({"_kind_": kind, **(msg or {})})
-
-
 class Listener:
+    __todos__ = []
+
     def __init__(self):
         self.loop = asyncio.new_event_loop()
         self.handlers: Dict[str, Handler] = {}
@@ -51,6 +47,9 @@ class Listener:
         self._pre_send: List[EventHandler] = []
         self._post_send: List[EventHandler] = []
         self._error_raise: List[EventHandler] = []
+
+    def new_context(self, cid: Optional[str] = None, **scope: Any) -> Context:
+        return Context(cid, _listener_=self, **scope)
 
     def __exit(self) -> None:
         for t in asyncio.Task.all_tasks(self.loop):
@@ -65,55 +64,59 @@ class Listener:
     def error_raise(self, handler: _EventHandler) -> None:
         self._error_raise.append(inject(handler))
 
-    def send(self, event: Event) -> None:
-        ctx = Context(event.cid, _app_=self)
-        listener = self.handlers[event.kind]
+    def todo(self, name: str, cid: Optional[str] = None, **detail: Any) -> None:
+        assert name in self.__todos__, f"todo `{name}` not found"
 
-        async def _send():
-            must_done = listener.opts["must_done"]
-            if isinstance(must_done, Callable):
-                must_done: List[str] = must_done(ctx)
-            for name in must_done:
-                for job in ctx.jobs.all(name):
-                    await job.wait()
+        handler = None
+        for pat, val in self.handlers.items():
+            if re.match(pat, name):
+                handler = val
+                break
+        assert handler, f"handler `{name}` not found"  # TODO 404
 
-            [await fn(ctx, event.msg) for fn in self._pre_send]
-            try:
-                await listener.fn(ctx, event.msg)
-            except BaseException as e:
-                if not self._error_raise:
-                    raise e
-                ctx.errors.append(e)
-                [await fn(ctx, event.msg) for fn in self._error_raise]
-            [await fn(ctx, event.msg) for fn in self._post_send]
+        ctx = self.new_context(cid)
+        event = ctx.events[name].with_parent(*handler.opts["after"]).with_detail(**detail)
 
-        self.loop.create_task(_send())
+        async def _todo():
+            async with event:
+                [await fn(ctx, event) for fn in self._pre_send]
+                try:
+                    await handler.fn(ctx, event)
+                except BaseException as e:
+                    if not self._error_raise:
+                        raise e
+                    ctx.errors.append(e)
+                    [await fn(ctx, event) for fn in self._error_raise]
+                [await fn(ctx, event) for fn in self._post_send]
 
-    async def listen(self, send: Callable[[Event], None]):
+        self.loop.create_task(_todo())
+
+    async def listen(self, todo: Callable[[str], None]):
         raise NotImplementedError()
 
     async def main_loop(self) -> None:
         try:
-            await self.listen(self.send)
+            await self.listen(self.todo)
         except asyncio.CancelledError:
             pass
 
     def run(self) -> None:
         self.loop.run_until_complete(self.main_loop())
         tasks = asyncio.gather(*asyncio.Task.all_tasks(self.loop))
-        self.loop.run_until_complete(tasks)
+        if not tasks.done():
+            self.loop.run_until_complete(tasks)
 
     def do(
             self,
-            name: str,
-            must_done: Union[None, List[str], Callable[[Context], List[str]]] = None,
+            pattern: str,
+            after: Union[None, List[str], Callable[[Context], List[str]]] = None,
             **kwargs: Any
     ) -> Callable[[_EventHandler], None]:
-        must_done = must_done or []
+        after = after or []
 
         def _decorator(fn: _EventHandler) -> None:
-            assert name not in self.handlers
-            self.handlers[name] = Handler(fn=inject(fn), opts={"name": name, "must_done": must_done, **kwargs})
+            assert pattern not in self.handlers
+            self.handlers[pattern] = Handler(fn=inject(fn), opts={"after": after, **kwargs})
         return _decorator
 
     def __repr__(self) -> str:
