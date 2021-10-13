@@ -14,22 +14,34 @@ class Event:
         self._ctx = weakref.ref(ctx)
         self.name = name
         self.detail: Dict[str, Any] = {}
-        self.parents: Set[Event] = set()
         self.trigger = asyncio.Event()
+
+        self.parents_pat: Set[str] = set()
+        self.parents: Set[Event] = set()
+        self.parents_count: Optional[int] = None
+        self.parents_ready = asyncio.Event()
 
     @property
     def ctx(self) -> 'Context':
         return self._ctx()
 
-    def with_parent(self, *patterns: str) -> 'Event':
-        self.parents.update(chain(*(self.ctx.get_events(pat) for pat in patterns)))
+    def load_parents(self):
+        self.parents = set(chain(*(self.ctx.get_events(pat) for pat in self.parents_pat)))
+        if self.parents_count is not None and len(self.parents) == self.parents_count:
+            self.parents_ready.set()
+
+    def add_parents(self, *parents_pat: str) -> 'Event':
+        self.parents_pat.update(set(parents_pat))
+        self.load_parents()
         return self
 
-    def with_detail(self, **detail: Any) -> 'Event':
+    def set_detail(self, **detail: Any) -> 'Event':
         self.detail.update(detail)
         return self
 
     async def __aenter__(self):
+        if self.parents_count is not None:
+            await self.parents_ready.wait()
         for event in self.parents:
             await event.wait()
         return self
@@ -64,10 +76,17 @@ class Context(metaclass=__UniqueCTX):
         self.cid = cid
         self.scope: Dict[str, Any] = scope
         self.errors: List[BaseException] = []
-        if self.listener:  # TODO init by `after` arg
+        if self.listener:
             self.events: Dict[str, Event] = {t: Event(t, self) for t in self.listener.__todos__}
         else:
             self.events: Dict[str, Event] = {}
+
+    def new_event(self, name: str) -> 'Event':
+        event = Event(name, self)
+        self.events[name] = event
+        event.load_parents()
+        [i.load_parents() for i in self.events.values()]
+        return event
 
     def get_events(self, pat: str = ".*") -> List[Event]:
         return [event for name, event in self.events.items() if re.match(pat, name)]

@@ -65,17 +65,21 @@ class Listener:
         self._error_raise.append(inject(handler))
 
     def todo(self, name: str, cid: Optional[str] = None, **detail: Any) -> None:
-        assert name in self.__todos__, f"todo `{name}` not found"
-
         handler = None
         for pat, val in self.handlers.items():
             if re.match(pat, name):
                 handler = val
                 break
-        assert handler, f"handler `{name}` not found"  # TODO 404
+        assert handler, f"handler `{name}` not found"
 
         ctx = self.new_context(cid)
-        event = ctx.events[name].with_parent(*handler.opts["after"]).with_detail(**detail)
+        if name not in ctx.events:
+            event = ctx.new_event(name)
+        else:
+            event = ctx.events[name]
+
+        event.parents_count = handler.opts.get("parents_count")
+        event.add_parents(*handler.opts["parents"]).set_detail(**detail)
 
         async def _todo():
             async with event:
@@ -109,14 +113,15 @@ class Listener:
     def do(
             self,
             pattern: str,
-            after: Union[None, List[str], Callable[[Context], List[str]]] = None,
+            parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
+            parents_count: Optional[int] = None,
             **kwargs: Any
     ) -> Callable[[_EventHandler], None]:
-        after = after or []
+        parents = parents or []
 
         def _decorator(fn: _EventHandler) -> None:
             assert pattern not in self.handlers
-            self.handlers[pattern] = Handler(fn=inject(fn), opts={"after": after, **kwargs})
+            self.handlers[pattern] = Handler(fn=inject(fn), opts={"parents": parents, "parents_count": parents_count, **kwargs})
         return _decorator
 
     def __repr__(self) -> str:

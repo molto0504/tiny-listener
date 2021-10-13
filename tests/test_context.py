@@ -81,7 +81,15 @@ class TestEvent(TestCase):
     def test_ctx(self):
         self.assertIs(self.ctx, self.event_foo.ctx)
 
-    def test_with_parent(self):
+    def test_load_parents(self):
+        event = Event(name="foo", ctx=self.ctx)
+        self.assertFalse(event.parents_ready.is_set())
+        event.parents_count = 0
+        self.assertFalse(event.parents_ready.is_set())
+        event.load_parents()
+        self.assertTrue(event.parents_ready.is_set())
+
+    def test_add_parents(self):
         # match all
         for pats in [
             [""],
@@ -91,14 +99,14 @@ class TestEvent(TestCase):
             ["/user/foo", "/user/bar"],
             ["", "/user/_not_exist_"],
         ]:
-            event = Event(name="foo", ctx=self.ctx).with_parent(*pats)
+            event = Event(name="foo", ctx=self.ctx).add_parents(*pats)
             self.assertEqual({self.event_foo, self.event_bar}, event.parents)
         # match one
         for pats in [
             ["/user/foo"],
             ["/user/foo", "/user/f"]
         ]:
-            event = Event(name="foo", ctx=self.ctx).with_parent(*pats)
+            event = Event(name="foo", ctx=self.ctx).add_parents(*pats)
             self.assertEqual({self.event_foo}, event.parents)
         # match none
         for pats in [
@@ -106,14 +114,14 @@ class TestEvent(TestCase):
             ["/user/_not_exist_"],
             ["/user/_not_exist_foo", "/user/_not_exist_bar"],
         ]:
-            event = Event(name="foo", ctx=self.ctx).with_parent(*pats)
+            event = Event(name="foo", ctx=self.ctx).add_parents(*pats)
             self.assertEqual(set(), event.parents)
 
-    def test_with_detail(self):
-        self.event_foo.with_detail(field_A=1)
+    def test_set_detail(self):
+        self.event_foo.set_detail(field_A=1)
         self.assertEqual({"field_A": 1}, self.event_foo.detail)
 
-        self.event_foo.with_detail(field_A=2, field_B=3)
+        self.event_foo.set_detail(field_A=2, field_B=3)
         self.assertEqual({"field_A": 2, "field_B": 3}, self.event_foo.detail)
 
 
@@ -126,7 +134,7 @@ async def test_event_trigger(event_loop):
     ctx = app.new_context("ctx_trigger")
     event_foo = ctx.events["/user/foo"]
     event_bar = ctx.events["/user/bar"]
-    event_bar.with_parent("/user/foo")
+    event_bar.add_parents("/user/foo")
 
     assert event_foo.is_done is False
     event_loop.call_later(0.1, lambda: event_foo.done())
