@@ -5,7 +5,7 @@ wheel
 # Testing
 pytest
 pytest-asyncio
-coverage
+pytest-cov
 
 # Dependencies
 click>=8.0.1
