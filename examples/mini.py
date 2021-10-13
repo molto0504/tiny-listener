@@ -2,30 +2,28 @@ from tiny_listener import Listener
 
 
 class App(Listener):
-    __todos__ = ["step_1", "step_2", "step_3"]
-
     async def listen(self, todo):
-        todo("step_1")
-        todo("step_2")
-        todo("step_3")
+        todo("/step/3")
+        todo("/step/2")
+        todo("/step/1")
 
 
 app = App()
 
 
-@app.do("step_1")
+@app.do("/step/1")
 async def do_something():
-    print("* step_1")
+    print("* step 1 done!")
 
 
-@app.do("step_2", after=["step_1"])
+@app.do("/step/2", parents=["/step/1"])
 async def do_something():
-    print("* step_2")
+    print("* step 2 done!")
 
 
-@app.do("step_3")
+@app.do("/step/3", parents=["/step/2"])
 async def do_something():
-    print("* step_3")
+    print("* step 3 done!")
 
 
 app.run()

@@ -2,8 +2,6 @@ from tiny_listener import Listener, Context
 
 
 class App(Listener):
-    __todos__ = ["step_1", "step_2", "step_3"]
-
     async def listen(self, todo):
         todo("step_1", cid="Alice")
         todo("step_3", cid="Bob")

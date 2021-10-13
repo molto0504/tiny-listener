@@ -95,7 +95,7 @@ class Listener:
 
         self.loop.create_task(_todo())
 
-    async def listen(self, todo: Callable[[str], None]):
+    async def listen(self, todo: Callable[..., None]):
         raise NotImplementedError()
 
     async def main_loop(self) -> None:
