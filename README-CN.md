@@ -76,4 +76,4 @@ class App(Listener):
 再次运行你的代码, 你会发现事件触发的顺序并没有改变.
 
 这是因为 `app.do` 方法的 parents 参数可以指定事件触发顺序,
-无论 `todo` 何时被调用,`*/event/2* 总会在 */event/1* 后执行.
+无论 `todo` 何时被调用, */event/2* 总会在 */event/1* 后执行.
