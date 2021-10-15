@@ -68,8 +68,8 @@ from tiny_listener import Listener
 
 class App(Listener):
     async def listen(self, todo):
-        todo("/event/2")  # 触发事件 2
-        todo("/event/1")  # 触发事件 1
+        todo("/event/2")
+        todo("/event/1")
 ...
 ```
 

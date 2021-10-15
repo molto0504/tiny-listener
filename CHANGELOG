@@ -1,0 +1,17 @@
+# Change Log
+
+
+## 0.0.2 (2021-10-15)
+
+### Changed
+
+- Refactor Event / Context / Listener.
+- Parent event now works.
+- Listener callback can run with block.
+
+
+## 0.0.1 (2021-10-09)
+
+### Changed
+
+Initial release.

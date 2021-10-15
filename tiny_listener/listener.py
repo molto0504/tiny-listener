@@ -1,7 +1,7 @@
 import re
 import asyncio
 import signal
-from typing import Optional, Dict, Callable, List, Awaitable, NamedTuple, Any, Union
+from typing import Optional, Dict, Callable, List, Awaitable, NamedTuple, Any, Union, Coroutine
 from inspect import signature, Parameter
 from functools import wraps
 
@@ -64,7 +64,7 @@ class Listener:
     def error_raise(self, handler: _EventHandler) -> None:
         self._error_raise.append(inject(handler))
 
-    def todo(self, name: str, cid: Optional[str] = None, **detail: Any) -> None:
+    def todo(self, name: str, cid: Optional[str] = None, block: bool = False, **detail: Any) -> Optional[Coroutine]:
         handler = None
         for pat, val in self.handlers.items():
             if re.match(pat, name):
@@ -85,7 +85,7 @@ class Listener:
             async with event:
                 [await fn(ctx, event) for fn in self._pre_send]
                 try:
-                    await handler.fn(ctx, event)
+                    return await handler.fn(ctx, event)
                 except BaseException as e:
                     if not self._error_raise:
                         raise e
@@ -93,7 +93,10 @@ class Listener:
                     [await fn(ctx, event) for fn in self._error_raise]
                 [await fn(ctx, event) for fn in self._post_send]
 
-        self.loop.create_task(_todo())
+        if block:
+            return _todo()
+        else:
+            self.loop.create_task(_todo())
 
     async def listen(self, todo: Callable[..., None]):
         raise NotImplementedError()
@@ -104,8 +107,10 @@ class Listener:
         except asyncio.CancelledError:
             pass
 
-    def run(self) -> None:
+    def run(self, forever: bool = False) -> None:
         self.loop.run_until_complete(self.main_loop())
+        if forever:
+            self.loop.run_forever()
         tasks = asyncio.gather(*asyncio.Task.all_tasks(self.loop))
         if not tasks.done():
             self.loop.run_until_complete(tasks)
