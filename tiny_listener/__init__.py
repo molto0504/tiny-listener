@@ -11,6 +11,7 @@ from .utils import import_from_string
 
 
 __all__ = [
+    "__version__",
     "Listener", "inject",
     "Context", "Event",
     "import_from_string",

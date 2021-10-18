@@ -1,21 +1,14 @@
-import re
-import os
 from setuptools import setup
 
-
-def get_version(package):
-    """
-    Return package version as listed in `__version__` in `init.py`.
-    """
-    path = os.path.join(package, "__init__.py")
-    init_py = open(path, "r", encoding="utf8").read()
-    return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
+from tiny_listener import __version__
 
 
 setup(
     name="tiny-listener",
-    version=get_version("tiny_listener"),
+    version=__version__,
     description="lightning-fast, high-performance event handle framework",
+    long_description=open("README.md", "r", encoding="utf8").read(),
+    long_description_content_type="text/markdown",
     author="molto",
     author_email="wy6269@gmail.com",
     packages=[
@@ -28,5 +21,8 @@ setup(
     license="MIT",
     entry_points={
         "console_scripts": ["tiny-listener=tiny_listener.__main__:main"],
+    },
+    project_urls={
+        'Source': 'https://github.com/molto0504/tiny-listener',
     }
 )
