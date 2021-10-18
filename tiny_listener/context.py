@@ -76,10 +76,7 @@ class Context(metaclass=__UniqueCTX):
         self.cid = cid
         self.scope: Dict[str, Any] = scope
         self.errors: List[BaseException] = []
-        if self.listener:
-            self.events: Dict[str, Event] = {t: Event(t, self) for t in self.listener.__todos__}
-        else:
-            self.events: Dict[str, Event] = {}
+        self.events: Dict[str, Event] = {}
 
     def new_event(self, name: str) -> 'Event':
         event = Event(name, self)

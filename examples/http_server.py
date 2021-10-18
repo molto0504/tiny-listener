@@ -26,4 +26,4 @@ async def http_api(event: Event):
     resp.close()
 
 
-app.run(forever=True)
+app.run()

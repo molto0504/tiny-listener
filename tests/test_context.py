@@ -45,13 +45,9 @@ class TestContext(TestCase):
         self.assertEqual("Context(cid=ctx_8, scope={'foo': 'foo'}, errors=[])", repr(ctx))
 
     def test_events(self):
-        class App(Listener):
-            __todos__ = ["/user/foo", "/user/bar"]
-
-        ctx = Context("ctx_9", _listener_=App())
-        event_1 = ctx.events["/user/foo"]
-        event_2 = ctx.events["/user/bar"]
-
+        ctx = Context("ctx_9")
+        event_1 = ctx.new_event("/user/foo")
+        event_2 = ctx.new_event("/user/bar")
         # match all
         self.assertEqual([event_1, event_2], ctx.get_events())
         self.assertEqual([event_1, event_2], ctx.get_events("/"))
@@ -62,15 +58,22 @@ class TestContext(TestCase):
         # match none
         self.assertEqual([], ctx.get_events("/user/baz"))
 
+    def test_new_event(self):
+        ctx = Context("ctx_10")
+        self.assertEqual(0, len(ctx.events))
+        event = ctx.new_event("/event/foo")
+        self.assertEqual(event, ctx.events["/event/foo"])
+
 
 class TestEvent(TestCase):
     def setUp(self) -> None:
         class App(Listener):
-            __todos__ = ["/user/foo", "/user/bar"]
+            def listen(self, _): ...
+
         app = App()
         self.ctx = app.new_context("ctx_event")
-        self.event_foo = self.ctx.events["/user/foo"]
-        self.event_bar = self.ctx.events["/user/bar"]
+        self.event_foo = self.ctx.new_event("/user/foo")
+        self.event_bar = self.ctx.new_event("/user/bar")
 
     def test_ok(self):
         self.assertEqual("/user/foo", self.event_foo.name)
@@ -128,12 +131,13 @@ class TestEvent(TestCase):
 @pytest.mark.asyncio
 async def test_event_trigger(event_loop):
     class App(Listener):
-        __todos__ = ["/user/foo", "/user/bar"]
+        def listen(self, _): ...
 
     app = App()
     ctx = app.new_context("ctx_trigger")
-    event_foo = ctx.events["/user/foo"]
-    event_bar = ctx.events["/user/bar"]
+    event_foo = ctx.new_event("/user/foo")
+    event_bar = ctx.new_event("/user/bar")
+    event_bar.parents_count = 1
     event_bar.add_parents("/user/foo")
 
     assert event_foo.is_done is False

@@ -36,16 +36,14 @@ class Handler(NamedTuple):
 
 
 class Listener:
-    __todos__ = []
-
     def __init__(self):
         self.loop = asyncio.new_event_loop()
         self.handlers: Dict[str, Handler] = {}
         for sig in [signal.SIGINT, signal.SIGTERM]:
             self.loop.add_signal_handler(sig, self.__exit)
 
-        self._pre_send: List[EventHandler] = []
-        self._post_send: List[EventHandler] = []
+        self._pre_do: List[EventHandler] = []
+        self._post_do: List[EventHandler] = []
         self._error_raise: List[EventHandler] = []
 
     def new_context(self, cid: Optional[str] = None, **scope: Any) -> Context:
@@ -55,11 +53,11 @@ class Listener:
         for t in asyncio.Task.all_tasks(self.loop):
             t.cancel()
 
-    def pre_send(self, handler: _EventHandler) -> None:
-        self._pre_send.append(inject(handler))
+    def pre_do(self, handler: _EventHandler) -> None:
+        self._pre_do.append(inject(handler))
 
-    def post_send(self, handler: _EventHandler) -> None:
-        self._post_send.append(inject(handler))
+    def post_do(self, handler: _EventHandler) -> None:
+        self._post_do.append(inject(handler))
 
     def error_raise(self, handler: _EventHandler) -> None:
         self._error_raise.append(inject(handler))
@@ -73,17 +71,13 @@ class Listener:
         assert handler, f"handler `{name}` not found"
 
         ctx = self.new_context(cid)
-        if name not in ctx.events:
-            event = ctx.new_event(name)
-        else:
-            event = ctx.events[name]
-
+        event = ctx.new_event(name)
         event.parents_count = handler.opts.get("parents_count")
         event.add_parents(*handler.opts["parents"]).set_detail(**detail)
 
         async def _todo():
             async with event:
-                [await fn(ctx, event) for fn in self._pre_send]
+                [await fn(ctx, event) for fn in self._pre_do]
                 try:
                     return await handler.fn(ctx, event)
                 except BaseException as e:
@@ -91,7 +85,7 @@ class Listener:
                         raise e
                     ctx.errors.append(e)
                     [await fn(ctx, event) for fn in self._error_raise]
-                [await fn(ctx, event) for fn in self._post_send]
+                [await fn(ctx, event) for fn in self._post_do]
 
         if block:
             return _todo()
@@ -101,19 +95,9 @@ class Listener:
     async def listen(self, todo: Callable[..., None]):
         raise NotImplementedError()
 
-    async def main_loop(self) -> None:
-        try:
-            await self.listen(self.todo)
-        except asyncio.CancelledError:
-            pass
-
-    def run(self, forever: bool = False) -> None:
-        self.loop.run_until_complete(self.main_loop())
-        if forever:
-            self.loop.run_forever()
-        tasks = asyncio.gather(*asyncio.Task.all_tasks(self.loop))
-        if not tasks.done():
-            self.loop.run_until_complete(tasks)
+    def run(self) -> None:
+        self.loop.create_task(self.listen(self.todo))
+        self.loop.run_forever()
 
     def do(
             self,
