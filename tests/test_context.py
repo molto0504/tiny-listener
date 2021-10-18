@@ -51,7 +51,6 @@ class TestContext(TestCase):
         ctx = Context("ctx_9", _listener_=App())
         event_1 = ctx.events["/user/foo"]
         event_2 = ctx.events["/user/bar"]
-
         # match all
         self.assertEqual([event_1, event_2], ctx.get_events())
         self.assertEqual([event_1, event_2], ctx.get_events("/"))
@@ -61,6 +60,12 @@ class TestContext(TestCase):
         self.assertEqual([event_2], ctx.get_events("/user/bar"))
         # match none
         self.assertEqual([], ctx.get_events("/user/baz"))
+
+    def test_new_event(self):
+        ctx = Context("ctx_10")
+        self.assertEqual(0, len(ctx.events))
+        event = ctx.new_event("/event/foo")
+        self.assertEqual(event, ctx.events["/event/foo"])
 
 
 class TestEvent(TestCase):
@@ -134,6 +139,7 @@ async def test_event_trigger(event_loop):
     ctx = app.new_context("ctx_trigger")
     event_foo = ctx.events["/user/foo"]
     event_bar = ctx.events["/user/bar"]
+    event_bar.parents_count = 1
     event_bar.add_parents("/user/foo")
 
     assert event_foo.is_done is False

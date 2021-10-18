@@ -44,8 +44,8 @@ class Listener:
         for sig in [signal.SIGINT, signal.SIGTERM]:
             self.loop.add_signal_handler(sig, self.__exit)
 
-        self._pre_send: List[EventHandler] = []
-        self._post_send: List[EventHandler] = []
+        self._pre_do: List[EventHandler] = []
+        self._post_do: List[EventHandler] = []
         self._error_raise: List[EventHandler] = []
 
     def new_context(self, cid: Optional[str] = None, **scope: Any) -> Context:
@@ -55,11 +55,11 @@ class Listener:
         for t in asyncio.Task.all_tasks(self.loop):
             t.cancel()
 
-    def pre_send(self, handler: _EventHandler) -> None:
-        self._pre_send.append(inject(handler))
+    def pre_do(self, handler: _EventHandler) -> None:
+        self._pre_do.append(inject(handler))
 
-    def post_send(self, handler: _EventHandler) -> None:
-        self._post_send.append(inject(handler))
+    def post_do(self, handler: _EventHandler) -> None:
+        self._post_do.append(inject(handler))
 
     def error_raise(self, handler: _EventHandler) -> None:
         self._error_raise.append(inject(handler))
@@ -83,7 +83,7 @@ class Listener:
 
         async def _todo():
             async with event:
-                [await fn(ctx, event) for fn in self._pre_send]
+                [await fn(ctx, event) for fn in self._pre_do]
                 try:
                     return await handler.fn(ctx, event)
                 except BaseException as e:
@@ -91,7 +91,7 @@ class Listener:
                         raise e
                     ctx.errors.append(e)
                     [await fn(ctx, event) for fn in self._error_raise]
-                [await fn(ctx, event) for fn in self._post_send]
+                [await fn(ctx, event) for fn in self._post_do]
 
         if block:
             return _todo()
