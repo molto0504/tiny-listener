@@ -36,8 +36,6 @@ class Handler(NamedTuple):
 
 
 class Listener:
-    __todos__ = []
-
     def __init__(self):
         self.loop = asyncio.new_event_loop()
         self.handlers: Dict[str, Handler] = {}
@@ -73,11 +71,7 @@ class Listener:
         assert handler, f"handler `{name}` not found"
 
         ctx = self.new_context(cid)
-        if name not in ctx.events:
-            event = ctx.new_event(name)
-        else:
-            event = ctx.events[name]
-
+        event = ctx.new_event(name)
         event.parents_count = handler.opts.get("parents_count")
         event.add_parents(*handler.opts["parents"]).set_detail(**detail)
 
@@ -101,19 +95,9 @@ class Listener:
     async def listen(self, todo: Callable[..., None]):
         raise NotImplementedError()
 
-    async def main_loop(self) -> None:
-        try:
-            await self.listen(self.todo)
-        except asyncio.CancelledError:
-            pass
-
-    def run(self, forever: bool = False) -> None:
-        self.loop.run_until_complete(self.main_loop())
-        if forever:
-            self.loop.run_forever()
-        tasks = asyncio.gather(*asyncio.Task.all_tasks(self.loop))
-        if not tasks.done():
-            self.loop.run_until_complete(tasks)
+    def run(self) -> None:
+        self.loop.create_task(self.listen(self.todo))
+        self.loop.run_forever()
 
     def do(
             self,
