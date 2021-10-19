@@ -1,5 +1,6 @@
 import re
-from typing import Optional, Dict, Callable, List, Awaitable, NamedTuple, Any, Union, Coroutine, Tuple, Pattern
+import uuid
+from typing import Optional, Dict, Callable, Awaitable, NamedTuple, Any, Tuple, Pattern
 from inspect import signature, Parameter
 from functools import wraps
 
@@ -19,6 +20,8 @@ CONVERTOR_TYPES: Dict[str, Convertor] = {
     "str": Convertor("[^/]+", lambda s: str(s)),
     "int": Convertor("[0-9]+", lambda s: int(s)),
     "float": Convertor("[0-9]+(.[0-9]+)?", lambda s: float(s)),
+    "path": Convertor(".*", lambda s: str(s)),
+    "uuid": Convertor("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", lambda x: uuid.UUID(x))
 }
 
 
