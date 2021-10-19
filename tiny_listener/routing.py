@@ -89,3 +89,8 @@ class Route:
 
         path_regex += re.escape(self.path[idx:]) + "$"
         return re.compile(path_regex), convertors
+
+    def __repr__(self) -> str:
+        return "{}(path={}, opts={})".format(self.__class__.__name__,
+                                             self.path,
+                                             self.opts)

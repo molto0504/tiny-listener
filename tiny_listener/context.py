@@ -63,6 +63,11 @@ class Event:
     async def wait(self) -> Any:
         return await self.trigger.wait()
 
+    def __repr__(self) -> str:
+        return "{}(name={}, data={})".format(self.__class__.__name__,
+                                             self.name,
+                                             self.data)
+
 
 class __UniqueCTX(type):
     ctxs: Dict[str, 'Context'] = {}
