@@ -1,65 +1,7 @@
 from unittest import TestCase
 from typing import Callable
 
-from tiny_listener import Context, inject, Listener, Event
-
-
-class TestInject(TestCase):
-    def setUp(self) -> None:
-        class App(Listener):
-            def listen(self, _): ...
-
-        self.app = App()
-        self.ctx = Context("ctx_inject", _listener_=self.app)
-        self.event = self.ctx.new_event("foo")
-
-    def test_inject(self):
-        @inject
-        async def foo(ctx: Context):
-            assert ctx is self.ctx
-        self.app.loop.run_until_complete(foo(self.ctx, self.event))
-
-        @inject
-        async def foo(arg_1, ctx: Context, arg_2):
-            assert arg_1 is arg_2 is None
-            assert ctx is self.ctx
-        self.app.loop.run_until_complete(foo(self.ctx, self.event))
-
-        @inject
-        async def foo(arg_1, ctx: Context, *, arg_2=None):
-            assert arg_1 is arg_2 is None
-            assert ctx is self.ctx
-        self.app.loop.run_until_complete(foo(self.ctx, self.event))
-
-        @inject
-        async def foo(*, ctx: Context):
-            assert ctx is None
-        self.app.loop.run_until_complete(foo(self.ctx, self.event))
-
-        @inject
-        async def foo(ctx_1: Context, *, ctx_2: Context):
-            assert ctx_1 is self.ctx
-            assert ctx_2 is None
-        self.app.loop.run_until_complete(foo(self.ctx, self.event))
-
-        @inject
-        async def foo(ctx: Context, event: Event):
-            assert ctx is self.ctx
-            assert event is self.event
-        self.app.loop.run_until_complete(foo(self.ctx, self.event))
-
-        @inject
-        async def foo(arg_1, ctx: Context, arg_2, event: Event):
-            assert arg_1 is arg_2 is None
-            assert ctx is self.ctx
-            assert event is self.event
-        self.app.loop.run_until_complete(foo(self.ctx, self.event))
-
-        @inject
-        async def foo(ctx: Context, *, event: Event):
-            assert ctx is self.ctx
-            assert event is None
-        self.app.loop.run_until_complete(foo(self.ctx, self.event))
+from tiny_listener import Context, Listener, Event
 
 
 class TestListener(TestCase):

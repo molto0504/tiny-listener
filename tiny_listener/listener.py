@@ -1,44 +1,15 @@
-import re
 import asyncio
 import signal
-from typing import Optional, Dict, Callable, List, Awaitable, NamedTuple, Any, Union, Coroutine
-from inspect import signature, Parameter
-from functools import wraps
+from typing import Optional, Dict, Callable, List, Any, Union, Coroutine
 
-from .context import Context, Event
-
-
-_EventHandler = Callable[..., Awaitable[None]]
-EventHandler = Callable[[Context, Event], Awaitable[None]]
-
-
-def inject(handler: _EventHandler) -> EventHandler:
-    @wraps(handler)
-    async def f(ctx: Context, event: Event) -> None:
-        args = []
-        kwargs = {}
-        for name, param in signature(handler).parameters.items():
-            if param.kind == Parameter.KEYWORD_ONLY:
-                kwargs[name] = None
-            elif param.annotation is Context:
-                args.append(ctx)
-            elif param.annotation is Event:
-                args.append(event)
-            else:
-                args.append(None)
-        return await handler(*args, **kwargs)
-    return f
-
-
-class Handler(NamedTuple):
-    fn: EventHandler
-    opts: Dict[str, Any]
+from .context import Context
+from .routing import Route, _EventHandler, EventHandler, inject, Path
 
 
 class Listener:
     def __init__(self):
         self.loop = asyncio.new_event_loop()
-        self.handlers: Dict[str, Handler] = {}
+        self.routes: List[Route] = []
         for sig in [signal.SIGINT, signal.SIGTERM]:
             self.loop.add_signal_handler(sig, self.__exit)
 
@@ -63,36 +34,39 @@ class Listener:
         self._error_raise.append(inject(handler))
 
     def todo(self, name: str, cid: Optional[str] = None, block: bool = False, data: Optional[Dict] = None) -> Coroutine or None:
-        handler = None
-        for pat, val in self.handlers.items():
-            if re.match(pat, name):
-                handler = val
+        route = None
+        params = {}
+        for r in self.routes:
+            result, params = r.match(name)
+            if result:
+                route = r
                 break
-        assert handler, f"handler `{name}` not found"
+        assert route, f"handler `{name}` not found"
+        params = Path(params)
 
         ctx = self.new_context(cid)
         event = ctx.new_event(name)
-        event.parents_count = handler.opts.get("parents_count")
-        event.add_parents(*handler.opts["parents"]).set_data(data or {})
+        event.parents_count = route.opts.get("parents_count")
+        event.add_parents(*route.opts["parents"]).set_data(data or {})
 
         async def _todo():
             async with event:
-                [await fn(ctx, event) for fn in self._pre_do]
+                [await fn(ctx, event, params) for fn in self._pre_do]
                 try:
-                    return await handler.fn(ctx, event)
+                    return await route.fn(ctx, event, params)
                 except BaseException as e:
                     if not self._error_raise:
                         raise e
                     ctx.errors.append(e)
-                    [await fn(ctx, event) for fn in self._error_raise]
-                [await fn(ctx, event) for fn in self._post_do]
+                    [await fn(ctx, event, params) for fn in self._error_raise]
+                [await fn(ctx, event, params) for fn in self._post_do]
 
         if block:
             return _todo()
         else:
             self.loop.create_task(_todo())
 
-    async def listen(self, todo: Callable[..., None]):
+    async def listen(self, todo: Callable[..., Coroutine or None]):
         raise NotImplementedError()
 
     def run(self) -> None:
@@ -101,7 +75,7 @@ class Listener:
 
     def do(
             self,
-            pattern: str,
+            path: str,
             parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
             parents_count: Optional[int] = None,
             **kwargs: Any
@@ -109,9 +83,9 @@ class Listener:
         parents = parents or []
 
         def _decorator(fn: _EventHandler) -> None:
-            assert pattern not in self.handlers
-            self.handlers[pattern] = Handler(fn=inject(fn), opts={"parents": parents, "parents_count": parents_count, **kwargs})
+            assert path not in self.routes
+            self.routes.append(Route(path=path, fn=fn, opts={"parents": parents, "parents_count": parents_count, **kwargs}))
         return _decorator
 
     def __repr__(self) -> str:
-        return "{}(listener_count={})".format(self.__class__.__name__, len(self.handlers))
+        return "{}(listener_count={})".format(self.__class__.__name__, len(self.routes))

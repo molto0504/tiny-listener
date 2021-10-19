@@ -19,7 +19,7 @@ class App(Listener):
 app = App()
 
 
-@app.do("/")
+@app.do("/.*")
 async def http_api(event: Event):
     resp = event.data["resp"]
     resp.write(b"HTTP/1.1 200 OK\nContent-Length: 13\n\nHello, world!")
