@@ -78,7 +78,8 @@ class TestListener(TestCase):
         async def fn(c: Context, event: Event):
             self.assertEqual("Bob", c.cid)
             self.assertEqual({"age": 30}, event.detail)
-        self.app.run()
+
+        self.app.loop.run_until_complete(self.app.listen(self.app.todo))
 
     def test_pre_post_do(self):
         ctx = self.app.new_context("Bob")
@@ -110,22 +111,21 @@ class TestListener(TestCase):
         async def fn(c: Context):
             self.assertEqual(ctx, c)
 
-        self.app.run()
+        self.app.loop.run_until_complete(self.app.listen(self.app.todo))
 
-    # def test_error_raised(self):
-    #     ctx = self.app.new_context("Bob")
-    #
-    #     @self.app.do("something")
-    #     async def fn():
-    #         raise ValueError("something wrong")
-    #
-    #     self.app.run()  # TODO
-    #
-    #     @self.app.error_raise
-    #     async def fn(c: Context, event: Event):
-    #         self.assertEqual(ctx, c)
-    #         self.assertEqual({"age": 30}, event.detail)
-    #         self.assertIsInstance(ctx.errors[0], ValueError)
-    #
-    #     self.app.run()
+    def test_error_raised(self):
+        ctx = self.app.new_context("Bob")
 
+        @self.app.do("something")
+        async def fn():
+            raise ValueError("something wrong")
+
+        self.app.loop.run_until_complete(self.app.listen(self.app.todo))
+
+        @self.app.error_raise
+        async def fn(c: Context, event: Event):
+            self.assertEqual(ctx, c)
+            self.assertEqual({"age": 30}, event.detail)
+            self.assertIsInstance(ctx.errors[0], ValueError)
+
+        self.app.loop.run_until_complete(self.app.listen(self.app.todo))
