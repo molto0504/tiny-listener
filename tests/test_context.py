@@ -9,12 +9,14 @@ class TestContext(TestCase):
         # global context
         ctx = Context(foo="foo", bar=2)
         self.assertEqual("_global_", ctx.cid)
-        self.assertEqual({"foo": "foo", "bar": 2}, ctx.scope)
+        self.assertEqual("foo", ctx.scope["foo"])
+        self.assertEqual(2, ctx.scope["bar"])
         self.assertEqual({}, ctx.events)
         # request context
         ctx = Context(cid="req_1", foo="foo", bar=2)
         self.assertEqual("req_1", ctx.cid)
-        self.assertEqual({"foo": "foo", "bar": 2}, ctx.scope)
+        self.assertEqual("foo", ctx.scope["foo"])
+        self.assertEqual(2, ctx.scope["bar"])
         self.assertEqual({}, ctx.events)
 
     def test_unique(self):
@@ -38,11 +40,8 @@ class TestContext(TestCase):
 
     def test_call(self):
         ctx = Context("ctx_7", foo="foo")(bar=2)
-        self.assertEqual({"foo": "foo", "bar": 2}, ctx.scope)
-
-    def test_repr(self):
-        ctx = Context("ctx_8", foo="foo")
-        self.assertEqual("Context(cid=ctx_8, scope={'foo': 'foo'}, errors=[])", repr(ctx))
+        self.assertEqual("foo", ctx.scope["foo"])
+        self.assertEqual(2, ctx.scope["bar"])
 
     def test_events(self):
         ctx = Context("ctx_9")

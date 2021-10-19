@@ -83,7 +83,8 @@ class __UniqueCTX(type):
 class Context(metaclass=__UniqueCTX):
     def __init__(self, cid: str = "_global_", **scope) -> None:
         self.cid = cid
-        self.scope: Dict[str, Any] = scope
+        self.scope: Dict[str, Any] = {"__depends_cache__": {}}
+        self.scope.update(scope)
         self.errors: List[BaseException] = []
         self.events: Dict[str, Event] = {}
 

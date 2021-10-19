@@ -5,6 +5,7 @@ from inspect import signature, Parameter
 from functools import wraps
 
 from .context import Context, Event
+from .dependant import Depends
 
 
 class RoutingError(BaseException):
@@ -40,8 +41,19 @@ def as_handler(handler: _EventHandler) -> EventHandler:
         kwargs = {}
         for name, param in signature(handler).parameters.items():
             if param.kind == Parameter.KEYWORD_ONLY:
+                depends = param.default
+                if param.default and isinstance(depends, Depends):
+                    if depends.use_cache and depends.dependency in ctx.scope["__depends_cache__"]:
+                        kwargs[name] = ctx.scope["__depends_cache__"].get(depends.dependency)
+                        continue
+                    res = await as_handler(depends.dependency)(ctx, event, params)
+                    kwargs[name] = res
+                    ctx.scope["__depends_cache__"][depends.dependency] = res
+                    continue
                 kwargs[name] = None
-            elif param.annotation is Context:
+                continue
+
+            if param.annotation is Context:
                 args.append(ctx)
             elif param.annotation is Event:
                 args.append(event)

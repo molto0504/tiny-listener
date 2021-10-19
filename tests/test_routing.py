@@ -1,7 +1,8 @@
 import uuid
 from unittest import TestCase
+from typing import Dict
 
-from tiny_listener import Context, as_handler, Listener, Event, Route, Params, RoutingError
+from tiny_listener import Context, as_handler, Listener, Event, Route, Params, RoutingError, Depends
 
 
 class TestInject(TestCase):
@@ -65,6 +66,35 @@ class TestInject(TestCase):
             assert event is None
             assert params is None
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
+
+    def test_as_handler_depends(self):
+        async def get_params(params: Params):
+            return params
+
+        async def get_info(ctx: Context, *, data: Dict = Depends(get_params)):
+            return f"{ctx.cid}:{data['key']}"
+
+        @as_handler
+        async def foo(ctx: Context, *, info=Depends(get_info)):
+            assert ctx is self.ctx
+            assert info == "ctx_as_handler:val"
+        self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
+
+    def test_as_handler_depends_use_cache(self):
+        times = 0
+
+        async def dep():
+            nonlocal times
+            times += 1
+            return ...
+
+        @as_handler
+        async def foo(ctx: Context, *, foo=Depends(dep), bar=Depends(dep)):
+            assert ctx is self.ctx
+            assert foo is ...
+            assert bar is ...
+        self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
+        self.assertEqual(1, times)
 
 
 class TestRoute(TestCase):
