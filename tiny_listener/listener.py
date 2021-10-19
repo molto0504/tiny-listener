@@ -62,7 +62,7 @@ class Listener:
     def error_raise(self, handler: _EventHandler) -> None:
         self._error_raise.append(inject(handler))
 
-    def todo(self, name: str, cid: Optional[str] = None, block: bool = False, **detail: Any) -> Optional[Coroutine]:
+    def todo(self, name: str, cid: Optional[str] = None, block: bool = False, data: Optional[Dict] = None) -> Coroutine or None:
         handler = None
         for pat, val in self.handlers.items():
             if re.match(pat, name):
@@ -73,7 +73,7 @@ class Listener:
         ctx = self.new_context(cid)
         event = ctx.new_event(name)
         event.parents_count = handler.opts.get("parents_count")
-        event.add_parents(*handler.opts["parents"]).set_detail(**detail)
+        event.add_parents(*handler.opts["parents"]).set_data(data or {})
 
         async def _todo():
             async with event:

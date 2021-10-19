@@ -9,7 +9,7 @@ class App(Listener):
         line: bytes = await req.readline()
         if line:
             _, path, *_ = line.decode().split()
-            await self.todo(path, resp=resp, block=True)
+            await self.todo(path, block=True, data={resp: resp})
 
     async def listen(self, todo: Callable[..., None]):
         await asyncio.start_server(self.handler, host="0.0.0.0", port=8080, loop=self.loop)
@@ -21,7 +21,7 @@ app = App()
 
 @app.do("/")
 async def http_api(event: Event):
-    resp = event.detail["resp"]
+    resp = event.data["resp"]
     resp.write(b"HTTP/1.1 200 OK\nContent-Length: 13\n\nHello, world!")
     resp.close()
 

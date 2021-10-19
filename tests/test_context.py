@@ -77,7 +77,7 @@ class TestEvent(TestCase):
 
     def test_ok(self):
         self.assertEqual("/user/foo", self.event_foo.name)
-        self.assertEqual({}, self.event_foo.detail)
+        self.assertEqual({}, self.event_foo.data)
         self.assertEqual(set(), self.event_foo.parents)
         self.assertFalse(self.event_foo.trigger.is_set())
 
@@ -120,12 +120,12 @@ class TestEvent(TestCase):
             event = Event(name="foo", ctx=self.ctx).add_parents(*pats)
             self.assertEqual(set(), event.parents)
 
-    def test_set_detail(self):
-        self.event_foo.set_detail(field_A=1)
-        self.assertEqual({"field_A": 1}, self.event_foo.detail)
+    def test_set_data(self):
+        self.event_foo.set_data({"field_A": 1})
+        self.assertEqual({"field_A": 1}, self.event_foo.data)
 
-        self.event_foo.set_detail(field_A=2, field_B=3)
-        self.assertEqual({"field_A": 2, "field_B": 3}, self.event_foo.detail)
+        self.event_foo.set_data({"field_A": 2, "field_B": 3})
+        self.assertEqual({"field_A": 2, "field_B": 3}, self.event_foo.data)
 
 
 @pytest.mark.asyncio

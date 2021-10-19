@@ -13,7 +13,7 @@ class Event:
     def __init__(self, name: str, ctx: 'Context') -> None:
         self._ctx = weakref.ref(ctx)
         self.name = name
-        self.detail: Dict[str, Any] = {}
+        self.data = dict()
         self.trigger = asyncio.Event()
 
         self.parents_pat: Set[str] = set()
@@ -35,8 +35,8 @@ class Event:
         self.load_parents()
         return self
 
-    def set_detail(self, **detail: Any) -> 'Event':
-        self.detail.update(detail)
+    def set_data(self, data: Dict) -> 'Event':
+        self.data.update(data)
         return self
 
     async def __aenter__(self):
