@@ -7,6 +7,7 @@
 
 - Add MQTT client example.
 - Add Routing module.
+- Add timeout to Listener callback
 
 
 ## 0.0.3 (2021-10-18)

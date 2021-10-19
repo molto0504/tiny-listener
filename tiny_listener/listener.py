@@ -33,7 +33,14 @@ class Listener:
     def error_raise(self, handler: _EventHandler) -> None:
         self._error_raise.append(as_handler(handler))
 
-    def todo(self, name: str, cid: Optional[str] = None, block: bool = False, data: Optional[Dict] = None) -> Coroutine or None:
+    def todo(
+            self,
+            name: str,
+            cid: Optional[str] = None,
+            block: bool = False,
+            parents_timeout: Optional[float] = None,
+            data: Optional[Dict] = None
+    ) -> Coroutine or None:
         route = None
         params = {}
         for r in self.routes:
@@ -48,18 +55,22 @@ class Listener:
         event = ctx.new_event(name)
         event.parents_count = route.opts.get("parents_count")
         event.add_parents(*route.opts["parents"]).set_data(data or {})
+        event.parents_timeout = parents_timeout
 
         async def _todo():
-            async with event:
-                [await fn(ctx, event, params) for fn in self._pre_do]
+            async with event as exc:
                 try:
-                    return await route.fn(ctx, event, params)
+                    if exc:
+                        raise exc
+                    [await fn(ctx, event, params) for fn in self._pre_do]
+                    res = await route.fn(ctx, event, params)
+                    [await fn(ctx, event, params) for fn in self._post_do]
+                    return res
                 except BaseException as e:
                     if not self._error_raise:
                         raise e
                     ctx.errors.append(e)
                     [await fn(ctx, event, params) for fn in self._error_raise]
-                [await fn(ctx, event, params) for fn in self._post_do]
 
         if block:
             return _todo()

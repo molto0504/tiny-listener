@@ -2,6 +2,7 @@ import re
 import weakref
 import asyncio
 from typing import Dict, Optional, Any, List, Set, TYPE_CHECKING
+from concurrent.futures import TimeoutError
 from itertools import chain
 
 
@@ -20,6 +21,7 @@ class Event:
         self.parents: Set[Event] = set()
         self.parents_count: Optional[int] = None
         self.parents_ready = asyncio.Event()
+        self.parents_timeout: Optional[float] = None
 
     @property
     def ctx(self) -> 'Context':
@@ -39,12 +41,14 @@ class Event:
         self.data.update(data)
         return self
 
-    async def __aenter__(self):
-        if self.parents_count is not None:
-            await self.parents_ready.wait()
-        for event in self.parents:
-            await event.wait()
-        return self
+    async def __aenter__(self) -> Optional[TimeoutError]:
+        try:
+            if self.parents_count is not None:
+                await asyncio.wait_for(self.parents_ready.wait(), self.parents_timeout)
+            for event in self.parents:
+                await asyncio.wait_for(event.wait(), self.parents_timeout)
+        except TimeoutError as e:
+            return e
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
