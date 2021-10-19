@@ -1,7 +1,6 @@
-import re
 from unittest import TestCase
 
-from tiny_listener import Context, inject, Listener, Event, Route, Path, RoutingError
+from tiny_listener import Context, inject, Listener, Event, Route, Params, RoutingError
 
 
 class TestInject(TestCase):
@@ -12,7 +11,7 @@ class TestInject(TestCase):
         self.app = App()
         self.ctx = Context("ctx_inject", _listener_=self.app)
         self.event = self.ctx.new_event("foo")
-        self.path = Path({"key": "val"})
+        self.path = Params({"key": "val"})
 
     def test_inject_ok(self):
         @inject
@@ -45,14 +44,14 @@ class TestInject(TestCase):
 
     def test_inject_all(self):
         @inject
-        async def foo(ctx: Context, event: Event, params: Path):
+        async def foo(ctx: Context, event: Event, params: Params):
             assert ctx is self.ctx
             assert event is self.event
             assert params == {"key": "val"}
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
 
         @inject
-        async def foo(arg_1, ctx: Context, arg_2, event: Event, params: Path):
+        async def foo(arg_1, ctx: Context, arg_2, event: Event, params: Params):
             assert arg_1 is arg_2 is None
             assert ctx is self.ctx
             assert event is self.event
@@ -60,7 +59,7 @@ class TestInject(TestCase):
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
 
         @inject
-        async def foo(ctx: Context, *, event: Event, params: Path):
+        async def foo(ctx: Context, *, event: Event, params: Params):
             assert ctx is self.ctx
             assert event is None
             assert params is None

@@ -22,18 +22,18 @@ CONVERTOR_TYPES: Dict[str, Convertor] = {
 }
 
 
-class Path(dict):
+class Params(dict):
     pass
 
 
 _EventHandler = Callable[..., Awaitable[None]]
-EventHandler = Callable[[Context, Event, Path], Awaitable[None]]
+EventHandler = Callable[[Context, Event, Params], Awaitable[None]]
 
 
 # TODO change name
 def inject(handler: _EventHandler) -> EventHandler:
     @wraps(handler)
-    async def f(ctx: Context, event: Event, path: Path) -> None:
+    async def f(ctx: Context, event: Event, params: Params) -> None:
         args = []
         kwargs = {}
         for name, param in signature(handler).parameters.items():
@@ -43,8 +43,8 @@ def inject(handler: _EventHandler) -> EventHandler:
                 args.append(ctx)
             elif param.annotation is Event:
                 args.append(event)
-            elif param.annotation is Path:
-                args.append(path)
+            elif param.annotation is Params:
+                args.append(params)
             else:
                 args.append(None)
         return await handler(*args, **kwargs)

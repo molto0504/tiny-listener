@@ -3,7 +3,7 @@ import signal
 from typing import Optional, Dict, Callable, List, Any, Union, Coroutine
 
 from .context import Context
-from .routing import Route, _EventHandler, EventHandler, inject, Path
+from .routing import Route, _EventHandler, EventHandler, inject, Params
 
 
 class Listener:
@@ -42,7 +42,7 @@ class Listener:
                 route = r
                 break
         assert route, f"handler `{name}` not found"
-        params = Path(params)
+        params = Params(params)
 
         ctx = self.new_context(cid)
         event = ctx.new_event(name)

@@ -2,7 +2,7 @@ from hbmqtt.client import MQTTClient
 from hbmqtt.mqtt.constants import QOS_0
 from hbmqtt.mqtt.publish import PublishPacket
 
-from tiny_listener import Listener, Event, Path
+from tiny_listener import Listener, Event, Params
 
 
 class App(Listener):
@@ -24,13 +24,13 @@ app = App()
 
 
 @app.do("/sys/device/{id}/log")
-async def fn(event: Event, params: Path):
+async def fn(event: Event, params: Params):
     payload = event.data["payload"]
     print(f"Log handler: {params['id']} => {payload.data}")
 
 
 @app.do("/sys/device/{id}/power")
-async def fn(event: Event, params: Path):
+async def fn(event: Event, params: Params):
     payload = event.data["payload"]
     print(f"Power handler: {params['id']} => {payload.data}")
 
