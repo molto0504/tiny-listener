@@ -1,7 +1,7 @@
 import uuid
 from unittest import TestCase
 
-from tiny_listener import Context, inject, Listener, Event, Route, Params, RoutingError
+from tiny_listener import Context, as_handler, Listener, Event, Route, Params, RoutingError
 
 
 class TestInject(TestCase):
@@ -10,48 +10,48 @@ class TestInject(TestCase):
             def listen(self, _): ...
 
         self.app = App()
-        self.ctx = Context("ctx_inject", _listener_=self.app)
+        self.ctx = Context("ctx_as_handler", _listener_=self.app)
         self.event = self.ctx.new_event("foo")
         self.path = Params({"key": "val"})
 
-    def test_inject_ok(self):
-        @inject
+    def test_as_handler_ok(self):
+        @as_handler
         async def foo(ctx: Context):
             assert ctx is self.ctx
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
 
-        @inject
+        @as_handler
         async def foo(arg_1, ctx: Context, arg_2):
             assert arg_1 is arg_2 is None
             assert ctx is self.ctx
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
 
-        @inject
+        @as_handler
         async def foo(arg_1, ctx: Context, *, arg_2=None):
             assert arg_1 is arg_2 is None
             assert ctx is self.ctx
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
 
-        @inject
+        @as_handler
         async def foo(*, ctx: Context):
             assert ctx is None
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
 
-        @inject
+        @as_handler
         async def foo(ctx_1: Context, *, ctx_2: Context):
             assert ctx_1 is self.ctx
             assert ctx_2 is None
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
 
-    def test_inject_all(self):
-        @inject
+    def test_as_handler_all(self):
+        @as_handler
         async def foo(ctx: Context, event: Event, params: Params):
             assert ctx is self.ctx
             assert event is self.event
             assert params == {"key": "val"}
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
 
-        @inject
+        @as_handler
         async def foo(arg_1, ctx: Context, arg_2, event: Event, params: Params):
             assert arg_1 is arg_2 is None
             assert ctx is self.ctx
@@ -59,7 +59,7 @@ class TestInject(TestCase):
             assert params == {"key": "val"}
         self.app.loop.run_until_complete(foo(self.ctx, self.event, self.path))
 
-        @inject
+        @as_handler
         async def foo(ctx: Context, *, event: Event, params: Params):
             assert ctx is self.ctx
             assert event is None

@@ -3,7 +3,7 @@ import signal
 from typing import Optional, Dict, Callable, List, Any, Union, Coroutine
 
 from .context import Context
-from .routing import Route, _EventHandler, EventHandler, inject, Params
+from .routing import Route, _EventHandler, EventHandler, as_handler, Params
 
 
 class Listener:
@@ -25,13 +25,13 @@ class Listener:
             t.cancel()
 
     def pre_do(self, handler: _EventHandler) -> None:
-        self._pre_do.append(inject(handler))
+        self._pre_do.append(as_handler(handler))
 
     def post_do(self, handler: _EventHandler) -> None:
-        self._post_do.append(inject(handler))
+        self._post_do.append(as_handler(handler))
 
     def error_raise(self, handler: _EventHandler) -> None:
-        self._error_raise.append(inject(handler))
+        self._error_raise.append(as_handler(handler))
 
     def todo(self, name: str, cid: Optional[str] = None, block: bool = False, data: Optional[Dict] = None) -> Coroutine or None:
         route = None

@@ -33,8 +33,7 @@ _EventHandler = Callable[..., Awaitable[None]]
 EventHandler = Callable[[Context, Event, Params], Awaitable[None]]
 
 
-# TODO change name
-def inject(handler: _EventHandler) -> EventHandler:
+def as_handler(handler: _EventHandler) -> EventHandler:
     @wraps(handler)
     async def f(ctx: Context, event: Event, params: Params) -> None:
         args = []
@@ -60,7 +59,7 @@ class Route:
     def __init__(self, path: str, fn: _EventHandler, opts: Optional[Dict[str, Any]] = None):
         self.path = path
         self.path_regex, self.convertors = self.compile_path()
-        self.fn = inject(fn)
+        self.fn = as_handler(fn)
         self.opts: Dict[str, Any] = opts or {}
 
     def match(self, name: str) -> Tuple[bool, Dict[str, Any]]:
