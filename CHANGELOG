@@ -1,5 +1,16 @@
 # Change Log
 
+
+## 0.0.4 (2021-10-18)
+
+### Changed
+
+- Add MQTT client example.
+- Add Routing module.
+- Add timeout to Listener callback
+- Add Dependant module.
+
+
 ## 0.0.3 (2021-10-18)
 
 ### Changed

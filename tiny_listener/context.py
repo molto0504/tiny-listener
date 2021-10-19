@@ -2,6 +2,7 @@ import re
 import weakref
 import asyncio
 from typing import Dict, Optional, Any, List, Set, TYPE_CHECKING
+from concurrent.futures import TimeoutError
 from itertools import chain
 
 
@@ -13,13 +14,14 @@ class Event:
     def __init__(self, name: str, ctx: 'Context') -> None:
         self._ctx = weakref.ref(ctx)
         self.name = name
-        self.detail: Dict[str, Any] = {}
+        self.data = dict()
         self.trigger = asyncio.Event()
 
         self.parents_pat: Set[str] = set()
         self.parents: Set[Event] = set()
         self.parents_count: Optional[int] = None
         self.parents_ready = asyncio.Event()
+        self.parents_timeout: Optional[float] = None
 
     @property
     def ctx(self) -> 'Context':
@@ -35,16 +37,18 @@ class Event:
         self.load_parents()
         return self
 
-    def set_detail(self, **detail: Any) -> 'Event':
-        self.detail.update(detail)
+    def set_data(self, data: Dict) -> 'Event':
+        self.data.update(data)
         return self
 
-    async def __aenter__(self):
-        if self.parents_count is not None:
-            await self.parents_ready.wait()
-        for event in self.parents:
-            await event.wait()
-        return self
+    async def __aenter__(self) -> Optional[TimeoutError]:
+        try:
+            if self.parents_count is not None:
+                await asyncio.wait_for(self.parents_ready.wait(), self.parents_timeout)
+            for event in self.parents:
+                await asyncio.wait_for(event.wait(), self.parents_timeout)
+        except TimeoutError as e:
+            return e
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
@@ -58,6 +62,11 @@ class Event:
 
     async def wait(self) -> Any:
         return await self.trigger.wait()
+
+    def __repr__(self) -> str:
+        return "{}(name={}, data={})".format(self.__class__.__name__,
+                                             self.name,
+                                             self.data)
 
 
 class __UniqueCTX(type):
@@ -74,7 +83,8 @@ class __UniqueCTX(type):
 class Context(metaclass=__UniqueCTX):
     def __init__(self, cid: str = "_global_", **scope) -> None:
         self.cid = cid
-        self.scope: Dict[str, Any] = scope
+        self.scope: Dict[str, Any] = {"__depends_cache__": {}}
+        self.scope.update(scope)
         self.errors: List[BaseException] = []
         self.events: Dict[str, Event] = {}
 

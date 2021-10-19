@@ -1,3 +1,5 @@
+import asyncio
+
 from tiny_listener import Listener, Context
 
 
@@ -6,7 +8,7 @@ class App(Listener):
         todo("step_1", cid="Alice")
         todo("step_3", cid="Bob")
         todo("step_2", cid="Bob")
-        todo("step_3", cid="Alice")
+        todo("step_3", cid="Alice", parents_timeout=1)
         todo("step_1", cid="Bob")
         todo("step_2", cid="Alice")
 
@@ -14,17 +16,23 @@ class App(Listener):
 app = App()
 
 
+@app.error_raise
+async def err(ctx: Context):
+    print(ctx.errors)
+
+
 @app.do("step_1")
 async def something(ctx: Context):
     print(f"* step_1 | {ctx.cid}")
 
 
-@app.do("step_2", after=["step_1"])
+@app.do("step_2", parents=["step_1"])
 async def something(ctx: Context):
+    await asyncio.sleep(3)
     print(f"* step_2 | {ctx.cid}")
 
 
-@app.do("step_3", after=["step_2"])
+@app.do("step_3", parents=["step_2"])
 async def something(ctx: Context):
     print(f"* step_3 | {ctx.cid}")
 
