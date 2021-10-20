@@ -6,10 +6,16 @@ from .context import Context
 from .routing import Route, _EventHandler, EventHandler, as_handler, Params
 
 
+class NotFound(BaseException):
+    pass
+
+
 class Listener:
+    __default_routes__ = []
+
     def __init__(self):
         self.loop = asyncio.new_event_loop()
-        self.routes: List[Route] = []
+        self.routes: List[Route] = self.__default_routes__
         for sig in [signal.SIGINT, signal.SIGTERM]:
             self.loop.add_signal_handler(sig, self.__exit)
 
@@ -48,7 +54,9 @@ class Listener:
             if result:
                 route = r
                 break
-        assert route, f"handler `{name}` not found"
+        else:
+            raise NotFound(f"route `{name}` not found")
+
         params = Params(params)
 
         ctx = self.new_context(cid)
@@ -94,8 +102,21 @@ class Listener:
         parents = parents or []
 
         def _decorator(fn: _EventHandler) -> None:
-            assert path not in self.routes
             self.routes.append(Route(path=path, fn=fn, opts={"parents": parents, "parents_count": parents_count, **kwargs}))
+        return _decorator
+
+    @classmethod
+    def default_route(
+            cls,
+            path: str,
+            parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
+            parents_count: Optional[int] = None,
+            **kwargs: Any
+    ) -> Callable[[_EventHandler], None]:
+        parents = parents or []
+
+        def _decorator(fn: _EventHandler) -> None:
+            cls.__default_routes__.append(Route(path=path, fn=fn, opts={"parents": parents, "parents_count": parents_count, **kwargs}))
         return _decorator
 
     def __repr__(self) -> str:

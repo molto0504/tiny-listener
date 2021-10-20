@@ -2,7 +2,7 @@ import uuid
 from unittest import TestCase
 from typing import Dict
 
-from tiny_listener import Context, as_handler, Listener, Event, Route, Params, RoutingError, Depends
+from tiny_listener import Context, as_handler, Listener, Event, Route, Params, NotFound, Depends
 
 
 class TestInject(TestCase):
@@ -133,6 +133,7 @@ class TestRoute(TestCase):
     def test_convertor_path(self):
         route = Route(path="/user/{file:path}", fn=self.handler)
         self.assertEqual((True, {"file": "document/repo/foo.py"}), route.match("/user/document/repo/foo.py"))
+        self.assertEqual((True, {"file": "http://localhost/home"}), route.match("/user/http://localhost/home"))
         self.assertEqual((False, {}), route.match("/user"))
 
     def test_convertor_uuid(self):
@@ -151,4 +152,4 @@ class TestRoute(TestCase):
         }), route.match("/user/18baadd0-9225-4cc0-a13b-69098168689f/bob/document/repo/foo.py/18/1.1"))
 
     def test_convertor_not_exist(self):
-        self.assertRaises(RoutingError, Route, path="/user/{name:int128}", fn=self.handler)
+        self.assertRaises(AssertionError, Route, path="/user/{name:int128}", fn=self.handler)

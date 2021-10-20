@@ -8,10 +8,6 @@ from .context import Context, Event
 from .dependant import Depends
 
 
-class RoutingError(BaseException):
-    pass
-
-
 class Convertor(NamedTuple):
     regex: str
     convert: Callable[[Any], Any]
@@ -88,15 +84,12 @@ class Route:
         for match in self.PARAM_REGEX.finditer(self.path):
             param_name, convertor_type = match.groups("str")
             convertor_type = convertor_type.lstrip(":")
-            if convertor_type not in CONVERTOR_TYPES:
-                raise RoutingError(f"Unknown path convertor '{convertor_type}'")
+            assert convertor_type in CONVERTOR_TYPES, f"Unknown path convertor '{convertor_type}'"
             convertor = CONVERTOR_TYPES[convertor_type]
 
             path_regex += re.escape(self.path[idx: match.start()])
             path_regex += f"(?P<{param_name}>{convertor.regex})"
-
             convertors[param_name] = convertor
-
             idx = match.end()
 
         path_regex += re.escape(self.path[idx:]) + "$"
