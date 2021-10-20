@@ -1,7 +1,14 @@
 # Change Log
 
+## 0.0.5 (2021-10-20)
 
-## 0.0.4 (2021-10-18)
+### Changed
+
+- Add NotFound exception.
+- Add default route.
+
+
+## 0.0.4 (2021-10-19)
 
 ### Changed
 
