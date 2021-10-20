@@ -6,6 +6,10 @@ from .context import Context
 from .routing import Route, _EventHandler, EventHandler, as_handler, Params
 
 
+class NotFound(BaseException):
+    pass
+
+
 class Listener:
     def __init__(self):
         self.loop = asyncio.new_event_loop()
@@ -48,7 +52,9 @@ class Listener:
             if result:
                 route = r
                 break
-        assert route, f"handler `{name}` not found"
+        else:
+            raise NotFound(f"route `{name}` not found")
+
         params = Params(params)
 
         ctx = self.new_context(cid)
