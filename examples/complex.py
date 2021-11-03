@@ -1,6 +1,7 @@
 import asyncio
 
 from tiny_listener import Listener, Context
+from concurrent.futures import TimeoutError
 
 
 class App(Listener):
@@ -16,9 +17,9 @@ class App(Listener):
 app = App()
 
 
-@app.error_raise
-async def err(ctx: Context):
-    print(ctx.errors)
+@app.error_raise(TimeoutError)
+async def err_handler(err: TimeoutError):
+    print(err)
 
 
 @app.do("step_1")

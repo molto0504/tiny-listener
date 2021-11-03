@@ -38,11 +38,11 @@ class Event:
         return set()
 
     async def __aenter__(self) -> Optional[TimeoutError]:
-        try:
-            for event in self.parents:
+        for event in self.parents:
+            try:
                 await asyncio.wait_for(event.wait(), event.timeout)
-        except TimeoutError as e:
-            return e
+            except TimeoutError:
+                return TimeoutError(f"{event} timeout({event.timeout})")
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
@@ -79,7 +79,6 @@ class Context(metaclass=__UniqueCTX):
         self.cid = cid
         self.scope: Dict[str, Any] = {"__depends_cache__": {}}
         self.scope.update(scope)
-        self.errors: List[BaseException] = []
         self.events: Dict[str, Event] = {}
 
     def new_event(
@@ -121,7 +120,6 @@ class Context(metaclass=__UniqueCTX):
         return self.scope.update(scope) or self
 
     def __repr__(self) -> str:
-        return "{}(cid={}, scope={}, errors={})".format(self.__class__.__name__,
-                                                        self.cid,
-                                                        self.scope,
-                                                        self.errors)
+        return "{}(cid={}, scope={})".format(self.__class__.__name__,
+                                             self.cid,
+                                             self.scope)

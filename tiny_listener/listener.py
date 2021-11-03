@@ -1,6 +1,6 @@
 import asyncio
 import signal
-from typing import Optional, Dict, Callable, List, Any, Union, Coroutine
+from typing import Optional, Dict, Callable, List, Any, Union, Coroutine, Tuple, Type
 
 from .context import Context
 from .routing import Route, _EventHandler, EventHandler, as_handler, Params
@@ -21,7 +21,7 @@ class Listener:
 
         self._pre_do: List[EventHandler] = []
         self._post_do: List[EventHandler] = []
-        self._error_raise: List[EventHandler] = []
+        self._error_raise: List[Tuple[EventHandler, Type[BaseException]]] = []
 
     def new_context(self, cid: Optional[str] = None, **scope: Any) -> Context:
         return Context(cid, _listener_=self, **scope)
@@ -30,14 +30,16 @@ class Listener:
         for t in asyncio.Task.all_tasks(self.loop):
             t.cancel()
 
-    def pre_do(self, handler: _EventHandler) -> None:
-        self._pre_do.append(as_handler(handler))
+    def pre_do(self, fn: _EventHandler) -> None:
+        self._pre_do.append(as_handler(fn))
 
-    def post_do(self, handler: _EventHandler) -> None:
-        self._post_do.append(as_handler(handler))
+    def post_do(self, fn: _EventHandler) -> None:
+        self._post_do.append(as_handler(fn))
 
-    def error_raise(self, handler: _EventHandler) -> None:
-        self._error_raise.append(as_handler(handler))
+    def error_raise(self, exc: Type[BaseException]) -> Callable:
+        def f(fn: _EventHandler) -> Any:
+            self._error_raise.append((as_handler(fn), exc))
+        return f
 
     def todo(
             self,
@@ -66,15 +68,14 @@ class Listener:
                 try:
                     if exc:
                         raise exc
-                    [await fn(ctx, event, params) for fn in self._pre_do]
+                    [await fn(ctx, event, params, exc) for fn in self._pre_do]
                     res = await route.fn(ctx, event, params)
-                    [await fn(ctx, event, params) for fn in self._post_do]
+                    [await fn(ctx, event, params, exc) for fn in self._post_do]
                     return res
                 except BaseException as e:
                     if not self._error_raise:
                         raise e
-                    ctx.errors.append(e)
-                    [await fn(ctx, event, params) for fn in self._error_raise]
+                    [await fn(ctx, event, params, e) for fn, exc_cls in self._error_raise if isinstance(e, exc_cls)]
 
         if block:
             return _todo()

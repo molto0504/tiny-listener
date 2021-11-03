@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Optional, Dict, Callable, Awaitable, NamedTuple, Any, Tuple, Pattern, Union, List, Set, Iterable
+from typing import Optional, Dict, Callable, Awaitable, NamedTuple, Any, Tuple, Pattern, Union, List
 from inspect import signature, Parameter
 from functools import wraps
 
@@ -27,12 +27,12 @@ class Params(dict):
 
 
 _EventHandler = Callable[..., Awaitable[None]]
-EventHandler = Callable[[Context, Event, Params], Awaitable[None]]
+EventHandler = Callable[[Context, Event, Params, Optional[BaseException]], Awaitable[None]]
 
 
 def as_handler(handler: _EventHandler) -> EventHandler:
     @wraps(handler)
-    async def f(ctx: Context, event: Event, params: Params) -> None:
+    async def f(ctx: Context, event: Event, params: Params, exc: Optional[BaseException] = None) -> None:
         args = []
         kwargs = {}
         for name, param in signature(handler).parameters.items():
@@ -42,7 +42,7 @@ def as_handler(handler: _EventHandler) -> EventHandler:
                     if depends.use_cache and depends.dependency in ctx.scope["__depends_cache__"]:
                         kwargs[name] = ctx.scope["__depends_cache__"].get(depends.dependency)
                         continue
-                    res = await as_handler(depends.dependency)(ctx, event, params)
+                    res = await as_handler(depends.dependency)(ctx, event, params, None)
                     kwargs[name] = res
                     ctx.scope["__depends_cache__"][depends.dependency] = res
                     continue
@@ -55,6 +55,8 @@ def as_handler(handler: _EventHandler) -> EventHandler:
                 args.append(event)
             elif param.annotation is Params:
                 args.append(params)
+            elif issubclass(param.annotation, BaseException):
+                args.append(exc)
             else:
                 args.append(None)
         return await handler(*args, **kwargs)
