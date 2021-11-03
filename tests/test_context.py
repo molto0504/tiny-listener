@@ -1,7 +1,7 @@
 import pytest
 from unittest import TestCase
 
-from tiny_listener import Context, Listener, Event
+from tiny_listener import Context, Listener, Event, Route
 
 
 class TestContext(TestCase):
@@ -83,7 +83,9 @@ class TestEvent(TestCase):
     def test_ctx(self):
         self.assertIs(self.ctx, self.event_foo.ctx)
 
-    def test_add_parents(self):
+    def test_parents(self):
+        async def _cb(): ...
+
         # match all
         for pats in [
             [""],
@@ -93,14 +95,14 @@ class TestEvent(TestCase):
             ["/user/foo", "/user/bar"],
             ["", "/user/_not_exist_"],
         ]:
-            event = Event(name="foo", ctx=self.ctx).add_parents(*pats)
+            event = Event(name="foo", ctx=self.ctx, route=Route("/", _cb, parents=pats))
             self.assertEqual({self.event_foo, self.event_bar}, event.parents)
         # match one
         for pats in [
             ["/user/foo"],
             ["/user/foo", "/user/f"]
         ]:
-            event = Event(name="foo", ctx=self.ctx).add_parents(*pats)
+            event = Event(name="foo", ctx=self.ctx, route=Route("/", _cb, parents=pats))
             self.assertEqual({self.event_foo}, event.parents)
         # match none
         for pats in [
@@ -108,15 +110,8 @@ class TestEvent(TestCase):
             ["/user/_not_exist_"],
             ["/user/_not_exist_foo", "/user/_not_exist_bar"],
         ]:
-            event = Event(name="foo", ctx=self.ctx).add_parents(*pats)
+            event = Event(name="foo", ctx=self.ctx, route=Route("/", _cb, parents=pats))
             self.assertEqual(set(), event.parents)
-
-    def test_set_data(self):
-        self.event_foo.set_data({"field_A": 1})
-        self.assertEqual({"field_A": 1}, self.event_foo.data)
-
-        self.event_foo.set_data({"field_A": 2, "field_B": 3})
-        self.assertEqual({"field_A": 2, "field_B": 3}, self.event_foo.data)
 
 
 @pytest.mark.asyncio
@@ -124,11 +119,12 @@ async def test_event_trigger(event_loop):
     class App(Listener):
         def listen(self, _): ...
 
+    async def _cb(): ...
+
     app = App()
     ctx = app.new_context("ctx_trigger")
     event_foo = ctx.new_event("/user/foo")
-    event_bar = ctx.new_event("/user/bar")
-    event_bar.add_parents("/user/foo")
+    event_bar = ctx.new_event("/user/bar", route=Route("/", fn=_cb, parents=["/user/foo"]))
 
     assert event_foo.is_done is False
     event_loop.call_later(0.1, lambda: event_foo.done())

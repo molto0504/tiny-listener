@@ -8,34 +8,34 @@ from itertools import chain
 
 if TYPE_CHECKING:
     from .listener import Listener
+    from .routing import Route
 
 
 class Event:
-    def __init__(self, name: str, ctx: 'Context') -> None:
+    def __init__(
+            self,
+            name: str,
+            ctx: 'Context',
+            route: Optional['Route'] = None,
+            timeout: Optional[float] = None,
+            **data
+    ) -> None:
         self._ctx = weakref.ref(ctx)
         self.name = name
-        self.data = dict()
+        self.data = data
         self.trigger = asyncio.Event()
-
-        self.parents_pat: Set[str] = set()
-        self.parents: Set[Event] = set()
-        self.timeout: Optional[float] = None
+        self.route: Optional[Route] = route
+        self.timeout: Optional[float] = timeout
 
     @property
     def ctx(self) -> 'Context':
         return self._ctx()
 
-    def load_parents(self):
-        self.parents = set(chain(*(self.ctx.get_events(pat) for pat in self.parents_pat)))
-
-    def add_parents(self, *parents_pat: str) -> 'Event':
-        self.parents_pat.update(set(parents_pat))
-        self.load_parents()
-        return self
-
-    def set_data(self, data: Dict) -> 'Event':
-        self.data.update(data)
-        return self
+    @property
+    def parents(self) -> Set['Event']:
+        if self.route:
+            return set(chain(*(self.ctx.get_events(pat) for pat in self.route.parents)))
+        return set()
 
     async def __aenter__(self) -> Optional[TimeoutError]:
         try:
@@ -82,11 +82,15 @@ class Context(metaclass=__UniqueCTX):
         self.errors: List[BaseException] = []
         self.events: Dict[str, Event] = {}
 
-    def new_event(self, name: str) -> 'Event':
-        event = Event(name, self)
+    def new_event(
+            self,
+            name: str,
+            route: Optional['Route'] = None,
+            timeout: Optional[float] = None,
+            **data
+    ) -> 'Event':
+        event = Event(name=name, ctx=self, route=route, timeout=timeout, **data)
         self.events[name] = event
-        event.load_parents()
-        [i.load_parents() for i in self.events.values()]
         return event
 
     def get_events(self, pat: str = ".*") -> List[Event]:

@@ -60,9 +60,7 @@ class Listener:
         params = Params(params)
 
         ctx = self.new_context(cid)
-        event = ctx.new_event(name)
-        event.add_parents(*route.parents).set_data(data or {})
-        event.timeout = timeout
+        event = ctx.new_event(name=name, timeout=timeout, route=route, **data or {})
 
         async def _todo():
             async with event as exc:
