@@ -1,7 +1,7 @@
 import pytest
 from unittest import TestCase
 
-from tiny_listener import Context, Listener, Event, Route
+from tiny_listener import Context, Listener, Event, Route, NotFound
 
 
 class TestContext(TestCase):
@@ -62,6 +62,14 @@ class TestContext(TestCase):
         self.assertEqual(0, len(ctx.events))
         event = ctx.new_event("/event/foo")
         self.assertEqual(event, ctx.events["/event/foo"])
+
+    def test_todo(self):
+        class App(Listener):
+            def listen(self, _): ...
+
+        app = App()
+        ctx = app.new_context("ctx_11")
+        self.assertRaises(NotFound, ctx.todo, "something")
 
 
 class TestEvent(TestCase):

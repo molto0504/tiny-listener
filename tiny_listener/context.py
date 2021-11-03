@@ -1,7 +1,7 @@
 import re
 import weakref
 import asyncio
-from typing import Dict, Optional, Any, List, Set, TYPE_CHECKING
+from typing import Dict, Optional, Any, List, Set, Coroutine, TYPE_CHECKING
 from concurrent.futures import TimeoutError
 from itertools import chain
 
@@ -99,6 +99,15 @@ class Context(metaclass=__UniqueCTX):
     @property
     def listener(self) -> Optional['Listener']:
         return self.scope.get("_listener_")
+
+    def todo(
+            self,
+            name: str,
+            block: bool = False,
+            timeout: Optional[float] = None,
+            data: Optional[Dict] = None
+    ) -> Coroutine or None:
+        return self.listener.todo(name=name, cid=self.cid, block=block, timeout=timeout, data=data)
 
     @classmethod
     def exist(cls, cid: str) -> bool:

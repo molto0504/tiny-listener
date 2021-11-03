@@ -58,7 +58,6 @@ class Listener:
             raise NotFound(f"route `{name}` not found")
 
         params = Params(params)
-
         ctx = self.new_context(cid)
         event = ctx.new_event(name=name, timeout=timeout, route=route, **data or {})
 
