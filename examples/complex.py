@@ -7,8 +7,8 @@ class App(Listener):
     async def listen(self, todo):
         todo("step_1", cid="Alice")
         todo("step_3", cid="Bob")
-        todo("step_2", cid="Bob")
-        todo("step_3", cid="Alice", parents_timeout=1)
+        todo("step_2", cid="Bob", timeout=1)
+        todo("step_3", cid="Alice")
         todo("step_1", cid="Bob")
         todo("step_2", cid="Alice")
 

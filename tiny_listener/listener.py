@@ -44,7 +44,7 @@ class Listener:
             name: str,
             cid: Optional[str] = None,
             block: bool = False,
-            parents_timeout: Optional[float] = None,
+            timeout: Optional[float] = None,
             data: Optional[Dict] = None
     ) -> Coroutine or None:
         route = None
@@ -61,9 +61,8 @@ class Listener:
 
         ctx = self.new_context(cid)
         event = ctx.new_event(name)
-        event.parents_count = route.opts.get("parents_count")
         event.add_parents(*route.opts["parents"]).set_data(data or {})
-        event.parents_timeout = parents_timeout
+        event.timeout = timeout
 
         async def _todo():
             async with event as exc:
@@ -96,13 +95,12 @@ class Listener:
             self,
             path: str,
             parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
-            parents_count: Optional[int] = None,
             **kwargs: Any
     ) -> Callable[[_EventHandler], None]:
         parents = parents or []
 
         def _decorator(fn: _EventHandler) -> None:
-            self.routes.append(Route(path=path, fn=fn, opts={"parents": parents, "parents_count": parents_count, **kwargs}))
+            self.routes.append(Route(path=path, fn=fn, opts={"parents": parents, **kwargs}))
         return _decorator
 
     @classmethod
@@ -110,13 +108,12 @@ class Listener:
             cls,
             path: str,
             parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
-            parents_count: Optional[int] = None,
             **kwargs: Any
     ) -> Callable[[_EventHandler], None]:
         parents = parents or []
 
         def _decorator(fn: _EventHandler) -> None:
-            cls.__default_routes__.append(Route(path=path, fn=fn, opts={"parents": parents, "parents_count": parents_count, **kwargs}))
+            cls.__default_routes__.append(Route(path=path, fn=fn, opts={"parents": parents, **kwargs}))
         return _decorator
 
     def __repr__(self) -> str:

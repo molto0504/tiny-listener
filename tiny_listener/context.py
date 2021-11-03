@@ -19,9 +19,7 @@ class Event:
 
         self.parents_pat: Set[str] = set()
         self.parents: Set[Event] = set()
-        self.parents_count: Optional[int] = None
-        self.parents_ready = asyncio.Event()
-        self.parents_timeout: Optional[float] = None
+        self.timeout: Optional[float] = None
 
     @property
     def ctx(self) -> 'Context':
@@ -29,8 +27,6 @@ class Event:
 
     def load_parents(self):
         self.parents = set(chain(*(self.ctx.get_events(pat) for pat in self.parents_pat)))
-        if self.parents_count is not None and len(self.parents) == self.parents_count:
-            self.parents_ready.set()
 
     def add_parents(self, *parents_pat: str) -> 'Event':
         self.parents_pat.update(set(parents_pat))
@@ -43,10 +39,8 @@ class Event:
 
     async def __aenter__(self) -> Optional[TimeoutError]:
         try:
-            if self.parents_count is not None:
-                await asyncio.wait_for(self.parents_ready.wait(), self.parents_timeout)
             for event in self.parents:
-                await asyncio.wait_for(event.wait(), self.parents_timeout)
+                await asyncio.wait_for(event.wait(), event.timeout)
         except TimeoutError as e:
             return e
 

@@ -83,14 +83,6 @@ class TestEvent(TestCase):
     def test_ctx(self):
         self.assertIs(self.ctx, self.event_foo.ctx)
 
-    def test_load_parents(self):
-        event = Event(name="foo", ctx=self.ctx)
-        self.assertFalse(event.parents_ready.is_set())
-        event.parents_count = 0
-        self.assertFalse(event.parents_ready.is_set())
-        event.load_parents()
-        self.assertTrue(event.parents_ready.is_set())
-
     def test_add_parents(self):
         # match all
         for pats in [
@@ -136,7 +128,6 @@ async def test_event_trigger(event_loop):
     ctx = app.new_context("ctx_trigger")
     event_foo = ctx.new_event("/user/foo")
     event_bar = ctx.new_event("/user/bar")
-    event_bar.parents_count = 1
     event_bar.add_parents("/user/foo")
 
     assert event_foo.is_done is False
