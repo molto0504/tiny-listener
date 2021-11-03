@@ -1,6 +1,14 @@
 # Change Log
 
+## 0.0.5 (2021-11-03)
+
+### Changed
+
+- Remove parent count
+- Refactor route parents
+
 ## 0.0.5 (2021-10-20)
+
 
 ### Changed
 

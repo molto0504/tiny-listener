@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Optional, Dict, Callable, Awaitable, NamedTuple, Any, Tuple, Pattern
+from typing import Optional, Dict, Callable, Awaitable, NamedTuple, Any, Tuple, Pattern, Union, List, Set, Iterable
 from inspect import signature, Parameter
 from functools import wraps
 
@@ -64,11 +64,18 @@ def as_handler(handler: _EventHandler) -> EventHandler:
 class Route:
     PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
 
-    def __init__(self, path: str, fn: _EventHandler, opts: Optional[Dict[str, Any]] = None):
+    def __init__(
+            self,
+            path: str,
+            fn: _EventHandler,
+            opts: Optional[Dict[str, Any]] = None,
+            parents: Union[None, List[str], Callable[[Context], List[str]]] = None
+    ):
         self.path = path
         self.path_regex, self.convertors = self.compile_path()
         self.fn = as_handler(fn)
         self.opts: Dict[str, Any] = opts or {}
+        self.parents: Union[List[str], Callable[[Context], List[str]]] = parents or []
 
     def match(self, name: str) -> Tuple[bool, Dict[str, Any]]:
         match = self.path_regex.match(name)
