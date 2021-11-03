@@ -1,54 +1,48 @@
 import re
 import weakref
 import asyncio
-from typing import Dict, Optional, Any, List, Set, TYPE_CHECKING
+from typing import Dict, Optional, Any, List, Set, Coroutine, TYPE_CHECKING
 from concurrent.futures import TimeoutError
 from itertools import chain
 
 
 if TYPE_CHECKING:
     from .listener import Listener
+    from .routing import Route
 
 
 class Event:
-    def __init__(self, name: str, ctx: 'Context') -> None:
+    def __init__(
+            self,
+            name: str,
+            ctx: 'Context',
+            route: Optional['Route'] = None,
+            timeout: Optional[float] = None,
+            **data
+    ) -> None:
         self._ctx = weakref.ref(ctx)
         self.name = name
-        self.data = dict()
+        self.data = data
         self.trigger = asyncio.Event()
-
-        self.parents_pat: Set[str] = set()
-        self.parents: Set[Event] = set()
-        self.parents_count: Optional[int] = None
-        self.parents_ready = asyncio.Event()
-        self.parents_timeout: Optional[float] = None
+        self.route: Optional[Route] = route
+        self.timeout: Optional[float] = timeout
 
     @property
     def ctx(self) -> 'Context':
         return self._ctx()
 
-    def load_parents(self):
-        self.parents = set(chain(*(self.ctx.get_events(pat) for pat in self.parents_pat)))
-        if self.parents_count is not None and len(self.parents) == self.parents_count:
-            self.parents_ready.set()
-
-    def add_parents(self, *parents_pat: str) -> 'Event':
-        self.parents_pat.update(set(parents_pat))
-        self.load_parents()
-        return self
-
-    def set_data(self, data: Dict) -> 'Event':
-        self.data.update(data)
-        return self
+    @property
+    def parents(self) -> Set['Event']:
+        if self.route:
+            return set(chain(*(self.ctx.get_events(pat) for pat in self.route.parents)))
+        return set()
 
     async def __aenter__(self) -> Optional[TimeoutError]:
-        try:
-            if self.parents_count is not None:
-                await asyncio.wait_for(self.parents_ready.wait(), self.parents_timeout)
-            for event in self.parents:
-                await asyncio.wait_for(event.wait(), self.parents_timeout)
-        except TimeoutError as e:
-            return e
+        for event in self.parents:
+            try:
+                await asyncio.wait_for(event.wait(), event.timeout)
+            except TimeoutError:
+                return TimeoutError(f"{event} timeout({event.timeout})")
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
@@ -85,14 +79,17 @@ class Context(metaclass=__UniqueCTX):
         self.cid = cid
         self.scope: Dict[str, Any] = {"__depends_cache__": {}}
         self.scope.update(scope)
-        self.errors: List[BaseException] = []
         self.events: Dict[str, Event] = {}
 
-    def new_event(self, name: str) -> 'Event':
-        event = Event(name, self)
+    def new_event(
+            self,
+            name: str,
+            route: Optional['Route'] = None,
+            timeout: Optional[float] = None,
+            **data
+    ) -> 'Event':
+        event = Event(name=name, ctx=self, route=route, timeout=timeout, **data)
         self.events[name] = event
-        event.load_parents()
-        [i.load_parents() for i in self.events.values()]
         return event
 
     def get_events(self, pat: str = ".*") -> List[Event]:
@@ -101,6 +98,15 @@ class Context(metaclass=__UniqueCTX):
     @property
     def listener(self) -> Optional['Listener']:
         return self.scope.get("_listener_")
+
+    def todo(
+            self,
+            name: str,
+            block: bool = False,
+            timeout: Optional[float] = None,
+            data: Optional[Dict] = None
+    ) -> Coroutine or None:
+        return self.listener.todo(name=name, cid=self.cid, block=block, timeout=timeout, data=data)
 
     @classmethod
     def exist(cls, cid: str) -> bool:
@@ -114,7 +120,6 @@ class Context(metaclass=__UniqueCTX):
         return self.scope.update(scope) or self
 
     def __repr__(self) -> str:
-        return "{}(cid={}, scope={}, errors={})".format(self.__class__.__name__,
-                                                        self.cid,
-                                                        self.scope,
-                                                        self.errors)
+        return "{}(cid={}, scope={})".format(self.__class__.__name__,
+                                             self.cid,
+                                             self.scope)

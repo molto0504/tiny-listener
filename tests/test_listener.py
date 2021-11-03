@@ -64,10 +64,10 @@ class TestListener(TestCase):
 
         self.app.loop.run_until_complete(self.app.listen(self.app.todo))
 
-        @self.app.error_raise
-        async def fn(c: Context, event: Event):
+        @self.app.error_raise(ValueError)
+        async def fn(c: Context, event: Event, exc: ValueError):
             self.assertEqual(ctx, c)
             self.assertEqual({"age": 30}, event.data)
-            self.assertIsInstance(ctx.errors[0], ValueError)
+            self.assertIsInstance(exc, ValueError)
 
         self.app.loop.run_until_complete(self.app.listen(self.app.todo))
