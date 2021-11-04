@@ -1,4 +1,9 @@
 """
+:Example:
+
+    >>> tiny-listener mqtt_client:app
+    Run http server on :8080
+
 try this:
 
 GET:    http://127.0.0.1:8080/user
@@ -77,6 +82,3 @@ async def delete_one(params: Params, *, resp=Depends(response)):
         resp.write(b"HTTP/1.1 404\n\nNot Found")
     else:
         resp.write(b"HTTP/1.1 200\n\nOK")
-
-
-app.run()

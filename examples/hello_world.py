@@ -1,0 +1,29 @@
+"""
+:Example:
+
+    >>> tiny-listener hello_world:app
+    Hello, World!
+"""
+
+
+from tiny_listener import Listener
+
+
+class App(Listener):
+    async def listen(self, todo):
+        todo("say hello")
+        todo("say world")
+
+
+app = App()
+
+
+@app.do("say hello")
+async def f():
+    print("Hello", end=", ")
+
+
+@app.do("say world")
+async def f():
+    print("World!")
+
