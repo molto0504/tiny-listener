@@ -1,6 +1,7 @@
 import asyncio
 import signal
 from typing import Optional, Dict, Callable, List, Any, Union, Coroutine, Tuple, Type
+from concurrent.futures import CancelledError
 
 from .context import Context
 from .routing import Route, _EventHandler, EventHandler, as_handler, Params
@@ -28,7 +29,10 @@ class Listener:
         return Context(cid, _listener_=self, **scope)
 
     def exception_handler(self, loop, context):
-        self.loop.default_exception_handler(context)
+        if isinstance(context.get("exception"), CancelledError):
+            self.loop.stop()
+        else:
+            self.loop.default_exception_handler(context)
 
     def exit(self) -> None:
         for t in asyncio.Task.all_tasks(self.loop):
