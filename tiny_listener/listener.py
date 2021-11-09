@@ -15,10 +15,11 @@ class Listener:
 
     def __init__(self):
         self.loop = asyncio.new_event_loop()
-        self.routes: List[Route] = self.__default_routes__
+        self.loop.set_exception_handler(self.exception_handler)
         for sig in [signal.SIGINT, signal.SIGTERM]:
-            self.loop.add_signal_handler(sig, self.__exit)
+            self.loop.add_signal_handler(sig, self.exit)
 
+        self.routes: List[Route] = self.__default_routes__
         self._pre_do: List[EventHandler] = []
         self._post_do: List[EventHandler] = []
         self._error_raise: List[Tuple[EventHandler, Type[BaseException]]] = []
@@ -26,9 +27,13 @@ class Listener:
     def new_context(self, cid: Optional[str] = None, **scope: Any) -> Context:
         return Context(cid, _listener_=self, **scope)
 
-    def __exit(self) -> None:
+    def exception_handler(self, loop, context):
+        pass
+
+    def exit(self) -> None:
         for t in asyncio.Task.all_tasks(self.loop):
             t.cancel()
+        self.loop.stop()
 
     def pre_do(self, fn: _EventHandler) -> None:
         self._pre_do.append(as_handler(fn))
@@ -49,33 +54,32 @@ class Listener:
             timeout: Optional[float] = None,
             data: Optional[Dict] = None
     ) -> Coroutine or None:
-        route = None
-        params = {}
-        for r in self.routes:
-            result, params = r.match(name)
-            if result:
-                route = r
-                break
-        else:
-            raise NotFound(f"route `{name}` not found")
-
-        params = Params(params)
-        ctx = self.new_context(cid)
-        event = ctx.new_event(name=name, timeout=timeout, route=route, **data or {})
-
         async def _todo():
-            async with event as exc:
-                try:
+            ctx = self.new_context(cid)
+            params = Params()
+            route = None
+            for r in self.routes:
+                result, params = r.match(name)
+                if result:
+                    route = r
+                    params = Params(params)
+                    break
+            event = ctx.new_event(name=name, timeout=timeout, route=route, **data or {})
+
+            try:
+                async with event as exc:
+                    if event.route is None:
+                        raise NotFound(f"route `{name}` not found")
                     if exc:
                         raise exc
                     [await fn(ctx, event, params, exc) for fn in self._pre_do]
                     res = await route.fn(ctx, event, params)
                     [await fn(ctx, event, params, exc) for fn in self._post_do]
                     return res
-                except BaseException as e:
-                    if not self._error_raise:
-                        raise e
-                    [await fn(ctx, event, params, e) for fn, exc_cls in self._error_raise if isinstance(e, exc_cls)]
+            except BaseException as e:
+                if not self._error_raise:
+                    raise e
+                [await fn(ctx, event, params, e) for fn, exc_cls in self._error_raise if isinstance(e, exc_cls)]
 
         if block:
             return _todo()

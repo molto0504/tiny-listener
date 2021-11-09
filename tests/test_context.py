@@ -63,14 +63,6 @@ class TestContext(TestCase):
         event = ctx.new_event("/event/foo")
         self.assertEqual(event, ctx.events["/event/foo"])
 
-    def test_todo(self):
-        class App(Listener):
-            def listen(self, _): ...
-
-        app = App()
-        ctx = app.new_context("ctx_11")
-        self.assertRaises(NotFound, ctx.todo, "something")
-
 
 class TestEvent(TestCase):
     def setUp(self) -> None:
@@ -139,3 +131,13 @@ async def test_event_trigger(event_loop):
     async with event_bar:
         pass
     assert event_foo.is_done is True
+
+
+@pytest.mark.asyncio
+async def test_todo(event_loop):
+    class App(Listener):
+        def listen(self, todo): ...
+
+    app = App()
+    with pytest.raises(NotFound):
+        await app.todo("something", block=True)
