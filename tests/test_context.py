@@ -63,14 +63,6 @@ class TestContext(TestCase):
         event = ctx.new_event("/event/foo")
         self.assertEqual(event, ctx.events["/event/foo"])
 
-    def test_todo(self):
-        class App(Listener):
-            def listen(self, _): ...
-
-        app = App()
-        ctx = app.new_context("ctx_11")
-        self.assertRaises(NotFound, ctx.todo, "something")
-
 
 class TestEvent(TestCase):
     def setUp(self) -> None:

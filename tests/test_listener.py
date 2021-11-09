@@ -26,15 +26,7 @@ class TestListener(TestCase):
     def test_pre_post_do(self):
         ctx = self.app.new_context("Bob")
 
-        @self.app.do("something")
-        async def fn(c: Context, event: Event):
-            self.assertEqual("Bob", c.cid)
-            self.assertEqual({"age": 30}, event.data)
-            c.listener.todo("another", "Bob", data={"score": 100})
-            result = await c.listener.todo("block_event", block=True)
-            self.assertEqual(..., result)
-
-        @self.app.do("block_event")
+        @self.app.do("event")
         async def fn(c: Context, event: Event):
             self.assertEqual("Bob", c.cid)
             self.assertEqual({"score": 100}, event.data)
