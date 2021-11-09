@@ -28,7 +28,7 @@ class Listener:
         return Context(cid, _listener_=self, **scope)
 
     def exception_handler(self, loop, context):
-        pass
+        self.loop.default_exception_handler(context)
 
     def exit(self) -> None:
         for t in asyncio.Task.all_tasks(self.loop):
@@ -50,12 +50,12 @@ class Listener:
             self,
             name: str,
             cid: Optional[str] = None,
-            block: bool = False,
             timeout: Optional[float] = None,
             data: Optional[Dict] = None
-    ) -> Coroutine or None:
+    ):
+        ctx = self.new_context(cid)
+
         async def _todo():
-            ctx = self.new_context(cid)
             params = Params()
             route = None
             for r in self.routes:
@@ -81,10 +81,7 @@ class Listener:
                     raise e
                 [await fn(ctx, event, params, e) for fn, exc_cls in self._error_raise if isinstance(e, exc_cls)]
 
-        if block:
-            return _todo()
-        else:
-            self.loop.create_task(_todo())
+        return self.loop.create_task(_todo())
 
     async def listen(self, todo: Callable[..., Coroutine or None]):
         raise NotImplementedError()

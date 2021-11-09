@@ -131,13 +131,3 @@ async def test_event_trigger(event_loop):
     async with event_bar:
         pass
     assert event_foo.is_done is True
-
-
-@pytest.mark.asyncio
-async def test_todo(event_loop):
-    class App(Listener):
-        def listen(self, todo): ...
-
-    app = App()
-    with pytest.raises(NotFound):
-        await app.todo("something", block=True)
