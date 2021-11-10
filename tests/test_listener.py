@@ -7,8 +7,8 @@ from tiny_listener import Context, Listener, Event
 class TestListener(TestCase):
     def setUp(self) -> None:
         class App(Listener):
-            async def listen(self, todo: Callable[..., None]):
-                todo("something", cid="Bob", data={"age": 30})
+            async def listen(self, fire: Callable[..., None]):
+                fire("something", cid="Bob", data={"age": 30})
 
         self.app = App()
 
@@ -21,7 +21,7 @@ class TestListener(TestCase):
             self.assertEqual("Bob", c.cid)
             self.assertEqual({"age": 30}, event.data)
 
-        self.app.loop.run_until_complete(self.app.listen(self.app.todo))
+        self.app.loop.run_until_complete(self.app.listen(self.app.fire))
 
     def test_pre_post_do(self):
         ctx = self.app.new_context("Bob")
@@ -45,7 +45,7 @@ class TestListener(TestCase):
         async def fn(c: Context):
             self.assertEqual(ctx, c)
 
-        self.app.loop.run_until_complete(self.app.listen(self.app.todo))
+        self.app.loop.run_until_complete(self.app.listen(self.app.fire))
 
     def test_error_raised(self):
         ctx = self.app.new_context("Bob")
@@ -54,7 +54,7 @@ class TestListener(TestCase):
         async def fn():
             raise ValueError("something wrong")
 
-        self.app.loop.run_until_complete(self.app.listen(self.app.todo))
+        self.app.loop.run_until_complete(self.app.listen(self.app.fire))
 
         @self.app.error_raise(ValueError)
         async def fn(c: Context, event: Event, exc: ValueError):
@@ -62,4 +62,4 @@ class TestListener(TestCase):
             self.assertEqual({"age": 30}, event.data)
             self.assertIsInstance(exc, ValueError)
 
-        self.app.loop.run_until_complete(self.app.listen(self.app.todo))
+        self.app.loop.run_until_complete(self.app.listen(self.app.fire))

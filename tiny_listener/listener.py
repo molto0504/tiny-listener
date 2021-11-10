@@ -1,6 +1,6 @@
 import asyncio
 import signal
-from typing import Optional, Dict, Callable, List, Any, Union, Coroutine, Tuple, Type
+from typing import Optional, Dict, Callable, List, Any, Union, Tuple, Type
 from concurrent.futures import CancelledError
 
 from .context import Context
@@ -50,7 +50,7 @@ class Listener:
             self._error_raise.append((as_handler(fn), exc))
         return f
 
-    def todo(
+    def fire(
             self,
             name: str,
             cid: Optional[str] = None,
@@ -59,7 +59,7 @@ class Listener:
     ):
         ctx = self.new_context(cid)
 
-        async def _todo():
+        async def _fire():
             params = Params()
             route = None
             for r in self.routes:
@@ -85,13 +85,13 @@ class Listener:
                     raise e
                 [await fn(ctx, event, params, e) for fn, exc_cls in self._error_raise if isinstance(e, exc_cls)]
 
-        return self.loop.create_task(_todo())
+        return self.loop.create_task(_fire())
 
-    async def listen(self, todo: Callable[..., asyncio.Task]):
+    async def listen(self, fire: Callable[..., asyncio.Task]):
         raise NotImplementedError()
 
     def run(self) -> None:
-        self.loop.create_task(self.listen(self.todo))
+        self.loop.create_task(self.listen(self.fire))
         self.loop.run_forever()
 
     def do(

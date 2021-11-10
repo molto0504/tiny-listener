@@ -19,10 +19,10 @@ class App(Listener):
         line: bytes = await req.readline()
         if line:
             method, path, *_ = line.decode().split()
-            self.todo(f"{method.upper()}:{path}", data={"resp": resp})
+            self.fire(f"{method.upper()}:{path}", data={"resp": resp})
             print(f"REQUEST INFO | {method} | {path}")
 
-    async def listen(self, todo: Callable[..., None]):
+    async def listen(self, fire: Callable[..., None]):
         await start_server(self.handler, host="0.0.0.0", port=8080, loop=self.loop)
         print(f"Run http server on :8080")
 
