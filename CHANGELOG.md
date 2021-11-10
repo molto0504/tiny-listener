@@ -7,7 +7,7 @@
 - Remove parent count
 - Refactor route parents
 - Refactor error raise handler
-- Listener callback can not run with block any more.
+- Listener callback can not run with block anymore.
 
 
 ## 0.0.5 (2021-10-20)
