@@ -17,18 +17,18 @@ from tiny_listener import Listener, Event, Params
 
 
 class App(Listener):
-    async def listen(self, todo):
+    async def listen(self, fire):
         client = MQTTClient()
         await client.connect('mqtt://localhost/')
         await client.subscribe([
             ('/sys/device/#', QOS_0),
         ])
-        todo("/send", data={"client": client})
+        fire("/send", data={"client": client})
 
         while True:
             message = await client.deliver_message()
             packet: PublishPacket = message.publish_packet
-            todo(packet.variable_header.topic_name, data={"payload": packet.payload})
+            fire(packet.variable_header.topic_name, data={"payload": packet.payload})
 
 
 app = App()

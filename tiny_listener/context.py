@@ -99,13 +99,13 @@ class Context(metaclass=__UniqueCTX):
     def listener(self) -> Optional['Listener']:
         return self.scope.get("_listener_")
 
-    def todo(
+    def fire(
             self,
             name: str,
             timeout: Optional[float] = None,
             data: Optional[Dict] = None
     ) -> Coroutine or None:
-        return self.listener.todo(name=name, cid=self.cid, timeout=timeout, data=data)
+        return self.listener.fire(name=name, cid=self.cid, timeout=timeout, data=data)
 
     @classmethod
     def exist(cls, cid: str) -> bool:

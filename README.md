@@ -24,7 +24,7 @@ Why use tiny-listener:
 
 How does tiny-listener work:
 
-    listen -> todo -> do
+    listen -> fire -> do
 
 A typical usage:
 
@@ -36,11 +36,11 @@ A typical usage:
 from tiny_listener import Listener
 
 class App(Listener):
-    async def listen(self, todo):
+    async def listen(self, fire):
         # Normally, event will received from a message queue, such as Redis or RabbitMQ
         # We omitted these events and commit event directly
-        todo("/event/2")
-        todo("/event/1")
+        fire("/event/2")
+        fire("/event/1")
 
 app = App()
 
@@ -61,15 +61,15 @@ $ tiny-listener example:app
 >> event 2 done!
 ```
 
-Tiny-listener handle the two event by `todo` method declare order, if you exchange them:
+Tiny-listener handle the two event by `fire` method declare order, if you exchange them:
 
 ```python
 from tiny_listener import Listener
 
 class App(Listener):
-    async def listen(self, todo):
-        todo("/event/2")
-        todo("/event/1")
+    async def listen(self, fire):
+        fire("/event/2")
+        fire("/event/1")
 ...
 ```
 
@@ -78,4 +78,4 @@ Run your code, the event order does not change.
 Argument `parents` of Method `app.do` can limit event execute order,
 it's means */event/2* always run after */event/1*.
 
-Through todo order is wrong, but the decorator `app.do` always handle event in right order.
+Through fire order is wrong, but the decorator `app.do` always handle event in right order.

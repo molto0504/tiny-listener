@@ -4,11 +4,11 @@ from tiny_listener import Listener, Params
 
 
 class App(Listener):
-    async def listen(self, todo):
+    async def listen(self, fire):
         idx = 0
         while True:
             line = input(f"{idx}, please enter: ")
-            todo(line)
+            fire(line)
             idx += 1
             await asyncio.sleep(0)
 

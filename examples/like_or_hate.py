@@ -15,13 +15,13 @@ from tiny_listener import Listener, Params
 
 
 class App(Listener):
-    async def listen(self, todo):
-        todo("I hate bugs.")
-        todo("I like dogs.")
-        todo("I hate summer.")
-        todo("I like winter.")
-        todo("I hate you.")
-        todo("I like you.")
+    async def listen(self, fire):
+        fire("I hate bugs.")
+        fire("I like dogs.")
+        fire("I hate summer.")
+        fire("I like winter.")
+        fire("I hate you.")
+        fire("I like you.")
 
 
 app = App()

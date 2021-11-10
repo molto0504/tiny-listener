@@ -10,9 +10,9 @@ from tiny_listener import Listener
 
 
 class App(Listener):
-    async def listen(self, todo):
-        todo("say hello")
-        todo("say world")
+    async def listen(self, fire):
+        fire("say hello")
+        fire("say world")
 
 
 app = App()
