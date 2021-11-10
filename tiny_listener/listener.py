@@ -35,9 +35,9 @@ class Listener:
             self.loop.default_exception_handler(context)
 
     def exit(self) -> None:
-        for t in asyncio.Task.all_tasks(self.loop):
-            t.cancel()
-        self.loop.stop()
+        tasks = asyncio.gather(*asyncio.Task.all_tasks(self.loop), loop=self.loop, return_exceptions=True)
+        tasks.add_done_callback(lambda t: self.loop.stop())
+        tasks.cancel()
 
     def pre_do(self, fn: _EventHandler) -> None:
         self._pre_do.append(as_handler(fn))
@@ -87,7 +87,7 @@ class Listener:
 
         return self.loop.create_task(_todo())
 
-    async def listen(self, todo: Callable[..., Coroutine or None]):
+    async def listen(self, todo: Callable[..., asyncio.Task]):
         raise NotImplementedError()
 
     def run(self) -> None:
