@@ -1,13 +1,40 @@
+"""
+
+           Listener([ctxs, routes], add_ctx, add_route)
+              |                         |
+      |---------------|           |-----------|
+   context          context     route        route
+      |
+   |-----|
+event   event(match_a_route)
+   |     |
+route   route
+
+
+"""
 import re
 import weakref
 import asyncio
-from typing import Dict, Optional, Any, List, Set, Coroutine, TYPE_CHECKING
+from typing import Dict, Optional, Any, List, Set, Coroutine, Callable, TYPE_CHECKING
 from itertools import chain
 
 
 if TYPE_CHECKING:
     from .listener import Listener
     from .routing import Route
+from .dependant import Cache
+
+
+class EventError(BaseException):
+    pass
+
+
+class EventManager:
+    def __aenter__(self):
+        pass
+
+    def __anext__(self):
+        pass
 
 
 class Event:
@@ -17,7 +44,7 @@ class Event:
             ctx: 'Context',
             route: Optional['Route'] = None,
             timeout: Optional[float] = None,
-            **data
+            data: Optional[Dict] = None
     ) -> None:
         self._ctx = weakref.ref(ctx)
         self.name = name
@@ -25,6 +52,7 @@ class Event:
         self.trigger = asyncio.Event()
         self.route: Optional[Route] = route
         self.timeout: Optional[float] = timeout
+        self._error: Optional[EventError] = None
 
     @property
     def ctx(self) -> 'Context':
@@ -36,12 +64,14 @@ class Event:
             return set(chain(*(self.ctx.get_events(pat) for pat in self.route.parents)))
         return set()
 
-    async def __aenter__(self) -> Optional[asyncio.TimeoutError]:
+    def next(self):
+        self._error = None
+
+    async def __aenter__(self) -> Optional[EventError]:
         for event in self.parents:
-            try:
-                await asyncio.wait_for(event.wait(), event.timeout)
-            except asyncio.TimeoutError:
-                return asyncio.TimeoutError(f"{event} timeout({event.timeout})")
+            await asyncio.wait_for(event.wait(), None)
+            if event._error:
+                return event._error
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
@@ -62,23 +92,32 @@ class Event:
                                              self.data)
 
 
-class __UniqueCTX(type):
-    ctxs: Dict[str, 'Context'] = {}
+# class __UniqueCTX(type):
+#     ctxs: Dict[str, 'Context'] = {}
+#
+#     def __call__(cls, cid: str = "_global_", **scope) -> 'Context':
+#         if cid not in cls.ctxs:
+#             cls.ctxs[cid] = super().__call__(cid, **scope)
+#         ctx = cls.ctxs[cid]
+#         ctx.scope.update(scope)
+#         return ctx
 
-    def __call__(cls, cid: str = "_global_", **scope) -> 'Context':
-        if cid not in cls.ctxs:
-            cls.ctxs[cid] = super().__call__(cid, **scope)
-        ctx = cls.ctxs[cid]
-        ctx.scope.update(scope)
-        return ctx
+
+class ContextError(BaseException):
+    pass
 
 
-class Context(metaclass=__UniqueCTX):
-    def __init__(self, cid: str = "_global_", **scope) -> None:
+class Context:
+    def __init__(self, listener: Listener, cid: str = "__main__", scope: Optional[Dict] = None) -> None:
         self.cid = cid
-        self.scope: Dict[str, Any] = {"__depends_cache__": {}}
-        self.scope.update(scope)
+        self.cache: Cache = Cache()
+        self.__listener = weakref.ref(listener)
+        self.scope: Dict[str, Any] = scope or {}
         self.events: Dict[str, Event] = {}
+
+    @property
+    def listener(self) -> 'Listener':
+        return self.__listener()
 
     def new_event(
             self,
@@ -93,10 +132,6 @@ class Context(metaclass=__UniqueCTX):
 
     def get_events(self, pat: str = ".*") -> List[Event]:
         return [event for name, event in self.events.items() if re.match(pat, name)]
-
-    @property
-    def listener(self) -> Optional['Listener']:
-        return self.scope.get("_listener_")
 
     def fire(
             self,

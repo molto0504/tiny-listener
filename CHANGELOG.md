@@ -4,8 +4,9 @@
 
 ### Changed
 
-- Fix TimeoutError Type
+- Fix TimeoutError/CancelledError Type
 - Add Default pre_do/post_do/error_raise
+- Refactor Context/Listener/Event
 
 
 ## 0.0.7 (2021-11-10)

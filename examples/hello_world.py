@@ -25,5 +25,8 @@ async def f():
 
 @app.do("say world")
 async def f():
+    import asyncio
+    for t in asyncio.Task.all_tasks():
+        print(t.get_name())
     print("World!")
 
