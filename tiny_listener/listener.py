@@ -1,38 +1,59 @@
 import asyncio
 import signal
 from typing import Optional, Dict, Callable, List, Any, Union, Tuple, Type
-from concurrent.futures import CancelledError
+from copy import copy
 
 from .context import Context
 from .routing import Route, _EventHandler, EventHandler, as_handler, Params
 
 
-class NotFound(BaseException):
+class RouteNotFound(BaseException):
+    pass
+
+
+class ContextNotFound(BaseException):
+    pass
+
+
+class DuplicatedCid(BaseException):
     pass
 
 
 class Listener:
-    __default_routes__ = []
-
     def __init__(self):
         self.loop = asyncio.new_event_loop()
         self.loop.set_exception_handler(self.exception_handler)
         for sig in [signal.SIGINT, signal.SIGTERM]:
             self.loop.add_signal_handler(sig, self.exit)
 
-        self.routes: List[Route] = self.__default_routes__
+        self.ctxs: Dict[str, Context] = {}
+        self.routes: List[Route] = []
         self._pre_do: List[EventHandler] = []
         self._post_do: List[EventHandler] = []
         self._error_raise: List[Tuple[EventHandler, Type[BaseException]]] = []
 
-    def new_context(self, cid: Optional[str] = None, **scope: Any) -> Context:
-        return Context(cid, _listener_=self, **scope)
+    def new_ctx(self, cid: str = "__main__", scope: Optional[Dict] = None) -> Context:
+        if self.get_ctx(cid):
+            raise DuplicatedCid(f"Context `{cid}` already exist")
 
-    def exception_handler(self, loop, context):
-        if isinstance(context.get("exception"), CancelledError):
-            self.loop.stop()
+        ctx = Context(listener=self, cid=cid, scope=scope)
+        self.ctxs[cid] = ctx
+        return ctx
+
+    def get_ctx(self, cid: str) -> Optional[Context]:
+        return self.ctxs.get(cid)
+
+
+    # def is_context_exist(self, cid: str) -> bool:
+    #     return self.ctxs.get(cid) is not None
+
+
+    @staticmethod
+    def exception_handler(loop, context):
+        if isinstance(context.get("exception"), asyncio.CancelledError):
+            loop.stop()
         else:
-            self.loop.default_exception_handler(context)
+            loop.default_exception_handler(context)
 
     def exit(self) -> None:
         tasks = asyncio.gather(*asyncio.Task.all_tasks(self.loop), loop=self.loop, return_exceptions=True)
@@ -45,8 +66,8 @@ class Listener:
     def post_do(self, fn: _EventHandler) -> None:
         self._post_do.append(as_handler(fn))
 
-    def error_raise(self, exc: Type[BaseException]) -> Callable:
-        def f(fn: _EventHandler) -> Any:
+    def error_raise(self, exc: Type[BaseException]) -> Callable[[_EventHandler], None]:
+        def f(fn: _EventHandler) -> None:
             self._error_raise.append((as_handler(fn), exc))
         return f
 
@@ -54,12 +75,11 @@ class Listener:
             self,
             name: str,
             cid: Optional[str] = None,
-            timeout: Optional[float] = None,
+            parents_timeout: Optional[float] = None,
             data: Optional[Dict] = None
     ):
-        ctx = self.new_context(cid)
-
         async def _fire():
+            ctx = self.new_ctx(cid)
             params = Params()
             route = None
             for r in self.routes:
@@ -68,10 +88,10 @@ class Listener:
                     route = r
                     params = Params(params)
                     break
-            event = ctx.new_event(name=name, timeout=timeout, route=route, **data or {})
+            event = ctx.new_event(name=name, parents_timeout=parents_timeout, route=route, **data or {})
 
-            try:
-                async with event as exc:
+            async with event as exc:
+                try:
                     if event.route is None:
                         raise NotFound(f"route `{name}` not found")
                     if exc:
@@ -80,10 +100,13 @@ class Listener:
                     res = await route.fn(ctx, event, params)
                     [await fn(ctx, event, params, exc) for fn in self._post_do]
                     return res
-            except BaseException as e:
-                if not self._error_raise:
-                    raise e
-                [await fn(ctx, event, params, e) for fn, exc_cls in self._error_raise if isinstance(e, exc_cls)]
+                except BaseException as e:
+                    if not self._error_raise:
+                        raise e
+                    event.error = e
+                    [await fn(ctx, event, params, e) for fn, exc_cls in self._error_raise if isinstance(e, exc_cls)]
+                    if event.error is not None:
+                        ctx.drop(cid)
 
         return self.loop.create_task(_fire())
 
@@ -104,19 +127,6 @@ class Listener:
 
         def _decorator(fn: _EventHandler) -> None:
             self.routes.append(Route(path=path, fn=fn, parents=parents, opts=kwargs))
-        return _decorator
-
-    @classmethod
-    def default_do(
-            cls,
-            path: str,
-            parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
-            **kwargs: Any
-    ) -> Callable[[_EventHandler], None]:
-        parents = parents or []
-
-        def _decorator(fn: _EventHandler) -> None:
-            cls.__default_routes__.append(Route(path=path, fn=fn, parents=parents, opts=kwargs))
         return _decorator
 
     def __repr__(self) -> str:

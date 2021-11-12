@@ -1,11 +1,19 @@
 # Change Log
 
+## 0.0.8 (2021-11-12)
+
+### Changed
+
+- Fix TimeoutError/CancelledError Type
+- Add Default pre_do/post_do/error_raise
+- Refactor Context/Listener/Event
+
 
 ## 0.0.7 (2021-11-10)
 
 ### Changed
 
-- Rename todo -> ...
+- Rename todo -> fire
 
 
 ## 0.0.6 (2021-11-03)
