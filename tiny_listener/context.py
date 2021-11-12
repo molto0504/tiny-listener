@@ -2,7 +2,6 @@ import re
 import weakref
 import asyncio
 from typing import Dict, Optional, Any, List, Set, Coroutine, TYPE_CHECKING
-from concurrent.futures import TimeoutError
 from itertools import chain
 
 
@@ -37,12 +36,12 @@ class Event:
             return set(chain(*(self.ctx.get_events(pat) for pat in self.route.parents)))
         return set()
 
-    async def __aenter__(self) -> Optional[TimeoutError]:
+    async def __aenter__(self) -> Optional[asyncio.TimeoutError]:
         for event in self.parents:
             try:
                 await asyncio.wait_for(event.wait(), event.timeout)
-            except TimeoutError:
-                return TimeoutError(f"{event} timeout({event.timeout})")
+            except asyncio.TimeoutError:
+                return asyncio.TimeoutError(f"{event} timeout({event.timeout})")
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()

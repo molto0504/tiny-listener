@@ -2,6 +2,7 @@ import asyncio
 import signal
 from typing import Optional, Dict, Callable, List, Any, Union, Tuple, Type
 from concurrent.futures import CancelledError
+from copy import copy
 
 from .context import Context
 from .routing import Route, _EventHandler, EventHandler, as_handler, Params
@@ -12,7 +13,10 @@ class NotFound(BaseException):
 
 
 class Listener:
-    __default_routes__ = []
+    __default_routes__: List[Route] = []
+    __default_pre_do__: List[EventHandler] = []
+    __default_post_do__: List[EventHandler] = []
+    __default_error_raise__: List[Tuple[EventHandler, Type[BaseException]]] = []
 
     def __init__(self):
         self.loop = asyncio.new_event_loop()
@@ -20,19 +24,20 @@ class Listener:
         for sig in [signal.SIGINT, signal.SIGTERM]:
             self.loop.add_signal_handler(sig, self.exit)
 
-        self.routes: List[Route] = self.__default_routes__
-        self._pre_do: List[EventHandler] = []
-        self._post_do: List[EventHandler] = []
-        self._error_raise: List[Tuple[EventHandler, Type[BaseException]]] = []
+        self.routes = copy(self.__default_routes__)
+        self._pre_do = copy(self.__default_pre_do__)
+        self._post_do = copy(self.__default_post_do__)
+        self._error_raise = copy(self.__default_error_raise__)
 
     def new_context(self, cid: Optional[str] = None, **scope: Any) -> Context:
         return Context(cid, _listener_=self, **scope)
 
-    def exception_handler(self, loop, context):
+    @staticmethod
+    def exception_handler(loop, context):
         if isinstance(context.get("exception"), CancelledError):
-            self.loop.stop()
+            loop.stop()
         else:
-            self.loop.default_exception_handler(context)
+            loop.default_exception_handler(context)
 
     def exit(self) -> None:
         tasks = asyncio.gather(*asyncio.Task.all_tasks(self.loop), loop=self.loop, return_exceptions=True)
@@ -45,8 +50,8 @@ class Listener:
     def post_do(self, fn: _EventHandler) -> None:
         self._post_do.append(as_handler(fn))
 
-    def error_raise(self, exc: Type[BaseException]) -> Callable:
-        def f(fn: _EventHandler) -> Any:
+    def error_raise(self, exc: Type[BaseException]) -> Callable[[_EventHandler], None]:
+        def f(fn: _EventHandler) -> None:
             self._error_raise.append((as_handler(fn), exc))
         return f
 
@@ -118,6 +123,20 @@ class Listener:
         def _decorator(fn: _EventHandler) -> None:
             cls.__default_routes__.append(Route(path=path, fn=fn, parents=parents, opts=kwargs))
         return _decorator
+
+    @classmethod
+    def default_pre_do(cls, fn: _EventHandler) -> None:
+        cls.__default_pre_do__.append(as_handler(fn))
+
+    @classmethod
+    def default_post_do(cls, fn: _EventHandler) -> None:
+        cls.__default_post_do__.append(as_handler(fn))
+
+    @classmethod
+    def default_error_raise(cls, exc: Type[BaseException]) -> Callable[[_EventHandler], None]:
+        def f(fn: _EventHandler) -> None:
+            cls.__default_error_raise__.append((as_handler(fn), exc))
+        return f
 
     def __repr__(self) -> str:
         return "{}(listener_count={})".format(self.__class__.__name__, len(self.routes))
