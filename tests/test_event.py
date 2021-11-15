@@ -7,14 +7,11 @@ from tiny_listener import Context, Listener, Event
 def app():
     class App(Listener):
         async def listen(self, _): ...
-
     app = App()
 
-    async def endpoint(): ...
-    @app.do(path="/user/{name}", fn=endpoint, opts={"opts_1": "foo"}, parents=["/parent"])
+    @app.do(path="/user/{name}", parents=["/parent"])
     async def f(): ...
-
-    @app.do(path="/parent", fn=endpoint, opts={"opts_2": "bar"}, parents=[])
+    @app.do(path="/parent", parents=[])
     async def f(): ...
 
     return app

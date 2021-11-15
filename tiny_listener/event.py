@@ -1,6 +1,6 @@
 import weakref
 import asyncio
-from typing import Dict, Optional, Any, List, Set, Coroutine, Callable, TYPE_CHECKING
+from typing import Dict, Optional, Any, Set, TYPE_CHECKING
 from itertools import chain
 
 if TYPE_CHECKING:
@@ -13,16 +13,16 @@ class Event:
             self,
             name: str,
             ctx: 'Context',
-            route: 'Route' = None,
+            route: 'Route',
             timeout: Optional[float] = None,
             data: Optional[Dict] = None
     ) -> None:
-        self._ctx = weakref.ref(ctx)
         self.name = name
+        self._ctx = weakref.ref(ctx)
+        self.route = route
+        self.timeout: Optional[float] = timeout
         self.data = data or {}
         self.trigger = asyncio.Event()
-        self.route: Route = route
-        self.timeout: Optional[float] = timeout
 
     @property
     def ctx(self) -> 'Context':

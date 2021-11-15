@@ -1,34 +1,14 @@
-"""
-
-           Listener([ctxs, routes], add_ctx, add_route)
-              |                         |
-      |---------------|           |-----------|
-   context          context     route        route
-      |                            |
-   |-----|                         |
-event   event(match_a_route)  <----- new event
-   |     |
-route   route
-
-
-"""
 import re
 import weakref
-import asyncio
-from typing import Dict, Optional, Any, List, Set, Coroutine, Callable, TYPE_CHECKING
-from itertools import chain
-
+from typing import Dict, Optional, Any, List, Coroutine, TYPE_CHECKING
 
 from .dependant import Cache
 from .event import Event
 
+
 if TYPE_CHECKING:
     from .listener import Listener
     from .routing import Route
-
-
-class ContextError(BaseException):
-    pass
 
 
 class Context:
@@ -65,10 +45,8 @@ class Context:
     ) -> Coroutine or None:
         return self.listener.fire(name=name, cid=self.cid, timeout=timeout, data=data)
 
-    def __call__(self, **scope) -> 'Context':
-        return self.scope.update(scope) or self
-
     def __repr__(self) -> str:
-        return "{}(cid={}, scope={})".format(self.__class__.__name__,
-                                             self.cid,
-                                             self.scope)
+        return "{}(cid={}, events_count={}, scope={})".format(self.__class__.__name__,
+                                                              self.cid,
+                                                              len(self.events),
+                                                              self.scope)
