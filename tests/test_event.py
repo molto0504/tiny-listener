@@ -9,9 +9,7 @@ def app():
         async def listen(self, _): ...
     app = App()
 
-    @app.do(path="/user/{name}", parents=["/parent"])
-    async def f(): ...
-    @app.do(path="/parent", parents=[])
+    @app.do(path="/thing")
     async def f(): ...
 
     return app
@@ -24,10 +22,10 @@ def ctx(app):
 
 def test_ok(ctx):
     route = ctx.listener.routes[0]
-    event = Event(name="/user/bob", ctx=ctx, route=route)
+    event = Event(name="/thing", ctx=ctx, route=route)
     assert event.ctx is ctx
     assert event.route is route
-    assert event.name == "/user/bob"
+    assert event.name == "/thing"
     assert event.data == {}
     assert event.parents == set()
     assert event.is_done is False
@@ -35,10 +33,10 @@ def test_ok(ctx):
 
 def test_ok_from_ctx(ctx):
     route = ctx.listener.routes[0]
-    event = ctx.new_event(name="/user/bob", route=route, data={"data_1": "foo"})
+    event = ctx.new_event(name="/thing", route=route, data={"data_1": "foo"})
     assert event.ctx is ctx
     assert event.route is route
-    assert event.name == "/user/bob"
+    assert event.name == "/thing"
     assert event.data == {"data_1": "foo"}
     assert event.is_done is False
     assert event.parents == set()
@@ -46,7 +44,7 @@ def test_ok_from_ctx(ctx):
 
 @pytest.mark.asyncio
 async def test_done(event_loop, ctx):
-    event = Event(name="/user/bob", ctx=ctx, route=ctx.listener.routes[0])
+    event = Event(name="/thing", ctx=ctx, route=ctx.listener.routes[0])
     assert event.is_done is False
 
     event_loop.call_later(0.1, lambda: event.done())
@@ -54,7 +52,31 @@ async def test_done(event_loop, ctx):
     assert event.is_done is True
 
 
-def test_parents(ctx):
-    parent = ctx.new_event(name="/parent", route=ctx.listener.routes[1])
-    event = ctx.new_event(name="/user/bob", route=ctx.listener.routes[0], data={"data_1": "foo"})
-    assert event.parents == {parent}
+@pytest.fixture()
+def ex_ctx(ctx):
+    @ctx.listener.do(path="/user/alice")
+    async def f(): ...
+
+    @ctx.listener.do(path="/user/bob")
+    async def f(): ...
+
+    return ctx
+
+
+def test_parents_1(ex_ctx):
+    @ex_ctx.listener.do("/home", parents=["/user/*"])
+    async def home(): ...
+
+    event_bob = ex_ctx.new_event(name="/user/bob", route=ex_ctx.listener.routes[-2])
+    event_alice = ex_ctx.new_event(name="/user/alice", route=ex_ctx.listener.routes[-3])
+    event = ex_ctx.new_event(name="/home", route=ex_ctx.listener.routes[-1])
+    assert {event_alice, event_bob} == event.parents
+
+
+def test_parents_2(ex_ctx):
+    @ex_ctx.listener.do("/home", parents=["/user/b"])
+    async def home(): ...
+
+    event_bob = ex_ctx.new_event(name="/user/bob", route=ex_ctx.listener.routes[-2])
+    event = ex_ctx.new_event(name="/home", route=ex_ctx.listener.routes[-1])
+    assert {event_bob} == event.parents
