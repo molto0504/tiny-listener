@@ -13,7 +13,7 @@ class Event:
             self,
             name: str,
             ctx: 'Context',
-            route: 'Route',
+            route: Optional['Route'],
             timeout: Optional[float] = None,
             data: Optional[Dict] = None
     ) -> None:
@@ -44,6 +44,6 @@ class Event:
 
     def __repr__(self) -> str:
         return "{}(name={}, route={}. data={})".format(self.__class__.__name__,
-                                                       self.route.path,
+                                                       self.route.path if self.route else None,
                                                        self.name,
                                                        self.data)
