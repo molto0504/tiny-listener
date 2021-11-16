@@ -1,11 +1,10 @@
 import re
 import uuid
-from typing import Optional, Dict, Callable, Awaitable, NamedTuple, Any, Tuple, Pattern, Union, List
-from inspect import signature, Parameter
-from functools import wraps
+from typing import Optional, Dict, Callable, NamedTuple, Any, Tuple, Pattern, Union, List, TYPE_CHECKING
 
-from .context import Context, Event
-from .dependant import Depends
+if TYPE_CHECKING:
+    from .context import Context
+    from .listener import WrappedHook
 
 
 class Convertor(NamedTuple):
@@ -22,60 +21,20 @@ CONVERTOR_TYPES: Dict[str, Convertor] = {
 }
 
 
-class Params(dict):
-    pass
-
-
-_EventHandler = Callable[..., Awaitable[None]]
-EventHandler = Callable[[Context, Event, Params, Optional[BaseException]], Awaitable[None]]
-
-
-def as_handler(handler: _EventHandler) -> EventHandler:
-    @wraps(handler)
-    async def f(ctx: Context, event: Event, params: Params, exc: Optional[BaseException] = None) -> None:
-        args = []
-        kwargs = {}
-        for name, param in signature(handler).parameters.items():
-            if param.kind == Parameter.KEYWORD_ONLY:
-                depends = param.default
-                if param.default and isinstance(depends, Depends):
-                    if depends.use_cache and depends.dependency in ctx.scope["__depends_cache__"]:
-                        kwargs[name] = ctx.scope["__depends_cache__"].get(depends.dependency)
-                        continue
-                    res = await as_handler(depends.dependency)(ctx, event, params, None)
-                    kwargs[name] = res
-                    ctx.scope["__depends_cache__"][depends.dependency] = res
-                    continue
-                kwargs[name] = None
-                continue
-
-            if param.annotation is Context:
-                args.append(ctx)
-            elif param.annotation is Event:
-                args.append(event)
-            elif param.annotation is Params:
-                args.append(params)
-            elif issubclass(param.annotation, BaseException):
-                args.append(exc)
-            else:
-                args.append(None)
-        return await handler(*args, **kwargs)
-    return f
+PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
 
 
 class Route:
-    PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
-
     def __init__(
             self,
             path: str,
-            fn: _EventHandler,
+            fn: 'WrappedHook',
             opts: Optional[Dict[str, Any]] = None,
-            parents: Union[None, List[str], Callable[[Context], List[str]]] = None
+            parents: Union[None, List[str], Callable[['Context'], List[str]]] = None
     ):
         self.path = path
-        self.path_regex, self.convertors = self.compile_path()
-        self.fn = as_handler(fn)
+        self.path_regex, self.convertors = compile_path(path)
+        self.fn = fn
         self.opts: Dict[str, Any] = opts or {}
         self.parents: Union[List[str], Callable[[Context], List[str]]] = parents or []
 
@@ -86,25 +45,27 @@ class Route:
             params[k] = self.convertors[k].convert(v)
         return True if re.match(self.path_regex, name) else False, params
 
-    def compile_path(self) -> Tuple[Pattern[str], Dict[str, Convertor]]:
-        idx = 0
-        path_regex = "^"
-        convertors = {}
-        for match in self.PARAM_REGEX.finditer(self.path):
-            param_name, convertor_type = match.groups("str")
-            convertor_type = convertor_type.lstrip(":")
-            assert convertor_type in CONVERTOR_TYPES, f"Unknown path convertor '{convertor_type}'"
-            convertor = CONVERTOR_TYPES[convertor_type]
-
-            path_regex += re.escape(self.path[idx: match.start()])
-            path_regex += f"(?P<{param_name}>{convertor.regex})"
-            convertors[param_name] = convertor
-            idx = match.end()
-
-        path_regex += re.escape(self.path[idx:]) + "$"
-        return re.compile(path_regex), convertors
-
     def __repr__(self) -> str:
         return "{}(path={}, opts={})".format(self.__class__.__name__,
                                              self.path,
                                              self.opts)
+
+
+def compile_path(path: str) -> Tuple[Pattern[str], Dict[str, Convertor]]:
+    idx = 0
+    path_regex = "^"
+    convertors = {}
+    for match in PARAM_REGEX.finditer(path):
+        param_name, convertor_type = match.groups("str")
+        convertor_type = convertor_type.lstrip(":")
+        assert convertor_type in CONVERTOR_TYPES, f"Unknown path convertor '{convertor_type}'"
+        convertor = CONVERTOR_TYPES[convertor_type]
+
+        path_regex += re.escape(path[idx: match.start()])
+        path_regex += f"(?P<{param_name}>{convertor.regex})"
+        convertors[param_name] = convertor
+        idx = match.end()
+
+    path_regex += re.escape(path[idx:]) + "$"
+    return re.compile(path_regex), convertors
+
