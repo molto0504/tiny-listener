@@ -1,6 +1,6 @@
 # Tiny-listener
 
-Tiny-listener is a lightning-fast, high-performance event handle framework with Python 3.6+
+Tiny-listener is a lightweight event framework with Python 3.6+
 
 [中文](README-CN.md) / [English](README.md)
 
@@ -11,71 +11,50 @@ Python 3.6+
 ## Installation
 
 ```shell
-$ pip3 install tiny-listener
+$ pip install tiny-listener
 ```
 
-## Usage
+## Feature
 
 Why use tiny-listener:
 
-    - complement in a easy way
-    - high performance
-    - friendly API
+    - Easy to use
+    - High performance
 
 How does tiny-listener work:
 
-    listen -> fire -> do
+    listen(e.g. port, quene, file ...) -> fire(event) -> do(handler)
 
-A typical usage:
-
-    listen some kind of message queue, and declare handler for the message received
+## Usage
 
 **example.py**
 
 ```python
-from tiny_listener import Listener
+from tiny_listener import Listener, Params
 
 class App(Listener):
     async def listen(self, fire):
-        # Normally, event will received from a message queue, such as Redis or RabbitMQ
-        # We omitted these events and commit event directly
-        fire("/event/2")
-        fire("/event/1")
+        """listen event"""
+        fire("Say hi to Alice") # fire event
+        fire("Say hi to Bob")
+        fire("Say hi to Carol")
 
+        
 app = App()
 
-@app.do("/event/1")
-async def do_something():
-    print("* event 1 done!")
 
-@app.do("/event/2", parents=["/event/1"])
-async def do_something():
-    print("* event 2 done!")
+@app.do("Say hi to {name}")
+async def say_hi(param: Params):
+    """handle event"""
+    print("Hi,", param["name"])
+
 ```
 
-Then run the application using tiny-listener command:
+Run application using tiny-listener command:
 
 ```shell
 $ tiny-listener example:app
->> event 1 done!
->> event 2 done!
+>>> Hi, Alice
+>>> Hi, Bob
+>>> Hi, Carol
 ```
-
-Tiny-listener handle the two event by `fire` method declare order, if you exchange them:
-
-```python
-from tiny_listener import Listener
-
-class App(Listener):
-    async def listen(self, fire):
-        fire("/event/2")
-        fire("/event/1")
-...
-```
-
-Run your code, the event order does not change.
-
-Argument `parents` of Method `app.do` can limit event execute order,
-it's means */event/2* always run after */event/1*.
-
-Through fire order is wrong, but the decorator `app.do` always handle event in right order.
