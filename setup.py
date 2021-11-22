@@ -17,6 +17,7 @@ setup(
     zip_safe=False,
     install_requires=[
         "click>=8.0.1",
+        "typing-extensions>=3.7.4",
     ],
     license="MIT",
     entry_points={

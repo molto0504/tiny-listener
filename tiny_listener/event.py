@@ -43,7 +43,7 @@ class Event:
         return await self.trigger.wait()
 
     def __repr__(self) -> str:
-        return "{}(name={}, route={}. data={})".format(self.__class__.__name__,
+        return "{}(name={}, route={}, data={})".format(self.__class__.__name__,
                                                        self.route.path if self.route else None,
                                                        self.name,
                                                        self.data)
