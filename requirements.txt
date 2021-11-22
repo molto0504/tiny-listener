@@ -9,4 +9,4 @@ pytest-cov
 
 # Dependencies
 click>=8.0.1
-
+typing-extensions>=3.7.4
