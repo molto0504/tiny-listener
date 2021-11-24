@@ -24,11 +24,7 @@ class App(Listener):
             ('/sys/device/#', QOS_0),
         ])
         fire("/send", data={"client": client})
-
-        while True:
-            message = await client.deliver_message()
-            packet: PublishPacket = message.publish_packet
-            fire(packet.variable_header.topic_name, data={"payload": packet.payload})
+        fire("/recv", data={"client": client})
 
 
 app = App()
@@ -53,3 +49,12 @@ async def fn(event: Event):
     await client.publish('/sys/device/002/log', b'LOG error: ...')
     await client.publish('/sys/device/001/power', b'POWER 20%')
     await client.publish('/sys/device/002/power', b'POWER 30%')
+
+
+@app.do("/recv")
+async def fn(event: Event):
+    client = event.data["client"]
+    while True:
+        message = await client.deliver_message()
+        packet: PublishPacket = message.publish_packet
+        app.fire(packet.variable_header.topic_name, data={"payload": packet.payload})

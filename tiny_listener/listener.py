@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import signal
 from inspect import signature, Parameter
 from functools import wraps
@@ -32,16 +33,20 @@ class ContextNotFound(BaseException):
 
 class Listener:
     def __init__(self):
-        self.loop = asyncio.new_event_loop()
-        self.loop.set_exception_handler(self.exception_handler)
-        for sig in [signal.SIGINT, signal.SIGTERM]:
-            self.loop.add_signal_handler(sig, self.exit)
-
         self.ctxs: Dict[str, Context] = {}
         self.routes: List[Route] = []
         self._pre_do: List[WrappedHook] = []
         self._post_do: List[WrappedHook] = []
         self._error_raise: List[Tuple[WrappedHook, Type[BaseException]]] = []
+
+    def install_signal_handlers(self) -> None:
+        if threading.current_thread() is not threading.main_thread():
+            return
+
+        loop = asyncio.get_event_loop()
+
+        for sig in [signal.SIGINT, signal.SIGTERM]:
+            loop.add_signal_handler(sig, self.exit, sig, None)
 
     def new_ctx(self, cid: str = "__main__", scope: Optional[Dict] = None) -> Context:
         try:
@@ -57,7 +62,7 @@ class Listener:
         except KeyError:
             raise ContextNotFound(f"Context `{cid}` not found")
 
-    def drop_ctx(self, cid) -> 'Context':
+    def drop_ctx(self, cid: str) -> 'Context':
         try:
             return self.ctxs.pop(cid)
         except KeyError:
@@ -70,10 +75,10 @@ class Listener:
         else:
             loop.default_exception_handler(context)
 
-    def exit(self) -> None:
-        tasks = asyncio.gather(*asyncio.Task.all_tasks(self.loop), loop=self.loop, return_exceptions=True)
-        tasks.add_done_callback(lambda t: self.loop.stop())
-        tasks.cancel()
+    def exit(self, *_) -> None:
+        """Override this method to change how the app exit."""
+        loop = asyncio.get_event_loop()
+        loop.stop()
 
     def pre_do(self, fn: Hook) -> None:
         self._pre_do.append(wrap_hook(fn))
@@ -118,14 +123,17 @@ class Listener:
                 if event:
                     event.done()
 
-        return self.loop.create_task(_fire())
+        return asyncio.get_event_loop().create_task(_fire())
 
     async def listen(self, fire: Fire):
         raise NotImplementedError()
 
     def run(self) -> None:
-        self.loop.create_task(self.listen(self.fire))
-        self.loop.run_forever()
+        """Override this method to change how the app run."""
+        self.install_signal_handlers()
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.listen(self.fire))
+        loop.run_forever()
 
     def do(
             self,
@@ -138,7 +146,7 @@ class Listener:
         return _decorator
 
     def __repr__(self) -> str:
-        return "{}(listener_count={})".format(self.__class__.__name__, len(self.routes))
+        return "{}(routes_count={})".format(self.__class__.__name__, len(self.routes))
 
 
 def wrap_hook(handler: Hook) -> WrappedHook:

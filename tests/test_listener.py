@@ -124,11 +124,6 @@ def test_drop_ctx(app):
         app.get_ctx("_ctx_id_")
 
 
-def test_exception_handler(app):
-    app.exception_handler(app.loop, {"exception": ValueError()})
-    app.exception_handler(app.loop, {"exception": asyncio.CancelledError()})
-
-
 def test_hook(app):
     @app.pre_do
     async def f(): ...
@@ -186,13 +181,11 @@ def test_fire(app):
         assert isinstance(err, ValueError)
 
     t = app.fire("/something", data={"seq": 0})
-    app.loop.run_until_complete(t)
+    asyncio.get_event_loop().run_until_complete(t)
 
 
 @pytest.mark.asyncio
 async def test_raise(event_loop, app):
-    app.loop = event_loop
-
     @app.do("/something")
     async def fn():
         raise ValueError
@@ -203,8 +196,6 @@ async def test_raise(event_loop, app):
 
 @pytest.mark.asyncio
 async def test_exit(event_loop, app):
-    app.loop = event_loop
-
     @app.do("/something")
     async def fn(ctx: Context):
         ctx.listener.exit()
@@ -215,8 +206,6 @@ async def test_exit(event_loop, app):
 
 @pytest.mark.asyncio
 async def test_timeout(event_loop, app):
-    app.loop = event_loop
-
     @app.do("/step/1")
     async def f(): await asyncio.sleep(10)
 

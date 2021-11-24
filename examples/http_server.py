@@ -23,7 +23,7 @@ class App(Listener):
             print(f"REQUEST INFO | {method} | {path}")
 
     async def listen(self, fire: Callable[..., None]):
-        await start_server(self.handler, host="0.0.0.0", port=8080, loop=self.loop)
+        await start_server(self.handler, host="0.0.0.0", port=8080)
         print(f"Run http server on :8080")
 
 

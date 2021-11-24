@@ -1,5 +1,14 @@
 # Change Log
 
+
+## 0.0.9 (2021-11-24)
+
+### Changed
+
+- Refactor loop setup
+- Docs enh
+
+
 ## 0.0.8 (2021-11-16)
 
 ### Changed
