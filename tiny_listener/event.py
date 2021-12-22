@@ -9,14 +9,12 @@ if TYPE_CHECKING:
 
 
 class Event:
-    def __init__(
-            self,
-            name: str,
-            ctx: 'Context',
-            route: Optional['Route'],
-            timeout: Optional[float] = None,
-            data: Optional[Dict] = None
-    ) -> None:
+    def __init__(self,
+                 name: str,
+                 ctx: 'Context',
+                 route: Optional['Route'],
+                 timeout: Optional[float] = None,
+                 data: Optional[Dict] = None) -> None:
         self.name = name
         self._ctx = weakref.ref(ctx)
         self.route = route

@@ -3,11 +3,11 @@ from functools import wraps
 from inspect import Parameter, signature
 from typing import Any, Awaitable, Callable, Union
 
-from .context import Context, Event
+from .context import Event
 
 
 HookAble = Callable[..., Union[Awaitable[Any], Any]]
-Hook = Callable[['Context', 'Event'], Awaitable[Any]]
+Hook = Callable[['Event'], Awaitable[Any]]
 
 
 class Depends:
@@ -23,8 +23,8 @@ class Depends:
     def is_coro(self) -> bool:
         return self.__is_coro
 
-    async def __call__(self, ctx: 'Context', event: 'Event') -> None:
-        return await self.hook(ctx, event)
+    async def __call__(self, event: 'Event') -> None:
+        return await self.hook(event)
 
     def __hash__(self):
         return hash(self.__fn)
@@ -42,9 +42,10 @@ def as_hook(fn: HookAble) -> Hook:
     fn: Callable[..., Awaitable[Any]] = asyncio.coroutine(fn)
 
     @wraps(fn)
-    async def f(ctx: 'Context', event: 'Event') -> None:
+    async def f(event: 'Event') -> None:
         args = []
         kwargs = {}
+        ctx = event.ctx
         for name, param in signature(fn).parameters.items():
             # TODO ignore KEYWORD_ONLY
             if param.kind == Parameter.KEYWORD_ONLY:
@@ -57,13 +58,9 @@ def as_hook(fn: HookAble) -> Hook:
                     kwargs[name] = ctx.cache.get(depends)
                     continue
 
-                res = await depends(ctx, event)
+                res = await depends(event)
                 kwargs[name] = res
                 ctx.cache[depends] = res
-                continue
-
-            if param.annotation is Context:
-                args.append(ctx)
                 continue
 
             if param.annotation is Event:

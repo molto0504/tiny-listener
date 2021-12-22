@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class Context:
     def __init__(self,
                  listener: 'Listener',
-                 cid: str = "__main__",
+                 cid: str = "__global__",
                  scope: Optional[Dict] = None) -> None:
         self.cid = cid
         self.cache: Dict[Depends, Any] = {}
@@ -26,13 +26,11 @@ class Context:
     def listener(self) -> 'Listener':
         return self.__listener()
 
-    def new_event(
-            self,
-            name: str,
-            route: Optional['Route'] = None,
-            timeout: Optional[float] = None,
-            data: Optional[Dict] = None,
-    ) -> 'Event':
+    def new_event(self,
+                  name: str,
+                  route: Optional['Route'] = None,
+                  timeout: Optional[float] = None,
+                  data: Optional[Dict] = None) -> 'Event':
         event = Event(name=name, ctx=self, route=route, timeout=timeout, data=data or {})
         self.events[name] = event
         return event

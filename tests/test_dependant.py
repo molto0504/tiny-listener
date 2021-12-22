@@ -3,16 +3,16 @@ from unittest import TestCase
 
 import pytest
 
-from tiny_listener import Depends, as_hook, Context, Event
-
-
-class FakeContext:
-    def __init__(self):
-        self.cache = {}
+from tiny_listener import Depends, as_hook, Event
 
 
 class FakeEvent:
-    ...
+    def __init__(self):
+        class FakeContext:
+            def __init__(self):
+                self.cache = {}
+
+        self.ctx = FakeContext()
 
 
 class TestDepends(TestCase):
@@ -30,7 +30,7 @@ class TestDepends(TestCase):
 
         dep = Depends(fn=normal_func)
         loop = asyncio.get_event_loop()
-        task = asyncio.ensure_future(dep.hook(FakeContext(), FakeEvent()))  # type: ignore
+        task = asyncio.ensure_future(dep.hook(FakeEvent()))  # type: ignore
         with pytest.raises(ValueError):
             loop.run_until_complete(task)
 
@@ -52,26 +52,24 @@ class TestAsHook(TestCase):
 
         hook = as_hook(fn=normal_func)
         loop = asyncio.get_event_loop()
-        task = asyncio.ensure_future(hook(FakeContext(), FakeEvent()))  # type: ignore
+        task = asyncio.ensure_future(hook(FakeEvent()))  # type: ignore
         with pytest.raises(ValueError):
             loop.run_until_complete(task)
 
     def test_run_complex_normal_hook(self):
         fake_event = FakeEvent()
-        fake_ctx = FakeContext()
 
         def my_dep(event: Event):
             assert event is fake_event
             return ...
 
-        def normal_func(ctx: Context, event: Event, *, dep=Depends(my_dep)):
+        def normal_func(event: Event, *, dep=Depends(my_dep)):
             assert event is fake_event
-            assert ctx is fake_ctx
             assert dep is ...
 
         hook = as_hook(fn=normal_func)
         loop = asyncio.get_event_loop()
-        task = asyncio.ensure_future(hook(fake_ctx, fake_event))  # type: ignore
+        task = asyncio.ensure_future(hook(fake_event))  # type: ignore
         loop.run_until_complete(task)
 
     def test_run_simple_async_hook(self):
@@ -83,41 +81,36 @@ class TestAsHook(TestCase):
 
         hook = as_hook(fn=normal_func)
         loop = asyncio.get_event_loop()
-        task = asyncio.ensure_future(hook(FakeContext(), FakeEvent()))  # type: ignore
+        task = asyncio.ensure_future(hook(FakeEvent()))  # type: ignore
         with pytest.raises(ValueError):
             loop.run_until_complete(task)
 
     def test_run_complex_async_hook(self):
         fake_event = FakeEvent()
-        fake_ctx = FakeContext()
 
         async def my_dep(event: Event):
             assert event is fake_event
             return ...
 
-        async def normal_func(ctx: Context, event: Event, *, dep=Depends(my_dep)):
+        async def normal_func(event: Event, *, dep=Depends(my_dep)):
             assert event is fake_event
-            assert ctx is fake_ctx
             assert dep is ...
 
         hook = as_hook(fn=normal_func)
         loop = asyncio.get_event_loop()
-        task = asyncio.ensure_future(hook(fake_ctx, fake_event))  # type: ignore
+        task = asyncio.ensure_future(hook(fake_event))  # type: ignore
         loop.run_until_complete(task)
 
     def test_signature(self):
         fake_event = FakeEvent()
-        fake_ctx = FakeContext()
 
-        def normal_func(ctx_1: Context, ctx_2: Context, event: Event, field_1, *, field_2=None):
-            assert ctx_1 is ctx_2 is fake_ctx
-            assert event is fake_event
-            assert field_1 is None
-            assert field_2 is None
+        def normal_func(event_1: Event, event_2: Event, field_1, *, field_2=None):
+            assert event_1 is event_2 is fake_event
+            assert field_1 is field_2 is None
 
         hook = as_hook(fn=normal_func)
         loop = asyncio.get_event_loop()
-        task = asyncio.ensure_future(hook(fake_ctx, fake_event))  # type: ignore
+        task = asyncio.ensure_future(hook(fake_event))  # type: ignore
         loop.run_until_complete(task)
 
     def test_use_cache(self):
@@ -133,7 +126,7 @@ class TestAsHook(TestCase):
 
         loop = asyncio.get_event_loop()
         hook = as_hook(fn=func_use_cache)
-        task = asyncio.ensure_future(hook(FakeContext(), FakeEvent()))  # type: ignore
+        task = asyncio.ensure_future(hook(FakeEvent()))  # type: ignore
         loop.run_until_complete(task)
 
     def test_without_cache(self):
@@ -150,5 +143,5 @@ class TestAsHook(TestCase):
 
         loop = asyncio.get_event_loop()
         hook = as_hook(fn=func_use_cache)
-        task = asyncio.ensure_future(hook(FakeContext(), FakeEvent()))  # type: ignore
+        task = asyncio.ensure_future(hook(FakeEvent()))  # type: ignore
         loop.run_until_complete(task)

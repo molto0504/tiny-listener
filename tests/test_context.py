@@ -32,7 +32,7 @@ def test_ctx_ok(app):
     assert ctx.cache == {}
     # without ctx
     ctx = Context(listener=app)
-    assert ctx.cid == "__main__"
+    assert ctx.cid == "__global__"
     assert ctx.listener == app
     assert ctx.scope == {}
     assert ctx.events == {}

@@ -52,7 +52,7 @@ class Listener:
         for sig in [signal.SIGINT, signal.SIGTERM]:
             loop.add_signal_handler(sig, self.exit, sig, None)
 
-    def new_ctx(self, cid: str = "__main__", scope: Optional[Dict] = None) -> Context:
+    def new_ctx(self, cid: str = "__global__", scope: Optional[Dict] = None) -> Context:
         try:
             ctx = self.get_ctx(cid)
         except ContextNotFound:
