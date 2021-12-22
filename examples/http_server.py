@@ -11,7 +11,7 @@ try open the link on your browser: http://127.0.0.1:8080/user/1
 from asyncio import StreamReader, StreamWriter, start_server
 from typing import Callable, Dict
 
-from tiny_listener import Listener, Params, Depends, RouteNotFound, Event
+from tiny_listener import Listener, Depends, RouteNotFound, Event
 
 
 class App(Listener):
@@ -29,14 +29,12 @@ class App(Listener):
 
 app = App()
 
-mock_db = {
-    "1": "Alice",
-    "2": "Bob"
-}
-
 
 async def get_db():
-    return mock_db
+    return {
+        "1": "Alice",
+        "2": "Bob"
+    }
 
 
 async def get_resp(event: Event):
@@ -49,14 +47,14 @@ async def api_not_found(*, resp: StreamWriter = Depends(get_resp, use_cache=Fals
     resp.close()
 
 
-@app.do("GET:/user/{user_id}")
+@app.on_event("GET:/user/{user_id}")
 async def get_user(
-        params: Params,
+        event: Event,
         *,
         db: Dict = Depends(get_db),
         resp: StreamWriter = Depends(get_resp, use_cache=False)
 ):
-    user_id = params['user_id']
+    user_id = event.params['user_id']
     user = db.get(user_id)
     if user:
         resp.write(f"HTTP/1.1 200\n\n{user}".encode())

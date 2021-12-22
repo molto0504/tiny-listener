@@ -16,15 +16,17 @@ class Event:
                  timeout: Optional[float] = None,
                  data: Optional[Dict] = None) -> None:
         self.name = name
-        self._ctx = weakref.ref(ctx)
         self.route = route
         self.timeout: Optional[float] = timeout
         self.data = data or {}
+        self.params: Dict[str, Any] = {}
+        self.__ctx = weakref.ref(ctx)
         self.__done = asyncio.Event()
+        self.error: Optional[BaseException] = None
 
     @property
     def ctx(self) -> 'Context':
-        return self._ctx()
+        return self.__ctx()
 
     @property
     def parents(self) -> Set['Event']:

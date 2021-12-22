@@ -22,16 +22,16 @@ class App(Listener):
 app = App()
 
 
-@app.do("run server")
-async def run_server():
+@app.on_event("run server")
+async def _():
     async def handler(reader, _):
         while True:
             print(await reader.read(255))
     await asyncio.start_server(handler, *ADDRESS)
 
 
-@app.do("run client", parents=["run server"])
-async def run_client():
+@app.on_event("run client", parents=["run server"])
+async def _():
     reader, writer = await asyncio.open_connection(*ADDRESS)
     while True:
         writer.write(b"Hello, World!")

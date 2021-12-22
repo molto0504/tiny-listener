@@ -11,7 +11,7 @@
 """
 
 
-from tiny_listener import Listener, Params
+from tiny_listener import Listener, Event
 
 
 class App(Listener):
@@ -27,11 +27,12 @@ class App(Listener):
 app = App()
 
 
-@app.do("I like {things}.")
-async def like(param: Params):
-    print(f"✔ {param['things']}")
+@app.on_event("I like {things}.")
+async def like(event: Event):
+    print(f"✔ {event.params['things']}")
 
 
-@app.do("I hate {things}.", parents=["I like*"])
-async def hate(param: Params):
-    print(f"✖ {param['things']}")
+# TODO !!!!!!!!!!!!!!!!!! parents not work
+@app.on_event("I hate {things}.", parents=["I like*"])
+async def hate(event: Event):
+    print(f"✖ {event.params['things']}")

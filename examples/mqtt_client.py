@@ -13,7 +13,7 @@ from hbmqtt.client import MQTTClient
 from hbmqtt.mqtt.constants import QOS_0
 from hbmqtt.mqtt.publish import PublishPacket
 
-from tiny_listener import Listener, Event, Params
+from tiny_listener import Listener, Event
 
 
 class App(Listener):
@@ -30,19 +30,19 @@ class App(Listener):
 app = App()
 
 
-@app.do("/sys/device/{id}/log")
-async def fn(event: Event, params: Params):
+@app.on_event("/sys/device/{id}/log")
+async def fn(event: Event):
     payload = event.data["payload"]
-    print(f"Log handler: {params['id']} => {payload.data}")
+    print(f"Log handler: {event.params['id']} => {payload.data}")
 
 
-@app.do("/sys/device/{id}/power")
-async def fn(event: Event, params: Params):
+@app.on_event("/sys/device/{id}/power")
+async def fn(event: Event):
     payload = event.data["payload"]
-    print(f"Power handler: {params['id']} => {payload.data}")
+    print(f"Power handler: {event.params['id']} => {payload.data}")
 
 
-@app.do("/send")
+@app.on_event("/send")
 async def fn(event: Event):
     client = event.data["client"]
     await client.publish('/sys/device/001/log', b'LOG info: ...')
@@ -51,7 +51,7 @@ async def fn(event: Event):
     await client.publish('/sys/device/002/power', b'POWER 30%')
 
 
-@app.do("/recv")
+@app.on_event("/recv")
 async def fn(event: Event):
     client = event.data["client"]
     while True:

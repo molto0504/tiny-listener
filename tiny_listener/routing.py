@@ -3,8 +3,8 @@ import uuid
 from typing import Optional, Dict, Callable, NamedTuple, Any, Tuple, Pattern, Union, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from .dependant import Hook
     from .context import Context
-    from .listener import WrappedHook
 
 
 class Convertor(NamedTuple):
@@ -28,7 +28,7 @@ class Route:
     def __init__(
             self,
             path: str,
-            fn: 'WrappedHook',
+            fn: 'Hook',
             opts: Optional[Dict[str, Any]] = None,
             parents: Union[None, List[str], Callable[['Context'], List[str]]] = None
     ):

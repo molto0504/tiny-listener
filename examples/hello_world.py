@@ -18,12 +18,12 @@ class App(Listener):
 app = App()
 
 
-@app.do("say hello")
-async def f():
+@app.on_event("say hello")
+async def _():
     print("Hello", end=", ")
 
 
-@app.do("say world")
-async def f():
+@app.on_event("say world")
+async def _():
     print("World!")
 
