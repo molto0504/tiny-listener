@@ -4,6 +4,7 @@ from typing import Dict, Optional, Any, Set, TYPE_CHECKING
 from itertools import chain
 
 if TYPE_CHECKING:
+    from .listener import Listener
     from .context import Context
     from .routing import Route
 
@@ -24,9 +25,17 @@ class Event:
         self.__done = asyncio.Event()
         self.error: Optional[BaseException] = None
 
+    async def __call__(self):
+        pass
+
+
     @property
     def ctx(self) -> 'Context':
         return self.__ctx()
+
+    @property
+    def listener(self) -> 'Listener':
+        return self.ctx.listener
 
     @property
     def parents(self) -> Set['Event']:

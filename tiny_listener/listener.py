@@ -6,11 +6,7 @@ from typing_extensions import Protocol
 
 from .context import Context
 from .routing import Route
-from .dependant import Hook, as_hook
-
-
-# class Params(dict):
-#     pass
+from .dependant import Hook, HookFunc
 
 
 class Fire(Protocol):
@@ -46,7 +42,9 @@ class Listener:
         for sig in [signal.SIGINT, signal.SIGTERM]:
             loop.add_signal_handler(sig, self.exit, sig, None)
 
-    def new_ctx(self, cid: str = "__global__", scope: Optional[Dict] = None) -> Context:
+    def new_ctx(self,
+                cid: str = "__global__",
+                scope: Optional[Dict[str, Any]] = None) -> Context:
         try:
             ctx = self.get_ctx(cid)
         except ContextNotFound:
@@ -78,16 +76,16 @@ class Listener:
         loop = asyncio.get_event_loop()
         loop.stop()
 
-    def pre_do(self, fn: Hook) -> None:
-        self._pre_do.append(as_hook(fn))
+    # def pre_do(self, fn: Hook) -> None:
+    #     self._pre_do.append(as_hook(fn))
+    #
+    # def post_do(self, fn: Hook) -> None:
+    #     self._post_do.append(as_hook(fn))
 
-    def post_do(self, fn: Hook) -> None:
-        self._post_do.append(as_hook(fn))
-
-    def error_raise(self, exc: Type[BaseException]) -> Callable[[Hook], None]:
-        def f(fn: Hook) -> None:
-            self._error_raise.append((as_hook(fn), exc))
-        return f
+    # def error_raise(self, exc: Type[BaseException]) -> Callable[[Hook], None]:
+    #     def f(fn: Hook) -> None:
+    #         self._error_raise.append((as_hook(fn), exc))
+    #     return f
 
     def match_route(self, name: str) -> Tuple[Route, Dict[str, Any]]:
         for r in self.routes:
@@ -138,7 +136,7 @@ class Listener:
                  **kwargs: Any) -> Callable[[Hook], None]:
         def _decorator(fn: Hook) -> None:
             self.routes.append(Route(path=path,
-                                     fn=as_hook(fn),
+                                     fn=fn,
                                      parents=parents or [],
                                      opts=kwargs))
         return _decorator

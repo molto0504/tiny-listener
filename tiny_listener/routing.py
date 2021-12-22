@@ -2,8 +2,9 @@ import re
 import uuid
 from typing import Optional, Dict, Callable, NamedTuple, Any, Tuple, Pattern, Union, List, TYPE_CHECKING
 
+from .dependant import Hook, HookFunc
+
 if TYPE_CHECKING:
-    from .dependant import Hook
     from .context import Context
 
 
@@ -25,16 +26,14 @@ PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
 
 
 class Route:
-    def __init__(
-            self,
-            path: str,
-            fn: 'Hook',
-            opts: Optional[Dict[str, Any]] = None,
-            parents: Union[None, List[str], Callable[['Context'], List[str]]] = None
-    ):
+    def __init__(self,
+                 path: str,
+                 fn: Callable,
+                 opts: Optional[Dict[str, Any]] = None,
+                 parents: Optional[List[str]] = None):
         self.path = path
         self.path_regex, self.convertors = compile_path(path)
-        self.fn = fn
+        self.hook = Hook(fn)
         self.opts: Dict[str, Any] = opts or {}
         self.parents: Union[List[str], Callable[[Context], List[str]]] = parents or []
 

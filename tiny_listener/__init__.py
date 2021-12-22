@@ -8,9 +8,9 @@ __version__ = "0.0.9"
 from .listener import Listener, ContextNotFound, RouteNotFound
 from .context import Context, Event
 from .routing import Route
-from .dependant import Depends, Hook, as_hook
+from .dependant import Depends, Hook, HookFunc
 from .utils import import_from_string
 
 
 __all__ = ["__version__", "Listener", "ContextNotFound", "RouteNotFound",
-           "Context", "Event", "Route", "Depends", "Hook", "as_hook", "import_from_string"]
+           "Context", "Event", "Route", "Depends", "Hook", "HookFunc", "import_from_string"]

@@ -10,21 +10,32 @@ if TYPE_CHECKING:
     from .listener import Listener
     from .routing import Route
 
+Scope = Dict[str, Any]
+
 
 class Context:
     def __init__(self,
                  listener: 'Listener',
                  cid: str = "__global__",
-                 scope: Optional[Dict] = None) -> None:
+                 scope: Optional[Scope] = None) -> None:
         self.cid = cid
         self.cache: Dict[Depends, Any] = {}
-        self.scope: Dict[str, Any] = scope or {}
+        self.scope: Scope = scope or {}
         self.events: Dict[str, Event] = {}
         self.__listener = weakref.ref(listener)
 
     @property
     def listener(self) -> 'Listener':
         return self.__listener()
+
+    def alive(self) -> bool:
+        return self.cid in self.listener.ctxs
+
+    def drop(self) -> bool:
+        if self.alive:
+            del self.listener.ctxs[self.cid]
+            return True
+        return False
 
     def new_event(self,
                   name: str,
@@ -56,7 +67,6 @@ class Context:
                                   data=data)
 
     def __repr__(self) -> str:
-        return "{}(cid={}, events_count={}, scope={})".format(self.__class__.__name__,
-                                                              self.cid,
-                                                              len(self.events),
-                                                              self.scope)
+        return "{}(cid={}, scope={})".format(self.__class__.__name__,
+                                             self.cid,
+                                             self.scope)
