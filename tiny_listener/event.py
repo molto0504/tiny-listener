@@ -20,7 +20,7 @@ class Event:
         self.route = route
         self.timeout: Optional[float] = timeout
         self.data = data or {}
-        self.trigger = asyncio.Event()
+        self.__done = asyncio.Event()
 
     @property
     def ctx(self) -> 'Context':
@@ -32,13 +32,16 @@ class Event:
 
     @property
     def is_done(self) -> bool:
-        return self.trigger.is_set()
+        return self.__done.is_set()
 
     def done(self) -> None:
-        self.trigger.set()
+        self.__done.set()
 
-    async def wait(self) -> Any:
-        return await self.trigger.wait()
+    async def wait_until_done(self, timeout: Optional[float] = None) -> None:
+        """
+        :raises: asyncio.futures.TimeoutError
+        """
+        await asyncio.wait_for(self.__done.wait(), timeout)
 
     def __repr__(self) -> str:
         return "{}(name={}, route={}, data={})".format(self.__class__.__name__,

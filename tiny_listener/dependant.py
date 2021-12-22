@@ -47,7 +47,6 @@ def as_hook(fn: HookAble) -> Hook:
         kwargs = {}
         ctx = event.ctx
         for name, param in signature(fn).parameters.items():
-            # TODO ignore KEYWORD_ONLY
             if param.kind == Parameter.KEYWORD_ONLY:
                 depends: Union[Any, Depends] = param.default
                 if not isinstance(depends, Depends):

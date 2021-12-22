@@ -10,13 +10,13 @@ def app():
         async def listen(self, _): ...
     app = App()
 
-    @app.do(path="/thing/{uid}")
+    @app.on_event(path="/thing/{uid}")
     async def f(): ...
 
-    @app.do(path="/user/foo")
+    @app.on_event(path="/user/foo")
     async def f(): ...
 
-    @app.do(path="/user/bar")
+    @app.on_event(path="/user/bar")
     async def f(): ...
 
     return app

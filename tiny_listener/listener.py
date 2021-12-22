@@ -139,12 +139,15 @@ class Listener:
         loop.create_task(self.listen(self.fire))
         loop.run_forever()
 
-    def do(self,
-           path: str,
-           parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
-           **kwargs: Any) -> Callable[[Hook], None]:
+    def on_event(self,
+                 path: str,
+                 parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
+                 **kwargs: Any) -> Callable[[Hook], None]:
         def _decorator(fn: Hook) -> None:
-            self.routes.append(Route(path=path, fn=wrap_hook(fn), parents=parents or [], opts=kwargs))
+            self.routes.append(Route(path=path,
+                                     fn=wrap_hook(fn),
+                                     parents=parents or [],
+                                     opts=kwargs))
         return _decorator
 
     def __repr__(self) -> str:

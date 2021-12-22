@@ -18,7 +18,7 @@ def ctx(app):
 
 @pytest.fixture()
 def event(ctx):
-    @ctx.listener.do(path="/user/{name}")
+    @ctx.listener.on_event(path="/user/{name}")
     async def f(): ...
 
     return ctx.new_event("/event", ctx.listener.routes[0])
@@ -140,10 +140,10 @@ def test_hook(app):
 
 
 def test_match_route(app):
-    @app.do("/root/book")
+    @app.on_event("/root/book")
     async def f(): ...
 
-    @app.do("/root/book/{name}")
+    @app.on_event("/root/book/{name}")
     async def f(): ...
 
     route, param = app.match_route("/root/book")
@@ -164,7 +164,7 @@ def test_fire(app):
         assert event.data["seq"] == 0
         event.data["seq"] += 1
 
-    @app.do("/something")
+    @app.on_event("/something")
     async def f(event: Event):
         assert event.data["seq"] == 1
         event.data["seq"] += 1
@@ -186,7 +186,7 @@ def test_fire(app):
 
 @pytest.mark.asyncio
 async def test_raise(event_loop, app):
-    @app.do("/something")
+    @app.on_event("/something")
     async def fn():
         raise ValueError
 
