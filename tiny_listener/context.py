@@ -2,19 +2,22 @@ import re
 import weakref
 from typing import Dict, Optional, Any, List, Coroutine, TYPE_CHECKING
 
-from .dependant import Cache
 from .event import Event
 
 
 if TYPE_CHECKING:
+    from .dependant import Hook
     from .listener import Listener
     from .routing import Route
 
 
 class Context:
-    def __init__(self, listener: 'Listener', cid: str = "__main__", scope: Optional[Dict] = None) -> None:
+    def __init__(self,
+                 listener: 'Listener',
+                 cid: str = "__main__",
+                 scope: Optional[Dict] = None) -> None:
         self.cid = cid
-        self.cache: Cache = Cache()
+        self.cache: Dict['Hook', Any] = {}
         self.__listener = weakref.ref(listener)
         self.scope: Dict[str, Any] = scope or {}
         self.events: Dict[str, Event] = {}

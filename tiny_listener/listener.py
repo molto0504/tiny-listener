@@ -16,7 +16,11 @@ class Params(dict):
 
 
 class Fire(Protocol):
-    def __call__(self, name: str, cid: Optional[str] = None, timeout: Optional[float] = None, data: Optional[Dict] = None) -> asyncio.Task: ...
+    def __call__(self,
+                 name: str,
+                 cid: Optional[str] = None,
+                 timeout: Optional[float] = None,
+                 data: Optional[Dict] = None) -> asyncio.Task: ...
 
 
 Hook = Callable[..., Awaitable[None]]
@@ -135,12 +139,10 @@ class Listener:
         loop.create_task(self.listen(self.fire))
         loop.run_forever()
 
-    def do(
-            self,
-            path: str,
-            parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
-            **kwargs: Any
-    ) -> Callable[[Hook], None]:
+    def do(self,
+           path: str,
+           parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
+           **kwargs: Any) -> Callable[[Hook], None]:
         def _decorator(fn: Hook) -> None:
             self.routes.append(Route(path=path, fn=wrap_hook(fn), parents=parents or [], opts=kwargs))
         return _decorator

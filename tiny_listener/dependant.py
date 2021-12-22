@@ -1,36 +1,67 @@
-from typing import Any, Dict, Callable, Awaitable
+import asyncio
+from functools import wraps
+from inspect import Parameter, signature
+from typing import Any, Awaitable, Callable, Union
+
+from .context import Context, Event
 
 
-Dependency = Callable[..., Awaitable[None]]
+Hook = Callable[['Context', 'Event'], Awaitable[None]]
 
 
 class Depends:
-    def __init__(
-            self,
-            dependency: Dependency,
-            use_cache: bool = True
-    ) -> None:
-        self.dependency = dependency
+    def __init__(self,
+                 fn: Callable[..., Union[Awaitable[None], None]],
+                 use_cache: bool = True) -> None:
+        self.__is_coro: bool = asyncio.iscoroutinefunction(fn)
+        self.hook: Hook = as_hook(fn)
         self.use_cache = use_cache
 
+    @property
+    def is_coro(self) -> bool:
+        return self.__is_coro
+
+    async def __call__(self, ctx: 'Context', event: 'Event') -> None:
+        return await self.hook(ctx, event)
+
     def __repr__(self) -> str:
-        return "{}(dependency={}, use_cache={})".format(self.__class__.__name__,
-                                                        self.dependency.__name__,
-                                                        self.use_cache)
+        return "{}({}, use_cache={})".format(self.__class__.__name__,
+                                             self.hook.__name__,
+                                             self.use_cache)
 
 
-class Cache:
-    def __init__(self) -> None:
-        self._cache: Dict[Dependency, Any] = {}
+def as_hook(fn: Callable[..., Union[Awaitable[None], None]]) -> Hook:
+    fn: Callable[..., Awaitable[None]] = asyncio.coroutine(fn)
 
-    def get(self, depend: Depends) -> Any:
-        return self._cache.get(depend.dependency)
+    @wraps(fn)
+    async def f(ctx: 'Context', event: 'Event') -> None:
+        args = []
+        kwargs = {}
+        for name, param in signature(fn).parameters.items():
+            # TODO ignore KEYWORD_ONLY
+            if param.kind == Parameter.KEYWORD_ONLY:
+                depends: Union[Any, Depends] = param.default
+                if not isinstance(depends, Depends):
+                    kwargs[name] = None
+                    continue
 
-    def set(self, depend: Depends, val: Any):
-        self._cache[depend.dependency] = val
+                if depends.use_cache and depends.hook in ctx.cache:
+                    kwargs[name] = ctx.cache.get(depends.hook)
+                    continue
 
-    def exist(self, depend: Depends) -> bool:
-        return depend.dependency in self._cache
+                res = await depends(ctx, event)
+                kwargs[name] = res
+                ctx.cache[depends.hook] = res
+                continue
 
-    def all(self) -> Dict[Dependency, Any]:
-        return self._cache
+            if param.annotation is Context:
+                args.append(ctx)
+                continue
+
+            if param.annotation is Event:
+                args.append(event)
+                continue
+
+            args.append(None)
+        return await fn(*args, **kwargs)
+    return f

@@ -29,14 +29,14 @@ def test_ctx_ok(app):
     assert ctx.listener == app
     assert ctx.scope == {"scope_key": "scope_val"}
     assert ctx.events == {}
-    assert ctx.cache.all() == {}
+    assert ctx.cache == {}
     # without ctx
     ctx = Context(listener=app)
     assert ctx.cid == "__main__"
     assert ctx.listener == app
     assert ctx.scope == {}
     assert ctx.events == {}
-    assert ctx.cache.all() == {}
+    assert ctx.cache == {}
 
 
 def test_new_event(app):
