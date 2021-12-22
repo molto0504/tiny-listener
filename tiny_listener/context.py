@@ -6,7 +6,7 @@ from .event import Event
 
 
 if TYPE_CHECKING:
-    from .dependant import Hook
+    from .dependant import Depends
     from .listener import Listener
     from .routing import Route
 
@@ -17,7 +17,7 @@ class Context:
                  cid: str = "__main__",
                  scope: Optional[Dict] = None) -> None:
         self.cid = cid
-        self.cache: Dict['Hook', Any] = {}
+        self.cache: Dict[Depends, Any] = {}
         self.__listener = weakref.ref(listener)
         self.scope: Dict[str, Any] = scope or {}
         self.events: Dict[str, Event] = {}

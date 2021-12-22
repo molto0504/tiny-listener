@@ -104,3 +104,51 @@ class TestAsHook(TestCase):
         loop = asyncio.get_event_loop()
         task = asyncio.ensure_future(hook(fake_ctx, fake_event))  # type: ignore
         loop.run_until_complete(task)
+
+    def test_signature(self):
+        fake_event = FakeEvent()
+        fake_ctx = FakeContext()
+
+        def normal_func(ctx_1: Context, ctx_2: Context, event: Event, field_1, *, field_2=None):
+            assert ctx_1 is ctx_2 is fake_ctx
+            assert event is fake_event
+            assert field_1 is None
+            assert field_2 is None
+
+        hook = as_hook(fn=normal_func)
+        loop = asyncio.get_event_loop()
+        task = asyncio.ensure_future(hook(fake_ctx, fake_event))  # type: ignore
+        loop.run_until_complete(task)
+
+    def test_use_cache(self):
+        seq = 0
+
+        def my_dep():
+            nonlocal seq
+            seq += 1
+            return seq
+
+        def func_use_cache(*, dep_1=Depends(my_dep, use_cache=True), dep_2=Depends(my_dep, use_cache=True)):
+            assert dep_1 == dep_2 == 1
+
+        loop = asyncio.get_event_loop()
+        hook = as_hook(fn=func_use_cache)
+        task = asyncio.ensure_future(hook(FakeContext(), FakeEvent()))  # type: ignore
+        loop.run_until_complete(task)
+
+    def test_without_cache(self):
+        seq = 0
+
+        def my_dep():
+            nonlocal seq
+            seq += 1
+            return seq
+
+        def func_use_cache(*, dep_1=Depends(my_dep, use_cache=False), dep_2=Depends(my_dep, use_cache=False)):
+            assert dep_1 == 1
+            assert dep_2 == 2
+
+        loop = asyncio.get_event_loop()
+        hook = as_hook(fn=func_use_cache)
+        task = asyncio.ensure_future(hook(FakeContext(), FakeEvent()))  # type: ignore
+        loop.run_until_complete(task)

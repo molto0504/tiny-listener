@@ -6,13 +6,15 @@ from typing import Any, Awaitable, Callable, Union
 from .context import Context, Event
 
 
-Hook = Callable[['Context', 'Event'], Awaitable[None]]
+HookAble = Callable[..., Union[Awaitable[Any], Any]]
+Hook = Callable[['Context', 'Event'], Awaitable[Any]]
 
 
 class Depends:
     def __init__(self,
-                 fn: Callable[..., Union[Awaitable[None], None]],
+                 fn: HookAble,
                  use_cache: bool = True) -> None:
+        self.__fn = fn
         self.__is_coro: bool = asyncio.iscoroutinefunction(fn)
         self.hook: Hook = as_hook(fn)
         self.use_cache = use_cache
@@ -24,14 +26,20 @@ class Depends:
     async def __call__(self, ctx: 'Context', event: 'Event') -> None:
         return await self.hook(ctx, event)
 
+    def __hash__(self):
+        return hash(self.__fn)
+
+    def __eq__(self, other):
+        return self.__fn == other.__fn
+
     def __repr__(self) -> str:
         return "{}({}, use_cache={})".format(self.__class__.__name__,
                                              self.hook.__name__,
                                              self.use_cache)
 
 
-def as_hook(fn: Callable[..., Union[Awaitable[None], None]]) -> Hook:
-    fn: Callable[..., Awaitable[None]] = asyncio.coroutine(fn)
+def as_hook(fn: HookAble) -> Hook:
+    fn: Callable[..., Awaitable[Any]] = asyncio.coroutine(fn)
 
     @wraps(fn)
     async def f(ctx: 'Context', event: 'Event') -> None:
@@ -45,13 +53,13 @@ def as_hook(fn: Callable[..., Union[Awaitable[None], None]]) -> Hook:
                     kwargs[name] = None
                     continue
 
-                if depends.use_cache and depends.hook in ctx.cache:
-                    kwargs[name] = ctx.cache.get(depends.hook)
+                if depends.use_cache and depends in ctx.cache:
+                    kwargs[name] = ctx.cache.get(depends)
                     continue
 
                 res = await depends(ctx, event)
                 kwargs[name] = res
-                ctx.cache[depends.hook] = res
+                ctx.cache[depends] = res
                 continue
 
             if param.annotation is Context:
