@@ -46,9 +46,9 @@ async def listen(self):
 ```
 
 3. Tiny-listener 会自动分发事件:
-   当监听者收到一个 msg 时,
-   Tiny-listener 就会默认调用 `plan_A`,  除非这个 msg 是 "emergency",
-   这种情况下 Tiny-listener 会调用 `plan_B`.
+   
+   - 默认情况下, 当监听者收到一个 `msg` 时, `plan_A` 会被调用.
+   - 如果 `msg` 是 `emergency` 则 `plain_B` 会被调用.
 
 ## 例子
 

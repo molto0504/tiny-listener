@@ -41,14 +41,14 @@ def plan_A():
 ```python
 async def listen(self):
    while True:
-       msg = await queue.get()  # msg may be "emergency" or some other status
+       msg: str = await queue.get()  # msg may be "emergency" or some other status
        self.fire(msg)  # fire event
 ```
 
 3. Tiny-listener will dispatch event automatically:
-   when listener receive a msg,
-   Tiny-listener will call `plan_A` by default, unless the msg is `emergency`,
-   that will call `plan_B` instead.
+
+   - Normally, when listener receive a `msg`, `plan_A` will be called by default.
+   - If `msg` is `emergency` then `plan_B` will be called instead of `plan_A`.
 
 ## Usage
 
