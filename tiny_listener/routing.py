@@ -19,6 +19,7 @@ CONVERTOR_TYPES: Dict[str, Convertor] = {
 }
 
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
+Params = Dict[str, Any]
 
 
 class RouteError(BaseException):
@@ -41,12 +42,12 @@ class Route:
         self.parents: List[str] = parents or []
         self.hook = Hook(fn)
 
-    def match(self, name: str) -> Optional[Dict[str, Any]]:
+    def match(self, name: str) -> Optional[Params]:
         match = self.path_regex.match(name)
         if match is None:
             return
 
-        params = match.groupdict() if match else {}
+        params: Params = match.groupdict() if match else {}
         for k, v in params.items():
             params[k] = self.convertors[k].convert(v)
         return params

@@ -36,17 +36,22 @@ class Context:
             return True
         return False
 
+    def add_event(self, event: Event) -> None:
+        self.events[event.name] = event
+
     def new_event(self,
                   name: str,
                   route: Optional['Route'] = None,
                   timeout: Optional[float] = None,
-                  data: Optional[Dict] = None) -> 'Event':
+                  data: Optional[Dict] = None,
+                  params: Optional[Dict[str, Any]] = None) -> 'Event':
         event = Event(name=name,
                       ctx=self,
                       route=route,
                       timeout=timeout,
-                      data=data or {})
-        self.events[name] = event
+                      data=data or {},
+                      params=params or {})
+        self.add_event(event)
         return event
 
     def get_events(self, pat: str = ".*") -> List[Event]:

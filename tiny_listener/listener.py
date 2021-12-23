@@ -7,7 +7,7 @@ from typing_extensions import Protocol
 
 from .context import Context
 from .dependant import Hook
-from .routing import Route
+from .routing import Route, Params
 
 
 class Fire(Protocol):
@@ -88,11 +88,11 @@ class Listener:
     #         self._error_raise.append((as_hook(fn), exc))
     #     return f
 
-    def match_route(self, name: str) -> Tuple[Route, Dict[str, Any]]:
-        for r in self.routes:
-            result, params = r.match(name)
-            if result:
-                return r, params
+    def match_route(self, name: str) -> Tuple[Route, Params]:
+        for route in self.routes:
+            params = route.match(name)
+            if params is not None:
+                return route, params
         raise RouteNotFound(f"route `{name}` not found")
 
     def fire(self,
@@ -100,24 +100,30 @@ class Listener:
              cid: Optional[str] = None,
              timeout: Optional[float] = None,
              data: Optional[Dict] = None) -> asyncio.Task:
+        """
+        :raises: RouteNotFound
+        """
+        ctx = self.new_ctx(cid)
+        route, params = self.match_route(name)
+        event = ctx.new_event(name=name,
+                              timeout=timeout,
+                              route=route,
+                              data=data or {},
+                              params=params)
 
         async def _fire():
-            ctx = self.new_ctx(cid)
-            event = ctx.new_event(name=name, timeout=timeout, route=None, data=data or {})
             try:
-                event.route, event.params = self.match_route(name)
                 [await evt.wait_until_done(evt.timeout) for evt in event.parents]
-                [await fn(event) for fn in self._pre_do]
-                await event.route.fn(event)
-                [await fn(event) for fn in self._post_do]
+                # [await fn(event) for fn in self._pre_do]
+                await event(event)
+                # [await fn(event) for fn in self._post_do]
             except BaseException as e:
                 if not self._error_raise:
                     raise e
                 event.error = e
                 [await fn(event) for fn, exc_cls in self._error_raise if isinstance(e, exc_cls)]
             finally:
-                if event:
-                    event.done()
+                event.done()
 
         return asyncio.get_event_loop().create_task(_fire())
 

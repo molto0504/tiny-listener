@@ -13,13 +13,14 @@ class Event:
     def __init__(self,
                  name: str,
                  ctx: 'Context',
-                 route: Optional['Route'],
+                 route: 'Route',
                  timeout: Optional[float] = None,
-                 data: Optional[Dict] = None) -> None:
+                 data: Optional[Dict] = None,
+                 params: Optional[Dict] = None) -> None:
         self.name = name
         self.timeout: Optional[float] = timeout
         self.data = data or {}
-        self.params: Dict[str, Any] = {}
+        self.params: Dict[str, Any] = params or {}
         self.error: Optional[BaseException] = None
         self.__route = route
         self.__ctx = weakref.ref(ctx)
@@ -54,11 +55,12 @@ class Event:
         """
         await asyncio.wait_for(self.__done.wait(), timeout)
 
-    async def __call__(self, executor: Any):
+    async def __call__(self, executor: Any = None):
         return await self.route.hook(self, executor)
 
     def __repr__(self) -> str:
-        return "{}(name={}, route={}, data={})".format(self.__class__.__name__,
-                                                       self.route.path if self.route else None,
-                                                       self.name,
-                                                       self.data)
+        return "{}(name={}, route={}, params={}, data={})".format(self.__class__.__name__,
+                                                                  self.route.path,
+                                                                  self.name,
+                                                                  self.params,
+                                                                  self.data)
