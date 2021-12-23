@@ -32,7 +32,6 @@ async def like(event: Event):
     print(f"✔ {event.params['things']}")
 
 
-# TODO !!!!!!!!!!!!!!!!!! parents not work
 @app.on_event("I hate {things}.", parents=["I like*"])
 async def hate(event: Event):
     print(f"✖ {event.params['things']}")

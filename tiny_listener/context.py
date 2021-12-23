@@ -27,11 +27,12 @@ class Context:
     def listener(self) -> 'Listener':
         return self.__listener()
 
-    def alive(self) -> bool:
+    @property
+    def is_alive(self) -> bool:
         return self.cid in self.listener.ctxs
 
     def drop(self) -> bool:
-        if self.alive:
+        if self.is_alive:
             del self.listener.ctxs[self.cid]
             return True
         return False

@@ -24,21 +24,32 @@ def app():
     return app
 
 
-def test_ctx_ok(app):
-    # with ctx
-    ctx = Context(listener=app, cid="cid_1", scope={"scope_key": "scope_val"})
-    assert ctx.cid == "cid_1"
+def test_ok(app):
+    # with id
+    ctx = Context(listener=app, cid="test_ok", scope={"scope_key": "scope_val"})
+    assert ctx.cid == "test_ok"
     assert ctx.listener == app
     assert ctx.scope == {"scope_key": "scope_val"}
     assert ctx.events == {}
     assert ctx.cache == {}
-    # without ctx
+    # without id
     ctx = Context(listener=app)
     assert ctx.cid == "__global__"
     assert ctx.listener == app
     assert ctx.scope == {}
     assert ctx.events == {}
     assert ctx.cache == {}
+
+
+def test_alive_drop(app):
+    ctx = Context(listener=app, cid="test_alive_drop")
+    assert ctx.is_alive is False
+    app.add_ctx(ctx)
+    assert ctx.is_alive is True
+
+    assert ctx.drop() is True
+    assert ctx.is_alive is False
+    assert ctx.drop() is False
 
 
 def test_new_event(app):

@@ -50,8 +50,11 @@ class Listener:
             ctx = self.get_ctx(cid)
         except ContextNotFound:
             ctx = Context(listener=self, cid=cid, scope=scope)
-            self.ctxs[cid] = ctx
+            self.add_ctx(ctx)
         return ctx
+
+    def add_ctx(self, ctx: Context):
+        self.ctxs[ctx.cid] = ctx
 
     def get_ctx(self, cid: str) -> Context:
         try:
