@@ -12,7 +12,6 @@ HookFunc = Callable[['Event', Any], Awaitable[Any]]
 class Hook:
     def __init__(self, fn: Callable) -> None:
         self.__fn = fn
-        self.__parameters = signature(fn).parameters
         self.__is_coro = asyncio.iscoroutinefunction(fn)
         self.__hook = self.as_hook()
 
@@ -22,27 +21,22 @@ class Hook:
             args = []
             kwargs = {}
             ctx = event.ctx
-            for name, param in self.__parameters.items():
-                if param.kind == Parameter.KEYWORD_ONLY:
-                    depends: Union[Any, Depends] = param.default
-                    if not isinstance(depends, Depends):
-                        kwargs[name] = None
-                        continue
-
+            for name, param in signature(self.__fn).parameters.items():
+                depends = param.default
+                actual = None
+                if isinstance(depends, Depends):
                     if depends.use_cache and depends in ctx.cache:
-                        kwargs[name] = ctx.cache.get(depends)
-                        continue
+                        actual = ctx.cache.get(depends)
+                    else:
+                        actual = await depends(event, executor)
+                        ctx.cache[depends] = actual
+                elif param.annotation is Event:
+                    actual = event
 
-                    res = await depends(event, executor)
-                    kwargs[name] = res
-                    ctx.cache[depends] = res
-                    continue
-
-                if param.annotation is Event:
-                    args.append(event)
-                    continue
-
-                args.append(None)
+                if param.kind == Parameter.KEYWORD_ONLY:
+                    kwargs[name] = actual
+                else:
+                    args.append(actual)
             if self.__is_coro:
                 return await self.__fn(*args, **kwargs)
             else:

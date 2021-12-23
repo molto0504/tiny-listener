@@ -38,7 +38,7 @@ class TestHookDepends(TestCase):
         def my_dep():
             raise ValueError()
 
-        def normal_func(*, _=Depends(my_dep)):
+        def normal_func(_=Depends(my_dep)):
             pass
 
         dep = Depends(fn=normal_func)
@@ -50,7 +50,7 @@ class TestHookDepends(TestCase):
             assert event is self.fake_event
             return ...
 
-        def fn(event: Event, *, foo=Depends(my_dep)):
+        def fn(event: Event, foo=Depends(my_dep)):
             assert event is self.fake_event
             assert foo is ...
 
@@ -61,7 +61,7 @@ class TestHookDepends(TestCase):
         async def my_dep():
             raise ValueError()
 
-        async def fn(*, _=Depends(my_dep)):
+        async def fn(_=Depends(my_dep)):
             pass
 
         dep = Depends(fn=fn)
@@ -73,7 +73,7 @@ class TestHookDepends(TestCase):
             assert event is self.fake_event
             return ...
 
-        async def fn(event: Event, *, foo=Depends(my_dep)):
+        async def fn(event: Event, foo=Depends(my_dep)):
             assert event is self.fake_event
             assert foo is ...
 
@@ -81,9 +81,19 @@ class TestHookDepends(TestCase):
         self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
 
     def test_signature(self):
-        def fn(event_1: Event, event_2: Event, field_1, *, field_2=None):
+        async def my_dep():
+            return ...
+
+        def fn(event_1: Event,
+               event_2: Event,
+               field_1,
+               dep_1=Depends(my_dep),
+               *,
+               field_2=None,
+               dep_2=Depends(my_dep)):
             assert event_1 is event_2 is self.fake_event
             assert field_1 is field_2 is None
+            assert dep_1 is dep_2 is ...
 
         dep = Depends(fn=fn)
         self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
@@ -96,7 +106,7 @@ class TestHookDepends(TestCase):
             seq += 1
             return seq
 
-        def fn(*, dep_1=Depends(my_dep, use_cache=True), dep_2=Depends(my_dep, use_cache=True)):
+        def fn(dep_1=Depends(my_dep, use_cache=True), dep_2=Depends(my_dep, use_cache=True)):
             assert dep_1 == dep_2 == 1
 
         dep = Depends(fn=fn)
@@ -110,7 +120,7 @@ class TestHookDepends(TestCase):
             seq += 1
             return seq
 
-        def fn(*, dep_1=Depends(my_dep, use_cache=False), dep_2=Depends(my_dep, use_cache=False)):
+        def fn(dep_1=Depends(my_dep, use_cache=False), dep_2=Depends(my_dep, use_cache=False)):
             assert dep_1 == 1
             assert dep_2 == 2
 
@@ -124,7 +134,7 @@ class TestHookDepends(TestCase):
         async def get_bar():
             return "bar"
 
-        def fn(*, foo: str = Depends(get_foo), bar: str = Depends(get_bar)):
+        def fn(foo: str = Depends(get_foo), bar: str = Depends(get_bar)):
             assert foo == "foo"
             assert bar == "bar"
 
