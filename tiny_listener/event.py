@@ -17,17 +17,17 @@ class Event:
                  timeout: Optional[float] = None,
                  data: Optional[Dict] = None) -> None:
         self.name = name
-        self.route = route
         self.timeout: Optional[float] = timeout
         self.data = data or {}
         self.params: Dict[str, Any] = {}
+        self.error: Optional[BaseException] = None
+        self.__route = route
         self.__ctx = weakref.ref(ctx)
         self.__done = asyncio.Event()
-        self.error: Optional[BaseException] = None
 
-    async def __call__(self):
-        pass
-
+    @property
+    def route(self) -> 'Route':
+        return self.__route
 
     @property
     def ctx(self) -> 'Context':
@@ -53,6 +53,9 @@ class Event:
         :raises: asyncio.futures.TimeoutError
         """
         await asyncio.wait_for(self.__done.wait(), timeout)
+
+    async def __call__(self, executor: Any):
+        return await self.route.hook(self, executor)
 
     def __repr__(self) -> str:
         return "{}(name={}, route={}, data={})".format(self.__class__.__name__,
