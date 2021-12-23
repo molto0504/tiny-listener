@@ -142,7 +142,7 @@ class Listener:
         loop.run_forever()
 
     def on_event(self,
-                 path: str,
+                 path: str = "{_:path}",
                  after: Union[None, str, List[str]] = None,
                  **kwargs: Any) -> Callable[[Hook], None]:
         def _decorator(fn: Hook) -> None:
