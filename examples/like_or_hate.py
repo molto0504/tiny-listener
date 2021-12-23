@@ -10,8 +10,7 @@
     ✖ you
 """
 
-
-from tiny_listener import Listener, Event
+from tiny_listener import Event, Listener
 
 
 class App(Listener):
@@ -32,6 +31,6 @@ async def like(event: Event):
     print(f"✔ {event.params['things']}")
 
 
-@app.on_event("I hate {things}.", parents=["I like*"])
+@app.on_event("I hate {things}.", after=["I like*"])
 async def hate(event: Event):
     print(f"✖ {event.params['things']}")

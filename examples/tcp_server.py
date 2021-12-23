@@ -5,7 +5,6 @@
     b'Hello, World!'
 """
 
-
 import asyncio
 
 from tiny_listener import Listener
@@ -27,10 +26,11 @@ async def _():
     async def handler(reader, _):
         while True:
             print(await reader.read(255))
+
     await asyncio.start_server(handler, *ADDRESS)
 
 
-@app.on_event("run client", parents=["run server"])
+@app.on_event("run client", after=["run server"])
 async def _():
     reader, writer = await asyncio.open_connection(*ADDRESS)
     while True:

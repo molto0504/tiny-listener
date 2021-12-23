@@ -39,8 +39,8 @@ class Event:
         return self.ctx.listener
 
     @property
-    def parents(self) -> Set['Event']:
-        return set(chain(*(self.ctx.get_events(pat) for pat in self.route.parents)))
+    def after(self) -> Set['Event']:
+        return set(chain(*(self.ctx.get_events(pat) for pat in self.route.after)))
 
     @property
     def is_done(self) -> bool:

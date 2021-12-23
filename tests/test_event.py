@@ -17,7 +17,7 @@ def route_staff_2():
 
 @pytest.fixture()
 def route_final():
-    return Route(path="/final", fn=lambda: ..., parents=["/staff_.*"])
+    return Route(path="/final", fn=lambda: ..., after=["/staff_.*"])
 
 
 @pytest.fixture()
@@ -46,12 +46,12 @@ def test_ok(route_final, app):
     assert event.route is route_final
     assert event.ctx is ctx
     assert event.listener is app
-    assert event.parents == set()
+    assert event.after == set()
     assert event.is_done is False
 
 
-def test_parents(app, route_final, route_staff_1, route_staff_2):
-    ctx = app.new_ctx("test_parents")
+def test_after(app, route_final, route_staff_1, route_staff_2):
+    ctx = app.new_ctx("test_after")
     event_final = Event(name="/final",
                         ctx=ctx,
                         route=route_final)
@@ -63,13 +63,13 @@ def test_parents(app, route_final, route_staff_1, route_staff_2):
                           route=route_staff_2)
 
     ctx.add_event(event_final)
-    assert event_final.parents == set()
+    assert event_final.after == set()
 
     ctx.add_event(event_staff_1)
-    assert event_final.parents == {event_staff_1}
+    assert event_final.after == {event_staff_1}
 
     ctx.add_event(event_staff_2)
-    assert event_final.parents == {event_staff_1, event_staff_2}
+    assert event_final.after == {event_staff_1, event_staff_2}
 
 
 @pytest.mark.asyncio

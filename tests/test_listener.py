@@ -209,7 +209,7 @@
 # #     @app.do("/step/1")
 # #     async def f(): await asyncio.sleep(10)
 # #
-# #     @app.do("/step/2", parents=["/step/1"])
+# #     @app.do("/step/2", after=["/step/1"])
 # #     async def f(): ...
 # #
 # #     @app.error_raise(asyncio.TimeoutError)

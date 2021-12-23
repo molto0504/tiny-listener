@@ -7,11 +7,10 @@
 try open the link on your browser: http://127.0.0.1:8000/user/1
 """
 
-
 from asyncio import start_server
 from typing import Dict
 
-from tiny_listener import Listener, Depends, RouteNotFound, Event
+from tiny_listener import Depends, Event, Listener, RouteNotFound
 
 
 class App(Listener):

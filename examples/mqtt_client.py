@@ -8,12 +8,11 @@
     Power handler: 002 => bytearray(b'POWER 30%')
 """
 
-
 from hbmqtt.client import MQTTClient
 from hbmqtt.mqtt.constants import QOS_0
 from hbmqtt.mqtt.publish import PublishPacket
 
-from tiny_listener import Listener, Event
+from tiny_listener import Event, Listener
 
 
 class App(Listener):

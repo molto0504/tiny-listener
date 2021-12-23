@@ -14,6 +14,6 @@ __all__ = ["__version__",
            "Context", "Scope",
            "Event",
            "Depends", "Hook", "HookFunc",
-           "ContextNotFound", "Listener",  "RouteNotFound",
+           "ContextNotFound", "Listener", "RouteNotFound",
            "Params", "Route", "RouteError", "compile_path",
            "import_from_string"]

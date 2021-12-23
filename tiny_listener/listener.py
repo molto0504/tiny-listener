@@ -101,7 +101,7 @@ class Listener:
 
         async def _fire():
             try:
-                [await evt.wait_until_done(evt.timeout) for evt in event.parents]
+                [await evt.wait_until_done(evt.timeout) for evt in event.after]
                 # [await fn(event) for fn in self._pre_do]
                 await event(event)
                 # [await fn(event) for fn in self._post_do]
@@ -143,12 +143,12 @@ class Listener:
 
     def on_event(self,
                  path: str,
-                 parents: Union[None, List[str], Callable[[Context], List[str]]] = None,
+                 after: Union[None, str, List[str]] = None,
                  **kwargs: Any) -> Callable[[Hook], None]:
         def _decorator(fn: Hook) -> None:
             self.routes.append(Route(path=path,
                                      fn=fn,
-                                     parents=parents or [],
+                                     after=after or [],
                                      opts=kwargs))
 
         return _decorator

@@ -24,13 +24,13 @@ class TestRoute(TestCase):
         self.handler = f
 
     def test_ok(self):
-        route = Route(path="/user/bob", fn=self.handler, parents=["/user/{name}"], opts={"foo": "bar"})
+        route = Route(path="/user/bob", fn=self.handler, after=["/user/{name}"], opts={"foo": "bar"})
         self.assertEqual("/user/bob", route.path)
         self.assertEqual({}, route.convertors)
         self.assertEqual({"foo": "bar"}, route.opts)
         self.assertEqual({}, route.match("/user/bob"))
         self.assertIsNone(route.match("/user"))
-        self.assertEqual(["/user/{name}"], route.parents)
+        self.assertEqual(["/user/{name}"], route.after)
 
     def test_convertor_str(self):
         route = Route(path="/user/{name}", fn=self.handler)
