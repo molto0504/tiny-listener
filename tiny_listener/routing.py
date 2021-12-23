@@ -41,9 +41,8 @@ class Route:
         self.path_regex, self.convertors = compile_path(path)
         self.opts: Dict[str, Any] = opts or {}
         self.hook = Hook(fn)
-        if isinstance(after, str):
-            after = [after]
-        self.after: List[str] = after or []
+        after = [after] if isinstance(after, str) else after
+        self.after: List[str] = [after] if isinstance(after, str) else after or []
 
     def match(self, name: str) -> Optional[Params]:
         match = self.path_regex.match(name)
