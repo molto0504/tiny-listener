@@ -6,27 +6,27 @@ from tiny_listener import Event, Listener, Route
 
 
 @pytest.fixture()
-def route_staff_1():
-    return Route(path="/staff_1", fn=lambda: ...)
+def route_stuff_1():
+    return Route(path="/stuff_1", fn=lambda: ...)
 
 
 @pytest.fixture()
-def route_staff_2():
-    return Route(path="/staff_2", fn=lambda: ...)
+def route_stuff_2():
+    return Route(path="/stuff_2", fn=lambda: ...)
 
 
 @pytest.fixture()
 def route_final():
-    return Route(path="/final", fn=lambda: ..., after=["/staff_.*"])
+    return Route(path="/final", fn=lambda: ..., after=["/stuff_.*"])
 
 
 @pytest.fixture()
-def app(route_final, route_staff_1, route_staff_2):
+def app(route_final, route_stuff_1, route_stuff_2):
     class _App(Listener):
         async def listen(self, *_): ...
 
     app = _App()
-    app.routes = [route_final, route_staff_1, route_staff_2]
+    app.routes = [route_final, route_stuff_1, route_stuff_2]
     return app
 
 
@@ -50,26 +50,26 @@ def test_ok(route_final, app):
     assert event.is_done is False
 
 
-def test_after(app, route_final, route_staff_1, route_staff_2):
+def test_after(app, route_final, route_stuff_1, route_stuff_2):
     ctx = app.new_ctx("test_after")
     event_final = Event(name="/final",
                         ctx=ctx,
                         route=route_final)
-    event_staff_1 = Event(name="/staff_1",
+    event_stuff_1 = Event(name="/stuff_1",
                           ctx=ctx,
-                          route=route_staff_1)
-    event_staff_2 = Event(name="/staff_2",
+                          route=route_stuff_1)
+    event_stuff_2 = Event(name="/stuff_2",
                           ctx=ctx,
-                          route=route_staff_2)
+                          route=route_stuff_2)
 
     ctx.add_event(event_final)
     assert event_final.after == set()
 
-    ctx.add_event(event_staff_1)
-    assert event_final.after == {event_staff_1}
+    ctx.add_event(event_stuff_1)
+    assert event_final.after == {event_stuff_1}
 
-    ctx.add_event(event_staff_2)
-    assert event_final.after == {event_staff_1, event_staff_2}
+    ctx.add_event(event_stuff_2)
+    assert event_final.after == {event_stuff_1, event_stuff_2}
 
 
 @pytest.mark.asyncio
