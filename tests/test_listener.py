@@ -1,9 +1,88 @@
-# import asyncio
-# import pytest
-#
+import asyncio
+import pytest
+from unittest import TestCase
+
+from tiny_listener import Listener, ContextNotFound, Route, RouteNotFound
 # from tiny_listener import Listener, wrap_hook, Context, Event, Params, Depends, ContextNotFound, RouteNotFound
-#
-#
+
+
+class App(Listener):
+    async def listen(self):
+        pass
+
+
+class TestListener(TestCase):
+    def test_ok(self):
+        app = App()
+        self.assertEqual(app.ctxs, {})
+        self.assertEqual(app.routes, [])
+
+    def test_ctxs(self):
+        app = App()
+        self.assertEqual(app.ctxs, {})
+        # create ctx
+        ctx = app.new_ctx("test_ctxs")
+        self.assertEqual(app.ctxs, {"test_ctxs": ctx})
+        # create ctx already exist
+        ctx = app.new_ctx("test_ctxs")
+        self.assertEqual(app.ctxs, {"test_ctxs": ctx})
+        # get ctx
+        self.assertIs(app.get_ctx("test_ctxs"), ctx)
+        # get ctx does not exist
+        with pytest.raises(ContextNotFound):
+            app.get_ctx("_not_exit_")
+
+    def test_decorator_on_event(self):
+        app = App()
+
+        @app.on_event("/foo", after="/...", cfg=...)
+        def _(): pass
+
+        self.assertEqual(len(app.routes), 1)
+        route = app.routes[0]
+        self.assertEqual(route.path, "/foo")
+        self.assertEqual(route.opts, {"cfg": ...})
+        self.assertEqual(route.after, ["/..."])
+
+    def test_match(self):
+        app = App()
+
+        route_user_list = Route("/users", fn=lambda: ...)
+        route_user_detail = Route("/user/{name}", fn=lambda: ...)
+        app.routes = [route_user_detail, route_user_list]
+
+        route, params = app.match_route("/users")
+        self.assertIs(route, route_user_list)
+        self.assertEqual(params, {})
+
+        route, params = app.match_route("/user/bob")
+        self.assertIs(route, route_user_detail)
+        self.assertIn("name", params)
+
+        with pytest.raises(RouteNotFound):
+            app.match_route("/_not_exist_")
+
+    def test_decorator_hooks(self):
+        app = App()
+
+        @app.startup
+        def _(): ...
+
+        @app.shutdown
+        def _(): ...
+
+        @app.before_event
+        def _(): ...
+
+        @app.after_event
+        def _(): ...
+
+        @app.error_handler(ValueError)
+        def _(): ...
+
+        # TODO enh
+
+
 # @pytest.fixture()
 # def app():
 #     class App(Listener):

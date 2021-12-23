@@ -26,6 +26,9 @@ class Listener:
         self.__middleware_after_event: List[Hook] = []
         self.__error_handlers: List[Tuple[Type[BaseException], Hook]] = []
 
+    async def listen(self):
+        raise NotImplementedError()
+
     def new_ctx(self,
                 cid: str = "__global__",
                 scope: Optional[Dict[str, Any]] = None) -> Context:
@@ -45,24 +48,15 @@ class Listener:
         except KeyError:
             raise ContextNotFound(f"Context `{cid}` not found")
 
-    def exit(self) -> None:
-        """Override this method to change how the app exit."""
-        loop = asyncio.get_event_loop()
-        loop.stop()
-        for fn in self.__shutdown:
-            loop.run_until_complete(fn())
-        sys.exit()
-
     def on_event(self,
                  path: str = "{_:path}",
                  after: Union[None, str, List[str]] = None,
-                 **kwargs: Any) -> Callable[[Hook], None]:
+                 **opts: Any) -> Callable[[Hook], None]:
         def _decorator(fn: Hook) -> None:
             self.routes.append(Route(path=path,
                                      fn=fn,
                                      after=after or [],
-                                     opts=kwargs))
-
+                                     opts=opts))
         return _decorator
 
     def startup(self, fn: Callable) -> Callable:
@@ -128,8 +122,13 @@ class Listener:
 
         return asyncio.get_event_loop().create_task(_fire())
 
-    async def listen(self):
-        raise NotImplementedError()
+    def exit(self) -> None:
+        """Override this method to change how the app exit."""
+        loop = asyncio.get_event_loop()
+        loop.stop()
+        for fn in self.__shutdown:
+            loop.run_until_complete(fn())
+        sys.exit()
 
     def set_event_loop(self):
         """Override this method to change default event loop"""
