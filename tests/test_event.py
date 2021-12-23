@@ -24,6 +24,7 @@ def route_final():
 def app(route_final, route_staff_1, route_staff_2):
     class _App(Listener):
         async def listen(self, *_): ...
+
     app = _App()
     app.routes = [route_final, route_staff_1, route_staff_2]
     return app

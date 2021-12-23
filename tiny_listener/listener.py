@@ -6,8 +6,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from typing_extensions import Protocol
 
 from .context import Context
-from .dependant import Hook
-from .routing import Route, Params
+from .hook import Hook
+from .routing import Params, Route
 
 
 class Fire(Protocol):
@@ -59,12 +59,6 @@ class Listener:
     def get_ctx(self, cid: str) -> Context:
         try:
             return self.ctxs[cid]
-        except KeyError:
-            raise ContextNotFound(f"Context `{cid}` not found")
-
-    def drop_ctx(self, cid: str) -> 'Context':
-        try:
-            return self.ctxs.pop(cid)
         except KeyError:
             raise ContextNotFound(f"Context `{cid}` not found")
 

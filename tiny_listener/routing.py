@@ -2,7 +2,7 @@ import re
 import uuid
 from typing import Any, AnyStr, Callable, Dict, List, NamedTuple, Optional, Pattern, Tuple
 
-from .dependant import Hook
+from .hook import Hook
 
 
 class Convertor(NamedTuple):

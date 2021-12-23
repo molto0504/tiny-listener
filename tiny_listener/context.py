@@ -5,7 +5,7 @@ from typing import Any, Coroutine, Dict, List, Optional, TYPE_CHECKING
 from .event import Event
 
 if TYPE_CHECKING:
-    from .dependant import Depends
+    from .hook import Depends
     from .listener import Listener
     from .routing import Route
 
