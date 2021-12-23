@@ -1,7 +1,7 @@
 """
 :Example:
 
-    >>> tiny-listener mqtt_client:app
+    >>> tiny-listener http_server:app
     Run http server on :8000
 
 try open the link on your browser: http://127.0.0.1:8000/user/1
@@ -11,6 +11,8 @@ from asyncio import start_server
 from typing import Dict
 
 from tiny_listener import Depends, Event, Listener, RouteNotFound
+
+PORT = 8000
 
 
 class App(Listener):
@@ -27,8 +29,8 @@ class App(Listener):
                 print(f"REQUEST INFO | {method} | {path}")
 
     async def listen(self):
-        await start_server(self.handler, host="0.0.0.0", port=8000)
-        print("Run http server on localhost:8000")
+        await start_server(self.handler, host="0.0.0.0", port=PORT)
+        print(f"Run http server on localhost:{PORT}")
 
 
 app = App()
