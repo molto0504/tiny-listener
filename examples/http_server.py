@@ -2,62 +2,54 @@
 :Example:
 
     >>> tiny-listener mqtt_client:app
-    Run http server on :8080
+    Run http server on :8000
 
-try open the link on your browser: http://127.0.0.1:8080/user/1
+try open the link on your browser: http://127.0.0.1:8000/user/1
 """
 
 
-from asyncio import StreamReader, StreamWriter, start_server
-from typing import Callable, Dict
+from asyncio import start_server
+from typing import Dict
 
 from tiny_listener import Listener, Depends, RouteNotFound, Event
 
 
 class App(Listener):
-    async def handler(self, req: StreamReader, resp: StreamWriter) -> None:
-        line: bytes = await req.readline()
+    async def handler(self, req, resp) -> None:
+        line = await req.readline()
         if line:
             method, path, *_ = line.decode().split()
-            self.fire(f"{method.upper()}:{path}", data={"resp": resp})
-            print(f"REQUEST INFO | {method} | {path}")
+            try:
+                self.fire(f"{method.upper()}:{path}", data={"resp": resp})
+            except RouteNotFound:
+                resp.write(b"HTTP/1.1 404\n\nNot Found")
+                resp.close()
+            finally:
+                print(f"REQUEST INFO | {method} | {path}")
 
-    async def listen(self, fire: Callable[..., None]):
-        await start_server(self.handler, host="0.0.0.0", port=8080)
-        print(f"Run http server on :8080")
+    async def listen(self):
+        await start_server(self.handler, host="0.0.0.0", port=8000)
+        print("Run http server on localhost:8000")
 
 
 app = App()
 
 
-async def get_db():
+async def fake_db_table():
     return {
         "1": "Alice",
         "2": "Bob"
     }
 
 
-async def get_resp(event: Event):
-    return event.data["resp"]
-
-
-@app.error_raise(RouteNotFound)
-async def api_not_found(*, resp: StreamWriter = Depends(get_resp, use_cache=False)):
-    resp.write(b"HTTP/1.1 404\n\nNot Found")
-    resp.close()
-
-
 @app.on_event("GET:/user/{user_id}")
-async def get_user(
-        event: Event,
-        *,
-        db: Dict = Depends(get_db),
-        resp: StreamWriter = Depends(get_resp, use_cache=False)
-):
+async def get_user(event: Event, users: Dict = Depends(fake_db_table)):
+    resp = event.data["resp"]
     user_id = event.params['user_id']
-    user = db.get(user_id)
+    user = users.get(user_id)
+
     if user:
         resp.write(f"HTTP/1.1 200\n\n{user}".encode())
     else:
-        resp.write(f"HTTP/1.1 200\n\nUser `{user_id}` does not exist".encode())
+        resp.write(f"HTTP/1.1 404\n\nUser `{user_id}` does not exist".encode())
     resp.close()

@@ -14,9 +14,9 @@ ADDRESS = ("127.0.0.1", 12345)
 
 
 class App(Listener):
-    async def listen(self, fire):
-        fire("run server")
-        fire("run client")
+    async def listen(self):
+        self.fire("run server")
+        self.fire("run client")
 
 
 app = App()

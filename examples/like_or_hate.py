@@ -15,13 +15,13 @@ from tiny_listener import Listener, Event
 
 
 class App(Listener):
-    async def listen(self, fire):
-        fire("I hate bugs.")
-        fire("I like dogs.")
-        fire("I hate summer.")
-        fire("I like winter.")
-        fire("I hate you.")
-        fire("I like you.")
+    async def listen(self):
+        self.fire("I hate bugs.")
+        self.fire("I like dogs.")
+        self.fire("I hate summer.")
+        self.fire("I like winter.")
+        self.fire("I hate you.")
+        self.fire("I like you.")
 
 
 app = App()

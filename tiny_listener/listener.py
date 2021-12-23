@@ -34,15 +34,6 @@ class Listener:
         self._post_do: List[Hook] = []
         self._error_raise: List[Tuple[Hook, Type[BaseException]]] = []
 
-    def install_signal_handlers(self) -> None:
-        if threading.current_thread() is not threading.main_thread():
-            return
-
-        loop = asyncio.get_event_loop()
-
-        for sig in [signal.SIGINT, signal.SIGTERM]:
-            loop.add_signal_handler(sig, self.exit, sig, None)
-
     def new_ctx(self,
                 cid: str = "__global__",
                 scope: Optional[Dict[str, Any]] = None) -> Context:
@@ -124,14 +115,30 @@ class Listener:
 
         return asyncio.get_event_loop().create_task(_fire())
 
-    async def listen(self, fire: Fire):
+    async def listen(self):
         raise NotImplementedError()
+
+    def install_signal_handlers(self) -> None:
+        """Override this method to install your own signal handlers ."""
+        if threading.current_thread() is not threading.main_thread():
+            return
+
+        loop = asyncio.get_event_loop()
+
+        for sig in [signal.SIGINT, signal.SIGTERM]:
+            loop.add_signal_handler(sig, self.exit, sig, None)
+
+    def set_event_loop(self):
+        """Override this method to change default event loop"""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
     def run(self) -> None:
         """Override this method to change how the app run."""
+        self.set_event_loop()
         self.install_signal_handlers()
         loop = asyncio.get_event_loop()
-        loop.create_task(self.listen(self.fire))
+        asyncio.run_coroutine_threadsafe(self.listen(), loop)
         loop.run_forever()
 
     def on_event(self,
@@ -148,36 +155,3 @@ class Listener:
 
     def __repr__(self) -> str:
         return "{}(routes_count={})".format(self.__class__.__name__, len(self.routes))
-
-# def wrap_hook(handler: Hook) -> WrappedHook:
-#     @wraps(handler)
-#     async def f(ctx: Context, event: Event, params: Params, exc: Optional[BaseException] = None) -> None:
-#         args = []
-#         kwargs = {}
-#         # TODO ignore KEYWORD_ONLY
-#         for name, param in signature(handler).parameters.items():
-#             if param.kind == Parameter.KEYWORD_ONLY:
-#                 depends = param.default
-#                 if param.default and isinstance(depends, Depends):
-#                     if depends.use_cache and ctx.cache.exist(depends):
-#                         kwargs[name] = ctx.cache.get(depends)
-#                         continue
-#                     res = await wrap_hook(depends.dependency)(ctx, event, params, None)
-#                     kwargs[name] = res
-#                     ctx.cache.set(depends, res)
-#                     continue
-#                 kwargs[name] = None
-#                 continue
-#
-#             if param.annotation is Context:
-#                 args.append(ctx)
-#             elif param.annotation is Event:
-#                 args.append(event)
-#             elif param.annotation is Params:
-#                 args.append(params)
-#             elif issubclass(param.annotation, BaseException):
-#                 args.append(exc)
-#             else:
-#                 args.append(None)
-#         return await handler(*args, **kwargs)
-#     return f

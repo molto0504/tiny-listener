@@ -19,6 +19,7 @@ CONVERTOR_TYPES: Dict[str, Convertor] = {
 }
 
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
+
 Params = Dict[str, Any]
 
 
