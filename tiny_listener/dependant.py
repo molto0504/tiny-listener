@@ -1,10 +1,9 @@
 import asyncio
-from functools import wraps, partial
+from functools import partial, wraps
 from inspect import Parameter, signature
-from typing import Any, Awaitable, Callable, Union
+from typing import Any, Awaitable, Callable
 
 from .context import Event
-
 
 HookFunc = Callable[['Event', Any], Awaitable[Any]]
 
@@ -42,6 +41,7 @@ class Hook:
             else:
                 loop = asyncio.get_event_loop()
                 return await loop.run_in_executor(executor, partial(self.__fn, *args, **kwargs))
+
         return f
 
     async def __call__(self, event: 'Event', executor: Any = None) -> None:

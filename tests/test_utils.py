@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from tiny_listener import import_from_string, Listener
+from tiny_listener import Listener, import_from_string
 
 
 class TestImportFromString(TestCase):

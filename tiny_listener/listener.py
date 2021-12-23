@@ -1,12 +1,13 @@
 import asyncio
-import threading
 import signal
-from typing import Optional, Dict, Callable, List, Any, Union, Tuple, Type
+import threading
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
 from typing_extensions import Protocol
 
 from .context import Context
+from .dependant import Hook
 from .routing import Route
-from .dependant import Hook, HookFunc
 
 
 class Fire(Protocol):
@@ -139,11 +140,11 @@ class Listener:
                                      fn=fn,
                                      parents=parents or [],
                                      opts=kwargs))
+
         return _decorator
 
     def __repr__(self) -> str:
         return "{}(routes_count={})".format(self.__class__.__name__, len(self.routes))
-
 
 # def wrap_hook(handler: Hook) -> WrappedHook:
 #     @wraps(handler)

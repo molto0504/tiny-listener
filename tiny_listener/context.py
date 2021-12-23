@@ -1,9 +1,8 @@
 import re
 import weakref
-from typing import Dict, Optional, Any, List, Coroutine, TYPE_CHECKING
+from typing import Any, Coroutine, Dict, List, Optional, TYPE_CHECKING
 
 from .event import Event
-
 
 if TYPE_CHECKING:
     from .dependant import Depends

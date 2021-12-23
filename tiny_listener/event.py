@@ -1,7 +1,7 @@
-import weakref
 import asyncio
-from typing import Dict, Optional, Any, Set, TYPE_CHECKING
+import weakref
 from itertools import chain
+from typing import Any, Dict, Optional, Set, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .listener import Listener

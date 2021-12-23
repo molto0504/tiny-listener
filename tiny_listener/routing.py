@@ -1,11 +1,8 @@
 import re
 import uuid
-from typing import Optional, Dict, Callable, NamedTuple, Any, Tuple, Pattern, Union, List, TYPE_CHECKING, AnyStr
+from typing import Any, AnyStr, Callable, Dict, List, NamedTuple, Optional, Pattern, Tuple
 
 from .dependant import Hook
-
-if TYPE_CHECKING:
-    from event import Event
 
 
 class Convertor(NamedTuple):
@@ -21,7 +18,6 @@ CONVERTOR_TYPES: Dict[str, Convertor] = {
     "uuid": Convertor("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", lambda x: uuid.UUID(x))
 }
 
-
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
 
 
@@ -33,6 +29,7 @@ class Route:
     """
     :raises: RouteError
     """
+
     def __init__(self,
                  path: str,
                  fn: Callable,

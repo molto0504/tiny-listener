@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pytest
 
-from tiny_listener.routing import Route, compile_path, CONVERTOR_TYPES, RouteError
+from tiny_listener.routing import CONVERTOR_TYPES, Route, RouteError, compile_path
 
 
 def test_compile_path():
@@ -20,6 +20,7 @@ class TestRoute(TestCase):
     def setUp(self) -> None:
         async def f():
             return
+
         self.handler = f
 
     def test_ok(self):

@@ -1,4 +1,5 @@
 import asyncio
+
 import pytest
 
 from tiny_listener import Context, Listener
@@ -8,6 +9,7 @@ from tiny_listener import Context, Listener
 def app():
     class App(Listener):
         async def listen(self, _): ...
+
     app = App()
 
     @app.on_event(path="/thing/{uid}")
