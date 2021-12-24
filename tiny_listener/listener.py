@@ -108,7 +108,7 @@ class Listener:
             try:
                 [await evt.wait_until_done(evt.timeout) for evt in event.after]
                 [await fn(event) for fn in self.__middleware_before_event]
-                await event(event)
+                await event()
                 [await fn(event) for fn in self.__middleware_after_event]
             except BaseException as e:
                 event.error = e
@@ -122,23 +122,28 @@ class Listener:
 
         return asyncio.get_event_loop().create_task(_fire())
 
-    def exit(self) -> None:
-        """Override this method to change how the app exit."""
+    def stop(self):
         loop = asyncio.get_event_loop()
         loop.stop()
+
+    def exit(self) -> None:
+        """Override this method to change how the app exit."""
+        self.stop()
+        loop = asyncio.get_event_loop()
         for fn in self.__shutdown:
             loop.run_until_complete(fn())
         sys.exit()
 
-    def set_event_loop(self):
+    def set_event_loop(self, loop: Optional[asyncio.BaseEventLoop] = None) -> asyncio.BaseEventLoop:
         """Override this method to change default event loop"""
-        loop = asyncio.new_event_loop()
+        if loop is None:
+            loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        return loop
 
     def run(self) -> None:
         """Override this method to change how the app run."""
-        self.set_event_loop()
-        loop = asyncio.get_event_loop()
+        loop = self.set_event_loop()
         for fn in self.__startup:
             loop.run_until_complete(fn())
         asyncio.run_coroutine_threadsafe(self.listen(), loop)
