@@ -1,5 +1,5 @@
-import sys
 import asyncio
+import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, Awaitable
 
 from .context import Context
@@ -57,6 +57,7 @@ class Listener:
                                      fn=fn,
                                      after=after or [],
                                      opts=opts))
+
         return _decorator
 
     def startup(self, fn: Callable) -> Callable:
@@ -79,6 +80,7 @@ class Listener:
         def f(fn: Callable) -> Callable:
             self.__error_handlers.append((exc, Hook(fn)))
             return fn
+
         return f
 
     def match_route(self, name: str) -> Tuple[Route, Params]:

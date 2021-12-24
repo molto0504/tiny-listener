@@ -1,5 +1,6 @@
-import pytest
 from unittest import TestCase
+
+import pytest
 
 from tiny_listener import Listener, ContextNotFound, Route, RouteNotFound
 

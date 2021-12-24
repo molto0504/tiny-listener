@@ -132,6 +132,7 @@ dmypy.json
 
 # pyevent
 .idea/
+.DS_Store
 .tags
 .tmp*
 tmp*

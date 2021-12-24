@@ -6,10 +6,9 @@ import tiny_listener
 
 
 def show_version(ctx, _, value) -> None:
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo(f"tiny-listener {tiny_listener.__version__}")
-    ctx.exit()
+    if value and not ctx.resilient_parsing:
+        click.echo(f"tiny-listener {tiny_listener.__version__}")
+        ctx.exit()
 
 
 @click.command()
