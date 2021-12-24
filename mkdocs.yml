@@ -1,0 +1,20 @@
+site_name: Tiny-listener
+site_description: A lightweight event framework.
+repo_name: molto0504/tiny-listener
+repo_url: https://github.com/molto0504/tiny-listener
+
+theme:
+  name: "material"
+
+nav:
+  - Introduction: "index.md"
+  - HTTP listener: "http-listener.md"
+  - MQTT listener: "mqtt-listener.md"
+  - TCP listener: "tcp-listener.md"
+
+markdown_extensions:
+  - admonition
+  - codehilite:
+      css_class: highlight
+  - toc:
+      permalink: true
