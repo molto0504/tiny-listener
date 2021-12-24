@@ -1,37 +1,85 @@
-## Welcome to GitHub Pages
+# Tiny-listener
 
-You can use the [editor on GitHub](https://github.com/molto0504/tiny-listener/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Tiny-listener is a lightweight event framework with Python 3.6+
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+[中文](README-CN.md) / [English](README.md)
 
-### Markdown
+## Requirements
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+Python 3.6+
 
-```markdown
-Syntax highlighted code block
+## Installation
 
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```shell
+$ pip install tiny-listener
 ```
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
+## Why use tiny-listener:
 
-### Jekyll Themes
+- ✔ Pure Python, tiny install pack
+- ✔ Lighting-fast, based on native coroutine
+- ✔ Easy to use
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/molto0504/tiny-listener/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+## How it works:
 
-### Support or Contact
+1. Write your event handler, such as:
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+```python
+@app.on_event("emergency")
+def plan_B():
+    # do something
+    ...
+
+@app.on_event()
+def plan_A():
+    # do something
+    ...
+```
+
+2. Keep listening (e.g. port, quene ...) until something happen, such as:
+
+```python
+async def listen(self):
+   while True:
+       msg: str = await queue.get()  # msg may be "emergency" or some other status
+       self.fire(msg)  # fire event
+```
+
+3. Tiny-listener will dispatch event automatically:
+
+   - Normally, when listener receive a `msg`, `plan_A` will be called by default.
+   - If `msg` is `emergency` then `plan_B` will be called instead of `plan_A`.
+
+## Usage
+
+**example.py**
+
+```python
+from tiny_listener import Listener, Event
+
+class App(Listener):
+    async def listen(self):
+        """listen event"""
+        self.fire("Say hi to Alice")
+        self.fire("Say hi to Bob")
+        self.fire("Say hi to Carol")
+
+        
+app = App()
+
+
+@app.on_event("Say hi to {name}")
+async def say_hi(event: Event):
+    """handle event"""
+    print("Hi,", event.params["name"])
+
+```
+
+Run application using tiny-listener command:
+
+```shell
+$ tiny-listener example:app
+>>> Hi, Alice
+>>> Hi, Bob
+>>> Hi, Carol
+```
