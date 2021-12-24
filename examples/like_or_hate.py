@@ -10,28 +10,27 @@
     ✖ you
 """
 
-
-from tiny_listener import Listener, Params
+from tiny_listener import Event, Listener
 
 
 class App(Listener):
-    async def listen(self, fire):
-        fire("I hate bugs.")
-        fire("I like dogs.")
-        fire("I hate summer.")
-        fire("I like winter.")
-        fire("I hate you.")
-        fire("I like you.")
+    async def listen(self):
+        self.fire("I hate bugs.")
+        self.fire("I like dogs.")
+        self.fire("I hate summer.")
+        self.fire("I like winter.")
+        self.fire("I hate you.")
+        self.fire("I like you.")
 
 
 app = App()
 
 
-@app.do("I like {things}.")
-async def like(param: Params):
-    print(f"✔ {param['things']}")
+@app.on_event("I like {things}.")
+async def like(event: Event):
+    print(f"✔ {event.params['things']}")
 
 
-@app.do("I hate {things}.", parents=["I like*"])
-async def hate(param: Params):
-    print(f"✖ {param['things']}")
+@app.on_event("I hate {things}.", after=["I like*"])
+async def hate(event: Event):
+    print(f"✖ {event.params['things']}")

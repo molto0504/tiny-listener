@@ -1,82 +1,96 @@
+import asyncio
+
 import pytest
 
-from tiny_listener import Context, Listener, Event
+from tiny_listener import Event, Listener, Route
 
 
 @pytest.fixture()
-def app():
-    class App(Listener):
-        async def listen(self, _): ...
-    app = App()
+def route_stuff_1():
+    return Route(path="/stuff_1", fn=lambda: ...)
 
-    @app.do(path="/thing")
-    async def f(): ...
 
+@pytest.fixture()
+def route_stuff_2():
+    return Route(path="/stuff_2", fn=lambda: ...)
+
+
+@pytest.fixture()
+def route_final():
+    return Route(path="/final", fn=lambda: ..., after=["/stuff_.*"])
+
+
+@pytest.fixture()
+def app(route_final, route_stuff_1, route_stuff_2):
+    class _App(Listener):
+        async def listen(self, *_): ...
+
+    app = _App()
+    app.routes = [route_final, route_stuff_1, route_stuff_2]
     return app
 
 
-@pytest.fixture()
-def ctx(app):
-    return Context(listener=app, scope={"scope_1": "foo", "scope_2": "bar"})
-
-
-def test_ok(ctx):
-    route = ctx.listener.routes[0]
-    event = Event(name="/thing", ctx=ctx, route=route)
+def test_ok(route_final, app):
+    ctx = app.new_ctx("test_ok")
+    event = Event(name="/final",
+                  ctx=ctx,
+                  route=route_final,
+                  timeout=10,
+                  data={"foo": ...},
+                  params={"bar": ...})
+    assert event.name == "/final"
+    assert event.timeout == 10
+    assert event.data == {"foo": ...}
+    assert event.params == {"bar": ...}
+    assert event.error is None
+    assert event.route is route_final
     assert event.ctx is ctx
-    assert event.route is route
-    assert event.name == "/thing"
-    assert event.data == {}
-    assert event.parents == set()
+    assert event.listener is app
+    assert event.after == set()
     assert event.is_done is False
 
 
-def test_ok_from_ctx(ctx):
-    route = ctx.listener.routes[0]
-    event = ctx.new_event(name="/thing", route=route, data={"data_1": "foo"})
-    assert event.ctx is ctx
-    assert event.route is route
-    assert event.name == "/thing"
-    assert event.data == {"data_1": "foo"}
-    assert event.is_done is False
-    assert event.parents == set()
+def test_after(app, route_final, route_stuff_1, route_stuff_2):
+    ctx = app.new_ctx("test_after")
+    event_final = Event(name="/final",
+                        ctx=ctx,
+                        route=route_final)
+    event_stuff_1 = Event(name="/stuff_1",
+                          ctx=ctx,
+                          route=route_stuff_1)
+    event_stuff_2 = Event(name="/stuff_2",
+                          ctx=ctx,
+                          route=route_stuff_2)
+
+    ctx.add_event(event_final)
+    assert event_final.after == set()
+
+    ctx.add_event(event_stuff_1)
+    assert event_final.after == {event_stuff_1}
+
+    ctx.add_event(event_stuff_2)
+    assert event_final.after == {event_stuff_1, event_stuff_2}
 
 
 @pytest.mark.asyncio
-async def test_done(event_loop, ctx):
-    event = Event(name="/thing", ctx=ctx, route=ctx.listener.routes[0])
+async def test_done(event_loop, app, route_final):
+    event = Event(name="", ctx=app.new_ctx("test_done"), route=route_final)
     assert event.is_done is False
-
     event_loop.call_later(0.1, lambda: event.done())
-    await event.wait()
+    await event.wait_until_done()
     assert event.is_done is True
 
 
-@pytest.fixture()
-def ex_ctx(ctx):
-    @ctx.listener.do(path="/user/alice")
-    async def f(): ...
-
-    @ctx.listener.do(path="/user/bob")
-    async def f(): ...
-
-    return ctx
+@pytest.mark.asyncio
+async def test_timeout(event_loop, app, route_final):
+    event = Event(name="/final", ctx=app.new_ctx("test_timeout"), route=route_final)
+    assert event.is_done is False
+    with pytest.raises(asyncio.futures.TimeoutError):
+        await event.wait_until_done(timeout=0.1)
+    assert event.is_done is False
 
 
-def test_parents_1(ex_ctx):
-    @ex_ctx.listener.do("/home", parents=["/user/*"])
-    async def home(): ...
-
-    event_bob = ex_ctx.new_event(name="/user/bob", route=ex_ctx.listener.routes[-2])
-    event_alice = ex_ctx.new_event(name="/user/alice", route=ex_ctx.listener.routes[-3])
-    event = ex_ctx.new_event(name="/home", route=ex_ctx.listener.routes[-1])
-    assert {event_alice, event_bob} == event.parents
-
-
-def test_parents_2(ex_ctx):
-    @ex_ctx.listener.do("/home", parents=["/user/b"])
-    async def home(): ...
-
-    event_bob = ex_ctx.new_event(name="/user/bob", route=ex_ctx.listener.routes[-2])
-    event = ex_ctx.new_event(name="/home", route=ex_ctx.listener.routes[-1])
-    assert {event_bob} == event.parents
+@pytest.mark.asyncio
+async def test_call(event_loop, app, route_final):
+    event = Event(name="/final", ctx=app.new_ctx("test_call"), route=route_final)
+    assert await event() is ...

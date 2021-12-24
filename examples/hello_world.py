@@ -2,28 +2,27 @@
 :Example:
 
     >>> tiny-listener hello_world:app
-    Hello, World!
+    Hello
+    World
 """
-
 
 from tiny_listener import Listener
 
 
 class App(Listener):
-    async def listen(self, fire):
-        fire("say hello")
-        fire("say world")
+    async def listen(self):
+        self.fire("say world")
+        self.fire("say hello")
 
 
 app = App()
 
 
-@app.do("say hello")
-async def f():
-    print("Hello", end=", ")
+@app.on_event("say hello")
+async def _():
+    print("Hello")
 
 
-@app.do("say world")
-async def f():
-    print("World!")
-
+@app.on_event("say world", after="say hello")
+async def _():
+    print("World")

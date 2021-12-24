@@ -1,223 +1,149 @@
-import asyncio
+from unittest import TestCase
+
 import pytest
 
-from tiny_listener import Listener, wrap_hook, Context, Event, Params, Depends, ContextNotFound, RouteNotFound
+from tiny_listener import Listener, ContextNotFound, Route, RouteNotFound
 
 
-@pytest.fixture()
-def app():
-    class App(Listener):
-        async def listen(self, _): ...
-    return App()
+class App(Listener):
+    async def listen(self):
+        pass
 
 
-@pytest.fixture()
-def ctx(app):
-    return Context(listener=app, cid="_ctx_id_", scope={"scope_key": "scope_val"})
+class TestListener(TestCase):
+    def test_ok(self):
+        app = App()
+        self.assertEqual(app.ctxs, {})
+        self.assertEqual(app.routes, [])
 
+    def test_ctxs(self):
+        app = App()
+        self.assertEqual(app.ctxs, {})
+        # create ctx
+        ctx = app.new_ctx("test_ctxs")
+        self.assertEqual(app.ctxs, {"test_ctxs": ctx})
+        # create ctx already exist
+        ctx = app.new_ctx("test_ctxs")
+        self.assertEqual(app.ctxs, {"test_ctxs": ctx})
+        # get ctx
+        self.assertIs(app.get_ctx("test_ctxs"), ctx)
+        # get ctx does not exist
+        with pytest.raises(ContextNotFound):
+            app.get_ctx("_not_exit_")
 
-@pytest.fixture()
-def event(ctx):
-    @ctx.listener.do(path="/user/{name}")
-    async def f(): ...
+    def test_match(self):
+        app = App()
 
-    return ctx.new_event("/event", ctx.listener.routes[0])
+        route_user_list = Route("/users", fn=lambda: ...)
+        route_user_detail = Route("/user/{name}", fn=lambda: ...)
+        app.routes = [route_user_detail, route_user_list]
 
+        route, params = app.match_route("/users")
+        self.assertIs(route, route_user_list)
+        self.assertEqual(params, {})
 
-@pytest.mark.asyncio
-async def test_wrap_hook_ok(event_loop, event):
-    async def f1(e: Event):
-        assert e is event
+        route, params = app.match_route("/user/bob")
+        self.assertIs(route, route_user_detail)
+        self.assertIn("name", params)
 
-    async def f2(arg_1, e: Event, arg_2):
-        assert arg_1 is arg_2 is None
-        assert e is event
+        with pytest.raises(RouteNotFound):
+            app.match_route("/_not_exist_")
 
-    async def f3(arg_1, e: Event, *, arg_2=None):
-        assert arg_1 is arg_2 is None
-        assert e is event
+    def test_on_event_callback(self):
+        app = App()
 
-    async def f4(*, e: Event):
-        assert e is None
+        @app.on_event("/foo", after="/...", cfg=...)
+        def _(): pass
 
-    async def f5(e_1: Event, *, e_2: Event):
-        assert e_1 is event
-        assert e_2 is None
+        self.assertEqual(len(app.routes), 1)
+        route = app.routes[0]
+        self.assertEqual(route.path, "/foo")
+        self.assertEqual(route.opts, {"cfg": ...})
+        self.assertEqual(route.after, ["/..."])
 
-    async def f6(c: Context, e: Event, p: Params):
-        assert c is event.ctx
-        assert e is event
-        assert p == {"_key_": "_val_"}
+    def test_startup_callback(self):
+        app = App()
+        step = []
 
-    async def f7(arg_1, c: Context, arg_2, e: Event, p: Params):
-        assert arg_1 is arg_2 is None
-        assert c is event.ctx
-        assert e is event
-        assert p == {"_key_": "_val_"}
+        @app.startup
+        def step_1():
+            step.append(1)
 
-    async def f8(c: Context, *, e: Event, p: Params):
-        assert c is event.ctx
-        assert e is None
-        assert p is None
+        @app.startup
+        async def step_2():
+            step.append(2)
+            app.exit()
 
-    async def get_info(e: Event, c: Context, p: Params):
-        return e, c, p
+        with pytest.raises(SystemExit):
+            app.run()
+        self.assertEqual(step, [1, 2])
 
-    async def f9(*, info=Depends(get_info)):
-        e, c, p = info
-        assert e is event
-        assert c is event.ctx
-        assert p == {"_key_": "_val_"}
+    def test_shutdown_callback(self):
+        app = App()
+        step = []
 
-    async def f10(err: BaseException):
-        assert isinstance(err, ValueError)
+        @app.shutdown
+        def step_1():
+            step.append(1)
 
-    async def f11(err: ValueError):
-        assert isinstance(err, ValueError)
+        @app.shutdown
+        def step_2():
+            step.append(2)
 
-    for hook in [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11]:
-        await wrap_hook(hook)(event.ctx, event, Params({"_key_": "_val_"}), ValueError())
-
-
-@pytest.mark.asyncio
-async def test_wrap_hook_depends_use_cache(event):
-    times = 0
-
-    async def dep():
-        nonlocal times
-        times += 1
-        return ...
-
-    async def f(e: Event, *, foo=Depends(dep), bar=Depends(dep)):
-        assert e is event
-        assert foo is ...
-        assert bar is ...
-
-    await wrap_hook(f)(event.ctx, event, Params(), None)
-    assert times == 1
-
-
-def test_new_ctx(app):
-    ctx_1 = app.new_ctx("_ctx_id_")
-    assert ctx_1.cid == "_ctx_id_"
-
-    ctx_2 = app.new_ctx("_ctx_id_")
-    assert ctx_1 is ctx_2
-
-
-def test_get_ctx(app):
-    ctx = app.new_ctx("_ctx_id_")
-    assert ctx is app.get_ctx("_ctx_id_")
-
-    with pytest.raises(ContextNotFound):
-        app.get_ctx("_not_exist_")
-
-
-def test_drop_ctx(app):
-    with pytest.raises(ContextNotFound):
-        app.drop_ctx("_ctx_id_")
-
-    ctx = app.new_ctx("_ctx_id_")
-    assert ctx is app.drop_ctx("_ctx_id_")
-
-    with pytest.raises(ContextNotFound):
-        app.get_ctx("_ctx_id_")
-
-
-def test_hook(app):
-    @app.pre_do
-    async def f(): ...
-    assert len(app._pre_do) == 1
-
-    @app.post_do
-    async def f(): ...
-    assert len(app._post_do) == 1
-
-    @app.error_raise(ValueError)
-    async def f(): ...
-    assert len(app._error_raise) == 1
-    assert app._error_raise[0][1] is ValueError
-
-
-def test_match_route(app):
-    @app.do("/root/book")
-    async def f(): ...
-
-    @app.do("/root/book/{name}")
-    async def f(): ...
-
-    route, param = app.match_route("/root/book")
-    assert route.path == "/root/book"
-    assert param == {}
-
-    route, param = app.match_route("/root/book/moon")
-    assert route.path == "/root/book/{name}"
-    assert param == {"name": "moon"}
-
-    with pytest.raises(RouteNotFound):
-        app.match_route("/_not_exist_")
-
-
-def test_fire(app):
-    @app.pre_do
-    async def f(event: Event):
-        assert event.data["seq"] == 0
-        event.data["seq"] += 1
-
-    @app.do("/something")
-    async def f(event: Event):
-        assert event.data["seq"] == 1
-        event.data["seq"] += 1
-
-    @app.post_do
-    async def f(event: Event):
-        assert event.data["seq"] == 2
-        event.data["seq"] += 1
-        raise ValueError()
-
-    @app.error_raise(BaseException)
-    async def f(event: Event, err: ValueError):
-        assert event.data["seq"] == 3
-        assert isinstance(err, ValueError)
-
-    t = app.fire("/something", data={"seq": 0})
-    asyncio.get_event_loop().run_until_complete(t)
+        with pytest.raises(SystemExit):
+            app.exit()
+        self.assertEqual(step, [1, 2])
 
 
 @pytest.mark.asyncio
-async def test_raise(event_loop, app):
-    @app.do("/something")
-    async def fn():
-        raise ValueError
+async def test_middleware_callback(event_loop):
+    app = App()
+    step = []
+
+    @app.before_event
+    def step_1():
+        step.append(1)
+
+    @app.on_event()
+    def step_2():
+        step.append(2)
+
+    @app.after_event
+    async def step_3():
+        step.append(3)
+
+    await app.fire("/go")
+    assert step == [1, 2, 3]
+
+
+@pytest.mark.asyncio
+async def test_error_handler(event_loop):
+    app = App()
+    step = []
+
+    @app.on_event()
+    async def step_1():
+        step.append(1)
+        raise ValueError(...)
+
+    @app.error_handler(ValueError)
+    async def step_2():
+        step.append(2)
+
+    await app.fire("/go")
+    assert step == [1, 2]
+
+
+@pytest.mark.asyncio
+async def test_error_raise(event_loop):
+    app = App()
+
+    @app.on_event()
+    async def _():
+        raise ValueError(...)
+
+    @app.error_handler(KeyError)
+    async def _(): ...
 
     with pytest.raises(ValueError):
-        await asyncio.gather(app.fire("/something"))
-
-
-@pytest.mark.asyncio
-async def test_exit(event_loop, app):
-    @app.do("/something")
-    async def fn(ctx: Context):
-        ctx.listener.exit()
-
-    with pytest.raises(asyncio.CancelledError):
-        await asyncio.gather(app.fire("/something"))
-
-
-@pytest.mark.asyncio
-async def test_timeout(event_loop, app):
-    @app.do("/step/1")
-    async def f(): await asyncio.sleep(10)
-
-    @app.do("/step/2", parents=["/step/1"])
-    async def f(): ...
-
-    @app.error_raise(asyncio.TimeoutError)
-    async def f(ctx: Context, err: asyncio.TimeoutError):
-        assert isinstance(err, asyncio.TimeoutError)
-        ctx.listener.exit()
-
-    t1 = app.fire("/step/1", timeout=0.3)
-    t2 = app.fire("/step/2")
-    with pytest.raises(asyncio.CancelledError):
-        await asyncio.gather(t1, t2)
+        await app.fire("/go")
