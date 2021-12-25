@@ -1,6 +1,7 @@
+import asyncio
 import re
 import weakref
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from .event import Event
 
@@ -23,7 +24,7 @@ class Context:
         self.cache: Dict[Depends, Any] = {}
         self.scope: Scope = scope or {}
         self.events: Dict[str, Event] = {}
-        self.__listener = weakref.ref(listener)
+        self.__listener: Callable[..., "Listener"] = weakref.ref(listener)  # type: ignore
 
     @property
     def listener(self) -> "Listener":
@@ -45,7 +46,7 @@ class Context:
     def new_event(
         self,
         name: str,
-        route: Optional["Route"] = None,
+        route: "Route",
         timeout: Optional[float] = None,
         data: Optional[Dict] = None,
         params: Optional[Dict[str, Any]] = None,
@@ -66,7 +67,7 @@ class Context:
 
     def fire(
         self, name: str, timeout: Optional[float] = None, data: Optional[Dict] = None
-    ) -> Coroutine or None:
+    ) -> asyncio.Task:
         return self.listener.fire(name=name, cid=self.cid, timeout=timeout, data=data)
 
     def __repr__(self) -> str:

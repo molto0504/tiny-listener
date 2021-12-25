@@ -2,7 +2,6 @@ import re
 import uuid
 from typing import (
     Any,
-    AnyStr,
     Callable,
     Dict,
     List,
@@ -58,12 +57,14 @@ class Route:
         self.opts: Dict[str, Any] = opts or {}
         self.hook = Hook(fn)
         after = [after] if isinstance(after, str) else after
-        self.after: List[str] = [after] if isinstance(after, str) else after or []
+        if isinstance(after, str):
+            after = [after]
+        self.after: List[str] = after or []
 
     def match(self, name: str) -> Optional[Params]:
         match = self.path_regex.match(name)
         if match is None:
-            return
+            return None
 
         params: Params = match.groupdict() if match else {}
         for k, v in params.items():
@@ -76,7 +77,7 @@ class Route:
         )
 
 
-def compile_path(path: str) -> Tuple[Pattern[AnyStr], Dict[str, Convertor]]:
+def compile_path(path: str) -> Tuple[Pattern[str], Dict[str, Convertor]]:
     """
 
     :Example:

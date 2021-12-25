@@ -1,7 +1,7 @@
 import asyncio
 import weakref
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set
 
 if TYPE_CHECKING:
     from .context import Context
@@ -25,7 +25,7 @@ class Event:
         self.params: Dict[str, Any] = params or {}
         self.error: Optional[BaseException] = None
         self.__route = route
-        self.__ctx = weakref.ref(ctx)
+        self.__ctx: Callable[..., "Context"] = weakref.ref(ctx)  # type: ignore
         self.__done = asyncio.Event()
 
     @property

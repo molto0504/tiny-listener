@@ -92,7 +92,7 @@ class Listener:
     def fire(
         self,
         name: str,
-        cid: Optional[str] = None,
+        cid: str = "__global__",
         timeout: Optional[float] = None,
         data: Optional[Dict] = None,
     ) -> asyncio.Task:
@@ -138,8 +138,8 @@ class Listener:
         sys.exit()
 
     def set_event_loop(
-        self, loop: Optional[asyncio.BaseEventLoop] = None
-    ) -> asyncio.BaseEventLoop:
+        self, loop: Optional[asyncio.AbstractEventLoop] = None
+    ) -> asyncio.AbstractEventLoop:
         """Override this method to change default event loop"""
         if loop is None:
             loop = asyncio.new_event_loop()
