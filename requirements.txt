@@ -11,6 +11,12 @@ pytest==6.2.5
 pytest-asyncio
 pytest-cov
 
+# Lint
+flake8>=3.8.3,<4.0.0
+isort>=5.0.6
+black==21.9b0
+mypy
+
 # Dependencies
 click>=8.0.1
 typing-extensions>=3.7.4
