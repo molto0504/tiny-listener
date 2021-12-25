@@ -51,7 +51,7 @@ class Event:
 
     async def wait_until_done(self, timeout: Optional[float] = None) -> None:
         """
-        :raises: asyncio.futures.TimeoutError
+        :raises: asyncio.TimeoutError
         """
         await asyncio.wait_for(self.__done.wait(), timeout)
 

@@ -85,7 +85,7 @@ async def test_done(event_loop, app, route_final):
 async def test_timeout(event_loop, app, route_final):
     event = Event(name="/final", ctx=app.new_ctx("test_timeout"), route=route_final)
     assert event.is_done is False
-    with pytest.raises(asyncio.futures.TimeoutError):
+    with pytest.raises(asyncio.TimeoutError):
         await event.wait_until_done(timeout=0.1)
     assert event.is_done is False
 
