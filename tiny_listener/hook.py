@@ -5,7 +5,7 @@ from typing import Any, Awaitable, Callable
 
 from .context import Event
 
-HookFunc = Callable[['Event', Any], Awaitable[Any]]
+HookFunc = Callable[["Event", Any], Awaitable[Any]]
 
 
 class Hook:
@@ -16,7 +16,7 @@ class Hook:
 
     def as_hook(self) -> HookFunc:
         @wraps(self.__fn)
-        async def f(event: 'Event', executor: Any = None) -> None:
+        async def f(event: "Event", executor: Any = None) -> None:
             args = []
             kwargs = {}
             ctx = event.ctx
@@ -40,11 +40,13 @@ class Hook:
                 return await self.__fn(*args, **kwargs)
             else:
                 loop = asyncio.get_event_loop()
-                return await loop.run_in_executor(executor, partial(self.__fn, *args, **kwargs))
+                return await loop.run_in_executor(
+                    executor, partial(self.__fn, *args, **kwargs)
+                )
 
         return f
 
-    async def __call__(self, event: 'Event', executor: Any = None) -> None:
+    async def __call__(self, event: "Event", executor: Any = None) -> None:
         return await self.__hook(event, executor)
 
     def __repr__(self) -> str:
@@ -53,13 +55,11 @@ class Hook:
     def __hash__(self) -> int:
         return hash(self.__fn)
 
-    def __eq__(self, other: 'Hook') -> bool:
+    def __eq__(self, other) -> bool:
         return hash(self) == hash(other)
 
 
 class Depends(Hook):
-    def __init__(self,
-                 fn: Callable,
-                 use_cache: bool = True) -> None:
+    def __init__(self, fn: Callable, use_cache: bool = True) -> None:
         super().__init__(fn)
         self.use_cache = use_cache

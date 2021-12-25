@@ -23,7 +23,8 @@ def route_final():
 @pytest.fixture()
 def app(route_final, route_stuff_1, route_stuff_2):
     class _App(Listener):
-        async def listen(self, *_): ...
+        async def listen(self, *_):
+            ...
 
     app = _App()
     app.routes = [route_final, route_stuff_1, route_stuff_2]
@@ -32,12 +33,14 @@ def app(route_final, route_stuff_1, route_stuff_2):
 
 def test_ok(route_final, app):
     ctx = app.new_ctx("test_ok")
-    event = Event(name="/final",
-                  ctx=ctx,
-                  route=route_final,
-                  timeout=10,
-                  data={"foo": ...},
-                  params={"bar": ...})
+    event = Event(
+        name="/final",
+        ctx=ctx,
+        route=route_final,
+        timeout=10,
+        data={"foo": ...},
+        params={"bar": ...},
+    )
     assert event.name == "/final"
     assert event.timeout == 10
     assert event.data == {"foo": ...}
@@ -52,15 +55,9 @@ def test_ok(route_final, app):
 
 def test_after(app, route_final, route_stuff_1, route_stuff_2):
     ctx = app.new_ctx("test_after")
-    event_final = Event(name="/final",
-                        ctx=ctx,
-                        route=route_final)
-    event_stuff_1 = Event(name="/stuff_1",
-                          ctx=ctx,
-                          route=route_stuff_1)
-    event_stuff_2 = Event(name="/stuff_2",
-                          ctx=ctx,
-                          route=route_stuff_2)
+    event_final = Event(name="/final", ctx=ctx, route=route_final)
+    event_stuff_1 = Event(name="/stuff_1", ctx=ctx, route=route_stuff_1)
+    event_stuff_2 = Event(name="/stuff_2", ctx=ctx, route=route_stuff_2)
 
     ctx.add_event(event_final)
     assert event_final.after == set()

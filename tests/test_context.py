@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 
 from tiny_listener import Context, Listener
@@ -8,18 +6,22 @@ from tiny_listener import Context, Listener
 @pytest.fixture()
 def app():
     class App(Listener):
-        async def listen(self): ...
+        async def listen(self):
+            ...
 
     app = App()
 
     @app.on_event(path="/thing/{uid}")
-    async def f(): ...
+    async def _():
+        ...
 
     @app.on_event(path="/user/foo")
-    async def f(): ...
+    async def _():
+        ...
 
     @app.on_event(path="/user/bar")
-    async def f(): ...
+    async def _():
+        ...
 
     return app
 
