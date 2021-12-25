@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+    types: [opened, synchronize]
 
 jobs:
   test:
@@ -28,4 +29,6 @@ jobs:
       - name: Install Dependencies
         run: pip install -r requirements.txt
       - name: Test
-        run: pytest ./tests
+        run: bash scripts/test.sh
+      - name: Upload coverage
+        uses: codecov/codecov-action@v2
