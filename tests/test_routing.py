@@ -8,7 +8,7 @@ from tiny_listener.routing import CONVERTOR_TYPES, Route, RouteError, compile_pa
 
 def test_compile_path():
     reg, convertors = compile_path("/user")
-    assert reg.pattern == r"^\/user$"
+    assert reg.pattern == "^\\/user$"
     assert convertors == {}
 
     _, convertors = compile_path("/user/{age:int}")
