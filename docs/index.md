@@ -1,10 +1,14 @@
-Tiny-listener
+<figure markdown> 
+  ![Image title](logo-light.png#only-light)
+  ![Image title](logo-dark.png#only-dark)
+  <figcaption>A lightweight event framework</figcaption>
+</figure>
+
 --- 
 
 # Introduction
 
-Tiny-listener is a lightweight event framework with Python 3.6+.
-
+Tiny-listener is a lightweight and flexible event framework.
 
 ## Requirements
 

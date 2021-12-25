@@ -3,6 +3,7 @@ site_description: A lightweight event framework.
 repo_name: molto0504/tiny-listener
 repo_url: https://github.com/molto0504/tiny-listener
 edit_uri: ""
+site_author: molto
 
 theme:
   name: "material"
@@ -25,8 +26,11 @@ nav:
   - MQTT listener: "mqtt-listener.md"
   - TCP listener: "tcp-listener.md"
 
+
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
   - codehilite:
       css_class: highlight
   - toc:
