@@ -76,6 +76,7 @@ def test_get_events(app):
     assert [] == ctx.get_events("/user/baz")
 
 
-def test_fire(app):
+@pytest.mark.asyncio
+async def test_fire(event_loop, app):
     ctx = Context(listener=app, scope={"scope_key": "scope_val"})
-    assert isinstance(ctx.fire("/thing/1"), asyncio.Task)
+    await ctx.fire("/thing/1")

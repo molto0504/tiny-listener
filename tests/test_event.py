@@ -10,7 +10,7 @@ def route_stuff_1():
     return Route(path="/stuff_1", fn=lambda: ...)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def route_stuff_2():
     return Route(path="/stuff_2", fn=lambda: ...)
 
