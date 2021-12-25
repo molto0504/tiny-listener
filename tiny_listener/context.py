@@ -1,6 +1,6 @@
 import re
 import weakref
-from typing import Any, Coroutine, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Optional
 
 from .event import Event
 

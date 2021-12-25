@@ -1,6 +1,7 @@
 import asyncio
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, Awaitable
+from typing import (Any, Awaitable, Callable, Dict, List, Optional, Tuple,
+                    Type, Union)
 
 from .context import Context
 from .hook import Hook

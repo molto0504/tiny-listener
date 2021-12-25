@@ -1,6 +1,7 @@
 import re
 import uuid
-from typing import Any, AnyStr, Callable, Dict, List, NamedTuple, Optional, Pattern, Tuple, Union
+from typing import (Any, AnyStr, Callable, Dict, List, NamedTuple, Optional,
+                    Pattern, Tuple, Union)
 
 from .hook import Hook
 

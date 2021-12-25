@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import pytest
 
-from tiny_listener import Listener, ContextNotFound, Route, RouteNotFound
+from tiny_listener import ContextNotFound, Listener, Route, RouteNotFound
 
 
 class App(Listener):

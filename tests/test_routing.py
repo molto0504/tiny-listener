@@ -3,7 +3,8 @@ from unittest import TestCase
 
 import pytest
 
-from tiny_listener.routing import CONVERTOR_TYPES, Route, RouteError, compile_path
+from tiny_listener.routing import (CONVERTOR_TYPES, Route, RouteError,
+                                   compile_path)
 
 
 def test_compile_path():

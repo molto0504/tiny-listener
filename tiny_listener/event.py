@@ -1,11 +1,11 @@
 import asyncio
 import weakref
 from itertools import chain
-from typing import Any, Dict, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 if TYPE_CHECKING:
-    from .listener import Listener
     from .context import Context
+    from .listener import Listener
     from .routing import Route
 
 
