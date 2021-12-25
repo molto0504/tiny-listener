@@ -154,7 +154,7 @@ class Listener:
         asyncio.run_coroutine_threadsafe(self.listen(), loop)
         try:
             loop.run_forever()
-        except (KeyboardInterrupt, SystemExit) as e:
+        except (KeyboardInterrupt, SystemExit):
             self.exit()
 
     def __repr__(self) -> str:
