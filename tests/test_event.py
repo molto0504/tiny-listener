@@ -5,7 +5,7 @@ import pytest
 from tiny_listener import Event, Listener, Route
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def route_stuff_1():
     return Route(path="/stuff_1", fn=lambda: ...)
 
@@ -15,12 +15,12 @@ def route_stuff_2():
     return Route(path="/stuff_2", fn=lambda: ...)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def route_final():
     return Route(path="/final", fn=lambda: ..., after=["/stuff_.*"])
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def app(route_final, route_stuff_1, route_stuff_2):
     class _App(Listener):
         async def listen(self, *_): ...

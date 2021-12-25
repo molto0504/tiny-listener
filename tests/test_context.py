@@ -5,7 +5,7 @@ import pytest
 from tiny_listener import Context, Listener
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def app():
     class App(Listener):
         async def listen(self): ...
