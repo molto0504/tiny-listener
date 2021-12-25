@@ -3,10 +3,11 @@ setuptools
 wheel
 
 # Docs
-mkdocs-material
+mkdocs==1.2.3
+mkdocs-material==8.1.3
 
 # Testing
-pytest
+pytest==6.2.5
 pytest-asyncio
 pytest-cov
 
