@@ -53,7 +53,8 @@ class TestListener(TestCase):
         app = App()
 
         @app.on_event("/foo", after="/...", cfg=...)
-        def _(): pass
+        def _():
+            pass
 
         self.assertEqual(len(app.routes), 1)
         route = app.routes[0]
@@ -143,7 +144,8 @@ async def test_error_raise(event_loop):
         raise ValueError(...)
 
     @app.error_handler(KeyError)
-    async def _(): ...
+    async def _():
+        ...
 
     with pytest.raises(ValueError):
         await app.fire("/go")

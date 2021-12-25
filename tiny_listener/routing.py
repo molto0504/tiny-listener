@@ -1,7 +1,17 @@
 import re
 import uuid
-from typing import (Any, AnyStr, Callable, Dict, List, NamedTuple, Optional,
-                    Pattern, Tuple, Union)
+from typing import (
+    Any,
+    AnyStr,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Pattern,
+    Tuple,
+    Union,
+)
 
 from .hook import Hook
 
@@ -16,7 +26,10 @@ CONVERTOR_TYPES: Dict[str, Convertor] = {
     "int": Convertor("[0-9]+", lambda s: int(s)),
     "float": Convertor("[0-9]+(.[0-9]+)?", lambda s: float(s)),
     "path": Convertor(".*", lambda s: str(s)),
-    "uuid": Convertor("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", lambda x: uuid.UUID(x))
+    "uuid": Convertor(
+        "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        lambda x: uuid.UUID(x),
+    ),
 }
 
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
@@ -33,11 +46,13 @@ class Route:
     :raises: RouteError
     """
 
-    def __init__(self,
-                 path: str,
-                 fn: Callable,
-                 opts: Optional[Dict[str, Any]] = None,
-                 after: Union[None, str, List[str]] = None):
+    def __init__(
+        self,
+        path: str,
+        fn: Callable,
+        opts: Optional[Dict[str, Any]] = None,
+        after: Union[None, str, List[str]] = None,
+    ):
         self.path = path
         self.path_regex, self.convertors = compile_path(path)
         self.opts: Dict[str, Any] = opts or {}
@@ -56,9 +71,9 @@ class Route:
         return params
 
     def __repr__(self) -> str:
-        return "{}(path={}, opts={})".format(self.__class__.__name__,
-                                             self.path,
-                                             self.opts)
+        return "{}(path={}, opts={})".format(
+            self.__class__.__name__, self.path, self.opts
+        )
 
 
 def compile_path(path: str) -> Tuple[Pattern[AnyStr], Dict[str, Convertor]]:
@@ -82,7 +97,7 @@ def compile_path(path: str) -> Tuple[Pattern[AnyStr], Dict[str, Convertor]]:
             raise RouteError(f"unknown path convertor '{convertor_type}'")
         convertor = CONVERTOR_TYPES[convertor_type]
 
-        path_regex += re.escape(path[idx: match.start()])
+        path_regex += re.escape(path[idx : match.start()])
         path_regex += f"(?P<{param_name}>{convertor.regex})"
         convertors[param_name] = convertor
         idx = match.end()

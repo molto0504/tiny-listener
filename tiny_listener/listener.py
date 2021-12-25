@@ -1,7 +1,6 @@
 import asyncio
 import sys
-from typing import (Any, Awaitable, Callable, Dict, List, Optional, Tuple,
-                    Type, Union)
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from .context import Context
 from .hook import Hook
@@ -30,9 +29,9 @@ class Listener:
     async def listen(self):
         raise NotImplementedError()
 
-    def new_ctx(self,
-                cid: str = "__global__",
-                scope: Optional[Dict[str, Any]] = None) -> Context:
+    def new_ctx(
+        self, cid: str = "__global__", scope: Optional[Dict[str, Any]] = None
+    ) -> Context:
         try:
             ctx = self.get_ctx(cid)
         except ContextNotFound:
@@ -49,15 +48,14 @@ class Listener:
         except KeyError:
             raise ContextNotFound(f"Context `{cid}` not found")
 
-    def on_event(self,
-                 path: str = "{_:path}",
-                 after: Union[None, str, List[str]] = None,
-                 **opts: Any) -> Callable[[Hook], None]:
+    def on_event(
+        self,
+        path: str = "{_:path}",
+        after: Union[None, str, List[str]] = None,
+        **opts: Any,
+    ) -> Callable[[Hook], None]:
         def _decorator(fn: Hook) -> None:
-            self.routes.append(Route(path=path,
-                                     fn=fn,
-                                     after=after or [],
-                                     opts=opts))
+            self.routes.append(Route(path=path, fn=fn, after=after or [], opts=opts))
 
         return _decorator
 
@@ -91,21 +89,21 @@ class Listener:
                 return route, params
         raise RouteNotFound(f"route `{name}` not found")
 
-    def fire(self,
-             name: str,
-             cid: Optional[str] = None,
-             timeout: Optional[float] = None,
-             data: Optional[Dict] = None) -> asyncio.Task:
+    def fire(
+        self,
+        name: str,
+        cid: Optional[str] = None,
+        timeout: Optional[float] = None,
+        data: Optional[Dict] = None,
+    ) -> asyncio.Task:
         """
         :raises: RouteNotFound
         """
         ctx = self.new_ctx(cid)
         route, params = self.match_route(name)
-        event = ctx.new_event(name=name,
-                              timeout=timeout,
-                              route=route,
-                              data=data or {},
-                              params=params)
+        event = ctx.new_event(
+            name=name, timeout=timeout, route=route, data=data or {}, params=params
+        )
 
         async def _fire():
             try:
@@ -115,7 +113,9 @@ class Listener:
                 [await fn(event) for fn in self.__middleware_after_event]
             except BaseException as e:
                 event.error = e
-                handlers = [fn for kls, fn in self.__error_handlers if isinstance(e, kls)]
+                handlers = [
+                    fn for kls, fn in self.__error_handlers if isinstance(e, kls)
+                ]
                 if not handlers:
                     raise e
                 else:
@@ -137,7 +137,9 @@ class Listener:
             loop.run_until_complete(fn())
         sys.exit()
 
-    def set_event_loop(self, loop: Optional[asyncio.BaseEventLoop] = None) -> asyncio.BaseEventLoop:
+    def set_event_loop(
+        self, loop: Optional[asyncio.BaseEventLoop] = None
+    ) -> asyncio.BaseEventLoop:
         """Override this method to change default event loop"""
         if loop is None:
             loop = asyncio.new_event_loop()

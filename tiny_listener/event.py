@@ -10,13 +10,15 @@ if TYPE_CHECKING:
 
 
 class Event:
-    def __init__(self,
-                 name: str,
-                 ctx: 'Context',
-                 route: 'Route',
-                 timeout: Optional[float] = None,
-                 data: Optional[Dict] = None,
-                 params: Optional[Dict] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        ctx: "Context",
+        route: "Route",
+        timeout: Optional[float] = None,
+        data: Optional[Dict] = None,
+        params: Optional[Dict] = None,
+    ) -> None:
         self.name = name
         self.timeout: Optional[float] = timeout
         self.data = data or {}
@@ -27,19 +29,19 @@ class Event:
         self.__done = asyncio.Event()
 
     @property
-    def route(self) -> 'Route':
+    def route(self) -> "Route":
         return self.__route
 
     @property
-    def ctx(self) -> 'Context':
+    def ctx(self) -> "Context":
         return self.__ctx()
 
     @property
-    def listener(self) -> 'Listener':
+    def listener(self) -> "Listener":
         return self.ctx.listener
 
     @property
-    def after(self) -> Set['Event']:
+    def after(self) -> Set["Event"]:
         return set(chain(*(self.ctx.get_events(pat) for pat in self.route.after)))
 
     @property
@@ -59,8 +61,6 @@ class Event:
         return await self.route.hook(self, executor)
 
     def __repr__(self) -> str:
-        return "{}(name={}, route={}, params={}, data={})".format(self.__class__.__name__,
-                                                                  self.route.path,
-                                                                  self.name,
-                                                                  self.params,
-                                                                  self.data)
+        return "{}(name={}, route={}, params={}, data={})".format(
+            self.__class__.__name__, self.route.path, self.name, self.params, self.data
+        )
