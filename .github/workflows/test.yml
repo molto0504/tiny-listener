@@ -41,7 +41,7 @@ jobs:
       - name: Test
         run: |
           echo "[report]"                        > .coveragerc
-          echo "    exclude_lines"              >> .coveragerc
+          echo "exclude_lines ="                >> .coveragerc
           echo "    pragma: no cover"           >> .coveragerc
           echo "    def __repr__"               >> .coveragerc
           echo "    raise AssertionError"       >> .coveragerc
