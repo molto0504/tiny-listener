@@ -1,4 +1,3 @@
----
 name: Test
 
 on:
@@ -40,6 +39,15 @@ jobs:
       - name: Install Dependencies
         run: pip install -r requirements.txt
       - name: Test
-        run: bash scripts/test.sh
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
+        run: |
+          echo "[report]" > .coveragerc
+          echo "    exclude_lines"              >> .coveragerc
+          echo "    pragma: no cover"           >> .coveragerc
+          echo "    def __repr__"               >> .coveragerc
+          echo "    raise AssertionError"       >> .coveragerc
+          echo "    raise NotImplementedError"  >> .coveragerc
+          echo "    if __name__ == .__main__.:" >> .coveragerc
+          echo "    @(abc\.)?abstractmethod"    >> .coveragerc
+          echo "    def run"                    >> .coveragerc
+          echo "    TYPE_CHECKING"              >> .coveragerc
+          bash scripts/test.sh"
