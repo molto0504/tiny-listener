@@ -27,6 +27,7 @@ class Event:
         self.__route = route
         self.__ctx: Callable[..., "Context"] = weakref.ref(ctx)  # type: ignore
         self.__done = asyncio.Event()
+        self.__result: Any = None
 
     @property
     def route(self) -> "Route":
@@ -45,6 +46,10 @@ class Event:
         return set(chain(*(self.ctx.get_events(pat) for pat in self.route.after)))
 
     @property
+    def result(self) -> Any:
+        return self.__result
+
+    @property
     def is_done(self) -> bool:
         return self.__done.is_set()
 
@@ -57,8 +62,9 @@ class Event:
         """
         await asyncio.wait_for(self.__done.wait(), timeout)
 
-    async def __call__(self, executor: Any = None):
-        return await self.route.hook(self, executor)
+    async def __call__(self, executor: Any = None) -> Any:
+        self.__result = await self.route.hook(self, executor)
+        return self.__result
 
     def __repr__(self) -> str:
         return "{}(name={}, route={}, params={}, data={})".format(

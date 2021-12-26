@@ -90,4 +90,5 @@ async def test_timeout(event_loop, app, route_final):
 @pytest.mark.asyncio
 async def test_call(event_loop, app, route_final):
     event = Event(name="/final", ctx=app.new_ctx("test_call"), route=route_final)
-    assert await event() is ...
+    result = await event()
+    assert result is event.result is ...

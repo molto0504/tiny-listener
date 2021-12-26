@@ -26,7 +26,7 @@ class TestRoute(TestCase):
         route = Route(
             path="/user/bob",
             fn=self.handler,
-            after=["/user/{name}"],
+            after="/user/{name}",
             opts={"foo": "bar"},
         )
         self.assertEqual("/user/bob", route.path)

@@ -22,7 +22,7 @@ theme:
 
 nav:
   - Introduction: "index.md"
-  - HTTP listener: "http-listener.md"
+  - 'Usage: Tiny "Web Framwork"': "web-framework.md"
   - MQTT listener: "mqtt-listener.md"
   - TCP listener: "tcp-listener.md"
 
