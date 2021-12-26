@@ -1,7 +1,21 @@
-# Tiny-listener
+<p align="center">
+  <a href="https://molto0504.github.io/tiny-listener"><img src="https://molto0504.github.io/tiny-listener/logo-light.png#only-light" alt="FastAPI"></a>
+</p>
+<p align="center">
+    <em>A lightweight event framework</em>
+</p>
 
-Tiny-listener is a lightweight event framework with Python 3.6+
+---
 
+**Documentation**: <a href="https://molto0504.github.io/tiny-listener" target="_blank">https://molto0504.github.io/tiny-listener</a>
+
+**Source Code**: <a href="https://github.com/molto0504/tiny-listener" target="_blank">https://github.com/molto0504/tiny-listener</a>
+
+---
+
+# Introduction
+
+Tiny-listener is a lightweight and flexible event framework.
 
 ## Requirements
 
