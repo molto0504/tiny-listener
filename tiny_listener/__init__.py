@@ -1,7 +1,7 @@
 """tiny-listener
 """
 
-__version__ = "0.0.10"
+__version__ = "0.0.11"
 
 from .context import Context, Scope
 from .event import Event
