@@ -40,14 +40,14 @@ jobs:
         run: pip install -r requirements.txt
       - name: Test
         run: |
-          echo -e "[report]"                        > .coveragerc
-          echo -e "    exclude_lines"              >> .coveragerc
-          echo -e "    pragma: no cover"           >> .coveragerc
-          echo -e "    def __repr__"               >> .coveragerc
-          echo -e "    raise AssertionError"       >> .coveragerc
-          echo -e "    raise NotImplementedError"  >> .coveragerc
-          echo -e "    if __name__ == .__main__.:" >> .coveragerc
-          echo -e "    @(abc\.)?abstractmethod"    >> .coveragerc
-          echo -e "    def run"                    >> .coveragerc
-          echo -e "    TYPE_CHECKING"              >> .coveragerc
+          echo -e [report]                        > .coveragerc
+          echo -e     exclude_lines              >> .coveragerc
+          echo -e     pragma: no cover           >> .coveragerc
+          echo -e     def __repr__               >> .coveragerc
+          echo -e     raise AssertionError       >> .coveragerc
+          echo -e     raise NotImplementedError  >> .coveragerc
+          echo -e     if __name__ == .__main__.: >> .coveragerc
+          echo -e     @(abc\.)?abstractmethod    >> .coveragerc
+          echo -e     def run                    >> .coveragerc
+          echo -e     TYPE_CHECKING              >> .coveragerc
           bash scripts/test.sh"
