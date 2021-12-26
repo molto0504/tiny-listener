@@ -7,9 +7,9 @@
 
 ---
 
-**Documentation**: <a href="https://molto0504.github.io/tiny-listener" target="_blank">https://molto0504.github.io/tiny-listener</a>
+**Documentation**: <a href="https://molto0504.github.io/tiny-listener" target="_blank"> https://molto0504.github.io/tiny-listener </a>
 
-**Source Code**: <a href="https://github.com/molto0504/tiny-listener" target="_blank">https://github.com/molto0504/tiny-listener</a>
+**Source Code**: <a href="https://github.com/molto0504/tiny-listener" target="_blank"> https://github.com/molto0504/tiny-listener </a>
 
 ---
 
