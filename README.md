@@ -5,6 +5,18 @@
     <em>A lightweight event framework</em>
 </p>
 
+<p align="center">
+<a href="https://github.com/molto0504/tiny-listener/actions" target="_blank">
+    <img src="https://github.com/molto0504/tiny-listener/workflows/Test/badge.svg" alt="Test">
+</a>
+<a href="https://pypi.org/project/tiny-listener" target="_blank">
+    <img src="https://badge.fury.io/py/tiny-listener.svg" alt="Package version">
+</a>
+<a href="https://pypi.org/project/tiny-listener" target="_blank">
+    <img src="https://img.shields.io/pypi/pyversions/tiny-listener" alt="Supported Python versions">
+</a>
+</p>
+
 ---
 
 **Documentation**: <a href="https://molto0504.github.io/tiny-listener" target="_blank"> https://molto0504.github.io/tiny-listener </a>
