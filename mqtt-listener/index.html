@@ -328,7 +328,7 @@
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p><strong><a href="https://mqtt.org/">MQTT</a></strong> is a lightweight IOT protocol.</p>
-<p><strong><a href="https://hbmqtt.readthedocs.io/en/latest/">hbmqtt</a></strong> is an open source MQTT client and broker implementation with asyncio.</p>
+<p><strong><a href="https://github.com/Yakifo/amqtt">amqtt</a></strong> is an open source MQTT client and broker implementation with asyncio.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -336,17 +336,16 @@
 <p>We use a publicly test MQTT server <a href="http://test.mosquitto.org/">http://test.mosquitto.org/</a> here.</p>
 <p>Therefore, <strong>please don't publish anything sensitive, anybody could be listening.</strong></p>
 </div>
-<p><strong>STEP 1,</strong> Install Tiny-listener and <a href="https://hbmqtt.readthedocs.io/en/latest/">hbmqtt</a>:</p>
-<div class="highlight"><pre><span></span><code>$ pip install tiny-listener hbmqtt 
+<p><strong>STEP 1,</strong> Install Tiny-listener and <a href="https://github.com/Yakifo/amqtt">amqtt</a>:</p>
+<div class="highlight"><pre><span></span><code>$ pip install tiny-listener amqtt 
 </code></pre></div>
 <p><strong>STEP 2,</strong> Create python file <code>mqtt_client.py</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">asyncio</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randint</span>
 
-<span class="kn">from</span> <span class="nn">hbmqtt.client</span> <span class="kn">import</span> <span class="n">MQTTClient</span>
-<span class="kn">from</span> <span class="nn">hbmqtt.mqtt.constants</span> <span class="kn">import</span> <span class="n">QOS_0</span>
-<span class="kn">from</span> <span class="nn">hbmqtt.mqtt.publish</span> <span class="kn">import</span> <span class="n">PublishPacket</span>
+<span class="kn">from</span> <span class="nn">amqtt.client</span> <span class="kn">import</span> <span class="n">MQTTClient</span>
+<span class="kn">from</span> <span class="nn">amqtt.mqtt.constants</span> <span class="kn">import</span> <span class="n">QOS_0</span>
+<span class="kn">from</span> <span class="nn">amqtt.mqtt.publish</span> <span class="kn">import</span> <span class="n">PublishPacket</span>
 
 <span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span>
 
@@ -376,11 +375,7 @@
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/test/home/</span><span class="si">{room}</span><span class="s2">/temperature&quot;</span><span class="p">)</span>
 <span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
     <span class="n">payload</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">]</span>
-    <span class="nb">print</span><span class="p">(</span>
-        <span class="s2">&quot;LOG [</span><span class="si">{}</span><span class="s2">] | </span><span class="si">{:&lt;13}</span><span class="s2"> | </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;room&quot;</span><span class="p">],</span> <span class="n">payload</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;INFO: </span><span class="si">{:&lt;13}</span><span class="s2"> | </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;room&quot;</span><span class="p">],</span> <span class="n">payload</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">()))</span>
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/send&quot;</span><span class="p">)</span>
@@ -406,10 +401,10 @@
 <div class="highlight"><pre><span></span><code>$ tiny-listener my_mqtt_client:app
 </code></pre></div>
 <p>And check the log:</p>
-<div class="highlight"><pre><span></span><code>LOG [2021-12-31 11:40:48.685079] | living_room   | 13 °C
-LOG [2021-12-31 11:40:48.685349] | kitchen       | 15 °C
-LOG [2021-12-31 11:40:51.693860] | living_room   | 16 °C
-LOG [2021-12-31 11:40:51.694122] | kitchen       | 14 °C
+<div class="highlight"><pre><span></span><code>INFO: [2021-12-31 11:40:48.685079] | living_room   | 13 °C
+INFO: [2021-12-31 11:40:48.685349] | kitchen       | 15 °C
+INFO: [2021-12-31 11:40:51.693860] | living_room   | 16 °C
+INFO: [2021-12-31 11:40:51.694122] | kitchen       | 14 °C
 ...
 </code></pre></div>
 
