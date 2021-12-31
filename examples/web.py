@@ -1,21 +1,5 @@
 """
-
-1. Install ``httptools``:
-```shell
-$ pip install httptools
-```
-
-Note: ``httptools`` is a parser lib: https://github.com/MagicStack/httptools,
-      which may simplify your Application.
-
-
-2. Run your Application:
-```shell
-$ tiny-listener web_framework:app
-$ INFO:     Tiny-listener HTTP server running on on localhost:8000
-```
-
-3. Try this on your browser: http://127.0.0.1:8000/user/Bob
+See: https://molto0504.github.io/tiny-listener/web-framework/
 """
 
 from asyncio import StreamReader, StreamWriter, start_server

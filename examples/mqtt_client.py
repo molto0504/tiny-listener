@@ -1,22 +1,13 @@
 """
-:Example:
-
-    >>> tiny-listener mqtt_client:app
-    LOG [2021-12-31 11:40:48.685079] | living_room   | 13 °C
-    LOG [2021-12-31 11:40:48.685349] | kitchen       | 15 °C
-    LOG [2021-12-31 11:40:51.693860] | living_room   | 16 °C
-    LOG [2021-12-31 11:40:51.694122] | kitchen       | 14 °C
-    LOG [2021-12-31 11:40:54.697005] | living_room   | 26 °C
-    ...
+See: https://molto0504.github.io/tiny-listener/mqtt-listener/
 """
 
 import asyncio
-from datetime import datetime
 from random import randint
 
-from hbmqtt.client import MQTTClient
-from hbmqtt.mqtt.constants import QOS_0
-from hbmqtt.mqtt.publish import PublishPacket
+from amqtt.client import MQTTClient
+from amqtt.mqtt.constants import QOS_0
+from amqtt.mqtt.publish import PublishPacket
 
 from tiny_listener import Depends, Event, Listener
 
@@ -46,11 +37,7 @@ async def get_client() -> MQTTClient:
 @app.on_event("/test/home/{room}/temperature")
 async def _(event: Event):
     payload = event.data["payload"]
-    print(
-        "LOG [{}] | {:<13} | {}".format(
-            datetime.now(), event.params["room"], payload.data.decode()
-        )
-    )
+    print("INFO: {:<13} | {}".format(event.params["room"], payload.data.decode()))
 
 
 @app.on_event("/send")

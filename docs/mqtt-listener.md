@@ -5,7 +5,7 @@
     
     **[MQTT](https://mqtt.org/)** is a lightweight IOT protocol.
 
-    **[hbmqtt](https://hbmqtt.readthedocs.io/en/latest/)** is an open source MQTT client and broker implementation with asyncio.
+    **[amqtt](https://github.com/Yakifo/amqtt)** is an open source MQTT client and broker implementation with asyncio.
 
 
 !!! Warning
@@ -17,22 +17,21 @@
     Therefore, **please don't publish anything sensitive, anybody could be listening.**
 
 
-**STEP 1,** Install Tiny-listener and [hbmqtt](https://hbmqtt.readthedocs.io/en/latest/):
+**STEP 1,** Install Tiny-listener and [amqtt](https://github.com/Yakifo/amqtt):
 
 ```shell
-$ pip install tiny-listener hbmqtt 
+$ pip install tiny-listener amqtt 
 ```
 
 **STEP 2,** Create python file ``mqtt_client.py``:
 
 ```python
 import asyncio
-from datetime import datetime
 from random import randint
 
-from hbmqtt.client import MQTTClient
-from hbmqtt.mqtt.constants import QOS_0
-from hbmqtt.mqtt.publish import PublishPacket
+from amqtt.client import MQTTClient
+from amqtt.mqtt.constants import QOS_0
+from amqtt.mqtt.publish import PublishPacket
 
 from tiny_listener import Depends, Event, Listener
 
@@ -62,11 +61,7 @@ async def get_client() -> MQTTClient:
 @app.on_event("/test/home/{room}/temperature")
 async def _(event: Event):
     payload = event.data["payload"]
-    print(
-        "LOG [{}] | {:<13} | {}".format(
-            datetime.now(), event.params["room"], payload.data.decode()
-        )
-    )
+    print("INFO: {:<13} | {}".format(event.params["room"], payload.data.decode()))
 
 
 @app.on_event("/send")
@@ -98,9 +93,9 @@ $ tiny-listener my_mqtt_client:app
 And check the log:
 
 ```log
-LOG [2021-12-31 11:40:48.685079] | living_room   | 13 °C
-LOG [2021-12-31 11:40:48.685349] | kitchen       | 15 °C
-LOG [2021-12-31 11:40:51.693860] | living_room   | 16 °C
-LOG [2021-12-31 11:40:51.694122] | kitchen       | 14 °C
+INFO: [2021-12-31 11:40:48.685079] | living_room   | 13 °C
+INFO: [2021-12-31 11:40:48.685349] | kitchen       | 15 °C
+INFO: [2021-12-31 11:40:51.693860] | living_room   | 16 °C
+INFO: [2021-12-31 11:40:51.694122] | kitchen       | 14 °C
 ...
 ```
