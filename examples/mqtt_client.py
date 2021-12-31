@@ -18,7 +18,7 @@ from hbmqtt.client import MQTTClient
 from hbmqtt.mqtt.constants import QOS_0
 from hbmqtt.mqtt.publish import PublishPacket
 
-from tiny_listener import Event, Listener, Depends
+from tiny_listener import Depends, Event, Listener
 
 
 class App(Listener):
@@ -32,28 +32,34 @@ app = App()
 
 async def get_client() -> MQTTClient:
     client = MQTTClient()
-    await client.connect('mqtt://localhost/')
-    await client.subscribe([
-        ('/home/#', QOS_0),
-    ])
+    await client.connect("mqtt://localhost/")
+    await client.subscribe(
+        [
+            ("/home/#", QOS_0),
+        ]
+    )
     return client
 
 
 @app.on_event("/home/{room}/temperature")
 async def _(event: Event):
     payload = event.data["payload"]
-    print("LOG [{}] | {:<13} | {}".format(
-        datetime.now(),
-        event.params['room'],
-        payload.data.decode()
-    ))
+    print(
+        "LOG [{}] | {:<13} | {}".format(
+            datetime.now(), event.params["room"], payload.data.decode()
+        )
+    )
 
 
 @app.on_event("/send")
 async def _(client: MQTTClient = Depends(get_client)):
     while True:
-        await client.publish('/home/living_room/temperature', f"{randint(10, 30)} °C".encode())
-        await client.publish('/home/kitchen/temperature', f"{randint(10, 30)} °C".encode())
+        await client.publish(
+            "/home/living_room/temperature", f"{randint(10, 30)} °C".encode()
+        )
+        await client.publish(
+            "/home/kitchen/temperature", f"{randint(10, 30)} °C".encode()
+        )
         await asyncio.sleep(3)
 
 

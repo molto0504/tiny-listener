@@ -18,11 +18,11 @@ $ INFO:     Tiny-listener HTTP server running on on localhost:8000
 3. Try this on your browser: http://127.0.0.1:8000/user/Bob
 """
 
-from asyncio import StreamWriter, StreamReader, start_server
+from asyncio import StreamReader, StreamWriter, start_server
 
-from tiny_listener import Event, Listener, RouteNotFound
 from httptools import HttpRequestParser
 
+from tiny_listener import Event, Listener, RouteNotFound
 
 PORT = 8000
 
@@ -55,7 +55,9 @@ class App(Listener):
         if data:
             req = Request(data)
             try:
-                self.fire(f"{req.method}:{req.url}", data={"writer": writer, "request": req})
+                self.fire(
+                    f"{req.method}:{req.url}", data={"writer": writer, "request": req}
+                )
             except RouteNotFound:
                 writer.write(b"HTTP/1.1 404\n\nNot Found")
                 writer.close()
@@ -74,15 +76,14 @@ async def response(event: Event):
     req = event.data["request"]
     writer.write(f"HTTP/1.1 200\n\n{event.result}".encode())
     writer.close()
-    print('INFO:     {}:{} - "{} {} HTTP/{}" 200 OK'.format(
-        *writer.get_extra_info("peername"),
-        req.method,
-        req.url,
-        req.http_version
-    ))
+    print(
+        'INFO:     {}:{} - "{} {} HTTP/{}" 200 OK'.format(
+            *writer.get_extra_info("peername"), req.method, req.url, req.http_version
+        )
+    )
 
 
 @app.on_event("GET:/user/{username}")
 async def hello(event: Event):
-    username = event.params['username']
+    username = event.params["username"]
     return f"Hello, {username}!"
