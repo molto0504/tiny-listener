@@ -55,10 +55,10 @@ async def _(event: Event):
 async def _(client: MQTTClient = Depends(get_client)):
     while True:
         await client.publish(
-            "/home/living_room/temperature", f"{randint(10, 30)} °C".encode()
+            "/home/living_room/temperature", f"{randint(10, 30)} ℃".encode()
         )
         await client.publish(
-            "/home/kitchen/temperature", f"{randint(10, 30)} °C".encode()
+            "/home/kitchen/temperature", f"{randint(10, 30)} ℃".encode()
         )
         await asyncio.sleep(3)
 
