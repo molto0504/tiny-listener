@@ -452,7 +452,6 @@
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>$ pip install tiny-listener
 </code></pre></div>
-
 <h2 id="why-use-tiny-listener">Why use tiny-listener<a class="headerlink" href="#why-use-tiny-listener" title="Permanent link">&para;</a></h2>
 <ul>
 <li>✔ Pure Python.</li>
@@ -477,14 +476,12 @@
 <span class="k">async</span> <span class="k">def</span> <span class="nf">say_hi</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hi,&quot;</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
 </code></pre></div>
-
 <p>Run it:</p>
 <div class="highlight"><pre><span></span><code>$ tiny-listener example:app
 &gt;&gt;&gt; Hi, Alice
 &gt;&gt;&gt; Hi, Bob
 &gt;&gt;&gt; Hi, Carol
 </code></pre></div>
-
 <h2 id="how-it-works">How it works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Create your own Listener and listen something(e.g. port, queue ...):</li>
@@ -497,7 +494,6 @@
       <span class="bp">self</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="s2">&quot;Say hi to Bob&quot;</span><span class="p">)</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="s2">&quot;Say hi to Carol&quot;</span><span class="p">)</span>
 </code></pre></div>
-
 <ul>
 <li>Add event handler to your listener:</li>
 </ul>
@@ -507,13 +503,11 @@
 <span class="k">async</span> <span class="k">def</span> <span class="nf">say_hi</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hi,&quot;</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
 </code></pre></div>
-
 <ul>
 <li>Run listener with command:</li>
 </ul>
 <div class="highlight"><pre><span></span><code>$ tiny-listener example:app
 </code></pre></div>
-
 <ul>
 <li>Tiny-listener will dispatch every event automatically:</li>
 </ul>

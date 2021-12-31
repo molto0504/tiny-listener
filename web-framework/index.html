@@ -325,10 +325,20 @@
                 
 
 <h1 id="tiny-web-framework">Tiny "Web Framework"<a class="headerlink" href="#tiny-web-framework" title="Permanent link">&para;</a></h1>
-<p>Note: This tiny "web framework" is intended to show how Tiny-listener works.
-      If your really need a web framework for production environment,
-      using FastAPI / Django / Flask maybe a wise choice.</p>
-<p>Create python file <code>my_web.py</code>:</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p><strong><a href="https://github.com/MagicStack/httptools">httptools</a></strong> is a fast HTTP parser lib.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This tiny "web framework" is just intended to show how tiny-listener works.</p>
+<p>If your really need a web framework for production environment,
+using <a href="https://fastapi.tiangolo.com/">FastAPI</a> / <a href="https://www.djangoproject.com/">Django</a> / <a href="https://flask.palletsprojects.com/">Flask</a> instead.</p>
+</div>
+<p><strong>STEP 1,</strong> Install Tiny-listener and <a href="https://github.com/MagicStack/httptools">httptools</a>:</p>
+<div class="highlight"><pre><span></span><code>$ pip install tiny-listener httptools 
+</code></pre></div>
+<p><strong>STEP 2,</strong> Create python file <code>my_web.py</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">asyncio</span> <span class="kn">import</span> <span class="n">StreamWriter</span><span class="p">,</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">start_server</span>
 
 <span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">RouteNotFound</span>
@@ -399,13 +409,11 @@
     <span class="n">username</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">!&quot;</span>
 </code></pre></div>
-
-<p>1, Run your web:</p>
+<p><strong>STEP 3,</strong> Run your web:</p>
 <div class="highlight"><pre><span></span><code>$ tiny-listener my_web:app
 $ INFO:     Tiny-listener HTTP server running on on localhost:8000
 </code></pre></div>
-
-<p>2, Try this on your browser: http://127.0.0.1:8000/user/Bob:</p>
+<p><strong>STEP 4,</strong> Try this on your browser: <a href="http://127.0.0.1:8000/user/Bob">http://127.0.0.1:8000/user/Bob</a></p>
 <div class="highlight"><pre><span></span><code>...
 $ INFO:     <span class="m">127</span>.0.0.1:52579 - <span class="s2">&quot;GET /user/Bob HTTP/1.1&quot;</span> <span class="m">200</span> OK
 </code></pre></div>
