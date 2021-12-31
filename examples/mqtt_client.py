@@ -2,57 +2,63 @@
 :Example:
 
     >>> tiny-listener mqtt_client:app
-    Log handler: 001 => bytearray(b'LOG info: ...')
-    Log handler: 002 => bytearray(b'LOG error: ...')
-    Power handler: 001 => bytearray(b'POWER 20%')
-    Power handler: 002 => bytearray(b'POWER 30%')
+    LOG [2021-12-31 11:40:48.685079] | living_room   | 13 °C
+    LOG [2021-12-31 11:40:48.685349] | kitchen       | 15 °C
+    LOG [2021-12-31 11:40:51.693860] | living_room   | 16 °C
+    LOG [2021-12-31 11:40:51.694122] | kitchen       | 14 °C
+    LOG [2021-12-31 11:40:54.697005] | living_room   | 26 °C
+    ...
 """
+
+import asyncio
+from datetime import datetime
+from random import randint
 
 from hbmqtt.client import MQTTClient
 from hbmqtt.mqtt.constants import QOS_0
 from hbmqtt.mqtt.publish import PublishPacket
 
-from tiny_listener import Event, Listener
+from tiny_listener import Event, Listener, Depends
 
 
 class App(Listener):
     async def listen(self):
-        client = MQTTClient()
-        await client.connect('mqtt://localhost/')
-        await client.subscribe([
-            ('/sys/device/#', QOS_0),
-        ])
-        self.fire("/send", data={"client": client})
-        self.fire("/recv", data={"client": client})
+        self.fire("/send")
+        self.fire("/recv")
 
 
 app = App()
 
 
-@app.on_event("/sys/device/{id}/log")
-async def _(event: Event):
-    payload = event.data["payload"]
-    print(f"Log handler: {event.params['id']} => {payload.data}")
+async def get_client() -> MQTTClient:
+    client = MQTTClient()
+    await client.connect('mqtt://localhost/')
+    await client.subscribe([
+        ('/home/#', QOS_0),
+    ])
+    return client
 
 
-@app.on_event("/sys/device/{id}/power")
+@app.on_event("/home/{room}/temperature")
 async def _(event: Event):
     payload = event.data["payload"]
-    print(f"Power handler: {event.params['id']} => {payload.data}")
+    print("LOG [{}] | {:<13} | {}".format(
+        datetime.now(),
+        event.params['room'],
+        payload.data.decode()
+    ))
 
 
 @app.on_event("/send")
-async def _(event: Event):
-    client = event.data["client"]
-    await client.publish('/sys/device/001/log', b'LOG info: ...')
-    await client.publish('/sys/device/002/log', b'LOG error: ...')
-    await client.publish('/sys/device/001/power', b'POWER 20%')
-    await client.publish('/sys/device/002/power', b'POWER 30%')
+async def _(client: MQTTClient = Depends(get_client)):
+    while True:
+        await client.publish('/home/living_room/temperature', f"{randint(10, 30)} °C".encode())
+        await client.publish('/home/kitchen/temperature', f"{randint(10, 30)} °C".encode())
+        await asyncio.sleep(3)
 
 
 @app.on_event("/recv")
-async def _(event: Event):
-    client = event.data["client"]
+async def _(client: MQTTClient = Depends(get_client)):
     while True:
         message = await client.deliver_message()
         packet: PublishPacket = message.publish_packet

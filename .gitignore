@@ -130,9 +130,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# pyevent
+# Develop
+*~
+.*.sw?
 .idea/
+.vscode
 .DS_Store
 .tags
-.tmp*
 tmp*
