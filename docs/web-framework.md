@@ -1,12 +1,25 @@
 # Tiny "Web Framework"
 
 
-Note: This tiny "web framework" is intended to show how Tiny-listener works.
-      If your really need a web framework for production environment,
-      using FastAPI / Django / Flask maybe a wise choice.
+!!! Info
+
+    **[httptools](https://github.com/MagicStack/httptools)** is a fast HTTP parser lib.
 
 
-Create python file ``my_web.py``:
+!!! Note
+
+    This tiny "web framework" is just intended to show how tiny-listener works.
+
+    If your really need a web framework for production environment,
+    using [FastAPI](https://fastapi.tiangolo.com/) / [Django](https://www.djangoproject.com/) / [Flask](https://flask.palletsprojects.com/) instead.
+
+**STEP 1,** Install Tiny-listener and [httptools](https://github.com/MagicStack/httptools):
+
+```shell
+$ pip install tiny-listener httptools 
+```
+
+**STEP 2,** Create python file ``my_web.py``:
 
 ```python
 from asyncio import StreamWriter, StreamReader, start_server
@@ -80,14 +93,14 @@ async def hello(event: Event):
     return f"Hello, {username}!"
 ```
 
-1, Run your web:
+**STEP 3,** Run your web:
 
 ```shell
 $ tiny-listener my_web:app
 $ INFO:     Tiny-listener HTTP server running on on localhost:8000
 ```
 
-2, Try this on your browser: http://127.0.0.1:8000/user/Bob:
+**STEP 4,** Try this on your browser: [http://127.0.0.1:8000/user/Bob](http://127.0.0.1:8000/user/Bob)
 
 ```shell
 ...
