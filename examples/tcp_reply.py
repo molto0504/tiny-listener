@@ -1,12 +1,14 @@
 import asyncio
 
-from tiny_listener import Listener, Event, ContextNotFound
+from tiny_listener import ContextNotFound, Event, Listener
 
 ADDRESS = ("127.0.0.1", 12345)
 
 
 class App(Listener):
-    async def tcp_handler(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    async def tcp_handler(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ):
         while True:
             cid = str(hash(writer.get_extra_info("peername")))
             try:
