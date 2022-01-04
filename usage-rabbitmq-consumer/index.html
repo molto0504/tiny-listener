@@ -17,7 +17,7 @@
     
     
       
-        <title>Usage: "Chat Bot" with TCP - Tiny-listener</title>
+        <title>Usage: RabbitMQ consumer - Tiny-listener</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tcp-chat-bot" class="md-skip">
+        <a href="#rabbitmq-consumer" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Usage: "Chat Bot" with TCP
+              Usage: RabbitMQ consumer
             
           </span>
         </div>
@@ -274,6 +274,21 @@
 
   
   
+  
+    <li class="md-nav__item">
+      <a href="../usage-tcp-chat-bot/" class="md-nav__link">
+        Usage: "Chat Bot" with TCP
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
     
   
   
@@ -286,24 +301,9 @@
       
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Usage: "Chat Bot" with TCP
-      </a>
-      
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../usage-rabbitmq-consumer/" class="md-nav__link">
         Usage: RabbitMQ consumer
       </a>
+      
     </li>
   
 
@@ -339,66 +339,66 @@
               
                 
 
-<h1 id="tcp-chat-bot">TCP Chat Bot<a class="headerlink" href="#tcp-chat-bot" title="Permanent link">&para;</a></h1>
-<p><strong>STEP 1,</strong> Install Tiny-listener:</p>
-<div class="highlight"><pre><span></span><code>$ pip install tiny-listener
+<h1 id="rabbitmq-consumer">RabbitMQ Consumer<a class="headerlink" href="#rabbitmq-consumer" title="Permanent link">&para;</a></h1>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p><strong><a href="https://www.rabbitmq.com">RabbitMQ</a> </strong> is an open source message broker.</p>
+<p><strong><a href="https://aio-pika.readthedocs.io">aio-pika</a></strong> is a wrapper for the aiormq for asyncio and humans.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This tutorial assumes RabbitMQ is installed and running on localhost on the standard port (5672).</p>
+<p>See: <a href="https://www.rabbitmq.com/download.html">Downloading and Installing RabbitMQ</a></p>
+</div>
+<p><strong>STEP 1,</strong> Install Tiny-listener and <a href="https://aio-pika.readthedocs.io">aio-pika</a>:</p>
+<div class="highlight"><pre><span></span><code>$ pip install tiny-listener aio-pika 
 </code></pre></div>
-<p><strong>STEP 2,</strong> Create python file <code>tcp_chat_bot.py</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">asyncio</span> <span class="kn">import</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">StreamWriter</span><span class="p">,</span> <span class="n">start_server</span>
+<p><strong>STEP 2,</strong> Create python file <code>rabbitmq_consumer.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">aio_pika</span>
 
-<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">RouteNotFound</span>
-
-<span class="n">ADDRESS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="mi">12345</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span>
 
 
 <span class="k">class</span> <span class="nc">App</span><span class="p">(</span><span class="n">Listener</span><span class="p">):</span>
-    <span class="nd">@staticmethod</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">tcp_handler</span><span class="p">(</span><span class="n">reader</span><span class="p">:</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">writer</span><span class="p">:</span> <span class="n">StreamWriter</span><span class="p">):</span>
-        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">payload</span> <span class="o">=</span> <span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">payload</span><span class="p">:</span>
-                <span class="k">break</span>
-
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">app</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;writer&quot;</span><span class="p">:</span> <span class="n">writer</span><span class="p">})</span>
-            <span class="k">except</span> <span class="n">RouteNotFound</span><span class="p">:</span>
-                <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;Huh, go on.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-
     <span class="k">async</span> <span class="k">def</span> <span class="nf">listen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">await</span> <span class="n">start_server</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tcp_handler</span><span class="p">,</span> <span class="o">*</span><span class="n">ADDRESS</span><span class="p">)</span>
+        <span class="n">connection</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aio_pika</span><span class="o">.</span><span class="n">connect_robust</span><span class="p">(</span><span class="s2">&quot;amqp://127.0.0.1/&quot;</span><span class="p">)</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">connection</span><span class="p">:</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="k">await</span> <span class="n">connection</span><span class="o">.</span><span class="n">channel</span><span class="p">()</span>
+            <span class="n">queue</span> <span class="o">=</span> <span class="k">await</span> <span class="n">channel</span><span class="o">.</span><span class="n">declare_queue</span><span class="p">(</span><span class="s2">&quot;test_queue&quot;</span><span class="p">,</span> <span class="n">auto_delete</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">app</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="s2">&quot;/produce&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;channel&quot;</span><span class="p">:</span> <span class="n">channel</span><span class="p">})</span>
+
+            <span class="k">async</span> <span class="k">with</span> <span class="n">queue</span><span class="o">.</span><span class="n">iterator</span><span class="p">()</span> <span class="k">as</span> <span class="n">msg_queue</span><span class="p">:</span>
+                <span class="k">async</span> <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">msg_queue</span><span class="p">:</span>
+                    <span class="k">async</span> <span class="k">with</span> <span class="n">msg</span><span class="o">.</span><span class="n">process</span><span class="p">():</span>
+                        <span class="n">app</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/app/</span><span class="si">{</span><span class="n">msg</span><span class="o">.</span><span class="n">app_id</span><span class="si">}</span><span class="s2">/consume&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">msg</span><span class="o">.</span><span class="n">body</span><span class="p">})</span>
 
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">App</span><span class="p">()</span>
 
 
-<span class="k">async</span> <span class="k">def</span> <span class="nf">get_writer</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;writer&quot;</span><span class="p">]</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/produce&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;channel&quot;</span><span class="p">]</span>
+    <span class="k">await</span> <span class="n">channel</span><span class="o">.</span><span class="n">default_exchange</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+        <span class="n">aio_pika</span><span class="o">.</span><span class="n">Message</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;Hello, Alice!&quot;</span><span class="p">,</span> <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;001&quot;</span><span class="p">),</span> <span class="n">routing_key</span><span class="o">=</span><span class="s2">&quot;test_queue&quot;</span>
+    <span class="p">)</span>
+    <span class="k">await</span> <span class="n">channel</span><span class="o">.</span><span class="n">default_exchange</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+        <span class="n">aio_pika</span><span class="o">.</span><span class="n">Message</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;Hello, Bob!&quot;</span><span class="p">,</span> <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;002&quot;</span><span class="p">),</span> <span class="n">routing_key</span><span class="o">=</span><span class="s2">&quot;test_queue&quot;</span>
+    <span class="p">)</span>
 
 
-<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{_}</span><span class="s2">?&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">writer</span><span class="p">:</span> <span class="n">StreamWriter</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_writer</span><span class="p">)):</span>
-    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;I am confused, may be you should google it.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-
-
-<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{_}</span><span class="s2">.&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">writer</span><span class="p">:</span> <span class="n">StreamWriter</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_writer</span><span class="p">)):</span>
-    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;Yes, it makes sense to me.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/app/</span><span class="si">{app_id}</span><span class="s2">/consume&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="n">app_id</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;app_id&quot;</span><span class="p">]</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;INFO: App[</span><span class="si">{}</span><span class="s2">] consume: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
 </code></pre></div>
 <p><strong>STEP 3,</strong> Run your app:</p>
-<div class="highlight"><pre><span></span><code>$ tiny-listener tcp_chat_bot:app
+<div class="highlight"><pre><span></span><code>$ tiny-listener rabbitmq_consumer:app
 </code></pre></div>
-<p><strong>STEP 4,</strong> Open a new terminal with:</p>
-<div class="highlight"><pre><span></span><code>$ nc -I <span class="m">60</span> localhost <span class="m">12345</span>
-</code></pre></div>
-<p><strong>STEP 5,</strong> Chat with your bot:</p>
-<div class="highlight"><pre><span></span><code>$ hello!
-Huh, go on.
-
-$ who are you?
-I am confused, may be you should google it.
-
-$ earth is flat.
-Yes, it makes sense to me.
+<p>Check the logs:</p>
+<div class="highlight"><pre><span></span><code>INFO: App[001] consume: b&#39;Hello, Alice!&#39;
+INFO: App[002] consume: b&#39;Hello, Bob!&#39;
 </code></pre></div>
 
               
@@ -413,7 +413,7 @@ Yes, it makes sense to me.
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../usage-mqtt-client/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Usage: MQTT client" rel="prev">
+        <a href="../usage-tcp-chat-bot/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Usage: &#34;Chat Bot&#34; with TCP" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -422,26 +422,11 @@ Yes, it makes sense to me.
               <span class="md-footer__direction">
                 Previous
               </span>
-              Usage: MQTT client
+              Usage: "Chat Bot" with TCP
             </div>
           </div>
         </a>
       
-      
-        
-        <a href="../usage-rabbitmq-consumer/" class="md-footer__link md-footer__link--next" aria-label="Next: Usage: RabbitMQ consumer" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Usage: RabbitMQ consumer
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-          </div>
-        </a>
       
     </nav>
   

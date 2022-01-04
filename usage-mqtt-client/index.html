@@ -293,6 +293,21 @@
   
 
     
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage-rabbitmq-consumer/" class="md-nav__link">
+        Usage: RabbitMQ consumer
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -388,13 +403,12 @@
     <span class="n">temperature</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;INFO: </span><span class="si">{:&lt;13}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> ℃&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">room</span><span class="p">,</span> <span class="n">temperature</span><span class="p">))</span>
 </code></pre></div>
-<p><strong>STEP 3,</strong> Run your client:</p>
+<p><strong>STEP 3,</strong> Run your app:</p>
 <div class="highlight"><pre><span></span><code>$ tiny-listener mqtt_client:app
 </code></pre></div>
-<p>And check the log:</p>
+<p>Check the logs:</p>
 <div class="highlight"><pre><span></span><code>INFO: living_room   13 °C
 INFO: kitchen       15 °C
-...
 </code></pre></div>
 
               
