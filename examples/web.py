@@ -34,7 +34,7 @@ class Request:
 
 
 class App(Listener):
-    async def handler(self, reader: StreamReader, writer: StreamWriter) -> None:
+    async def handler(self, reader: StreamReader, writer: StreamWriter):
         data = await reader.readuntil(b"\r\n\r\n")
         if data:
             req = Request(data)
@@ -43,12 +43,12 @@ class App(Listener):
                     f"{req.method}:{req.url}", data={"writer": writer, "request": req}
                 )
             except RouteNotFound:
-                writer.write(b"HTTP/1.1 404\n\nNot Found")
+                writer.write(b"HTTP/1.1 404\n\nPage Not Found")
                 writer.close()
 
     async def listen(self):
-        await start_server(self.handler, host="0.0.0.0", port=PORT)
-        print(f"INFO:     Tiny-listener HTTP server running on on localhost:{PORT}")
+        await start_server(self.handler, port=PORT)
+        print(f"INFO:     HTTP server running on on http://127.0.0.1:{PORT}")
 
 
 app = App()
@@ -65,6 +65,11 @@ async def response(event: Event):
             *writer.get_extra_info("peername"), req.method, req.url, req.http_version
         )
     )
+
+
+@app.on_event("GET:/")
+async def home():
+    return "Welcome!"
 
 
 @app.on_event("GET:/user/{username}")
