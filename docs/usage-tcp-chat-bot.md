@@ -1,7 +1,13 @@
 # TCP Chat Bot
 
 
-**STEP 1,** Create python file ``tcp_chat_bot.py``:
+**STEP 1,** Install Tiny-listener:
+
+```shell
+$ pip install tiny-listener
+```
+
+**STEP 2,** Create python file ``tcp_chat_bot.py``:
 
 ```python
 from asyncio import StreamReader, StreamWriter, start_server
@@ -46,19 +52,19 @@ async def _(writer: StreamWriter = Depends(get_writer)):
 ```
 
 
-**STEP 2,** Run your client:
+**STEP 3,** Run your app:
 
 ```shell
 $ tiny-listener tcp_chat_bot:app
 ```
 
-**STEP 3,** Open a new terminal with:
+**STEP 4,** Open a new terminal with:
 
 ```shell
 $ nc -I 60 localhost 12345
 ```
 
-**STEP 4,** Chat with your bot:
+**STEP 5,** Chat with your bot:
 
 ```shell
 $ hello!

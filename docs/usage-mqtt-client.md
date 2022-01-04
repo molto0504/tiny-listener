@@ -75,16 +75,15 @@ async def _(event: Event):
     print("INFO: {:<13} {} ℃".format(room, temperature))
 ```
 
-**STEP 3,** Run your client:
+**STEP 3,** Run your app:
 
 ```shell
 $ tiny-listener mqtt_client:app
 ```
 
-And check the log:
+Check the logs:
 
 ```log
 INFO: living_room   13 °C
 INFO: kitchen       15 °C
-...
 ```

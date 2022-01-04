@@ -39,6 +39,7 @@ nav:
   - 'Usage: Tiny "Web Framwork"': "usage-http-web.md"
   - 'Usage: MQTT client': "usage-mqtt-client.md"
   - 'Usage: "Chat Bot" with TCP': "usage-tcp-chat-bot.md"
+  - 'Usage: RabbitMQ consumer': "usage-rabbitmq-consumer.md"
 
 
 markdown_extensions:

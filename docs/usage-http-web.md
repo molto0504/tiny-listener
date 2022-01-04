@@ -98,7 +98,7 @@ async def hello(event: Event):
     return f"Hello, {username}!"
 ```
 
-**STEP 3,** Run your web:
+**STEP 3,** Run your app:
 
 ```shell
 $ tiny-listener http_web:app
