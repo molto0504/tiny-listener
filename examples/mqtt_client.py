@@ -1,5 +1,5 @@
 """
-See: https://molto0504.github.io/tiny-listener/mqtt-listener/
+See: https://molto0504.github.io/tiny-listener/usage-mqtt-client/
 """
 
 from amqtt.client import MQTTClient

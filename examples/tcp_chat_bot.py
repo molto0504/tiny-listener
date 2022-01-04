@@ -1,3 +1,7 @@
+"""
+See: https://molto0504.github.io/tiny-listener/usage-tcp-chat-bot/
+"""
+
 from asyncio import StreamReader, StreamWriter, start_server
 
 from tiny_listener import Depends, Event, Listener, RouteNotFound

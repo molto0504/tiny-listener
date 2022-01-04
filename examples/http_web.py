@@ -1,5 +1,5 @@
 """
-See: https://molto0504.github.io/tiny-listener/web-framework/
+See: https://molto0504.github.io/tiny-listener/usage-http-web/
 """
 
 from asyncio import StreamReader, StreamWriter, start_server
