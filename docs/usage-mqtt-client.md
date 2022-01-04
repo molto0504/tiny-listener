@@ -1,4 +1,4 @@
-# MQTT Listener
+# MQTT Client
 
 !!! Info
 
@@ -14,7 +14,7 @@
 
     We use a publicly test MQTT server [http://test.mosquitto.org/](http://test.mosquitto.org/) here.
     
-    Therefore, **please don't publish anything sensitive, anybody could be listening.**
+    **Please don't publish anything sensitive, anybody could be listening.**
 
 
 **STEP 1,** Install Tiny-listener and [amqtt](https://github.com/Yakifo/amqtt):
@@ -78,7 +78,7 @@ async def _(event: Event):
 **STEP 3,** Run your client:
 
 ```shell
-$ tiny-listener my_mqtt_client:app
+$ tiny-listener mqtt_client:app
 ```
 
 And check the log:

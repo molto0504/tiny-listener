@@ -19,7 +19,7 @@
 $ pip install tiny-listener httptools 
 ```
 
-**STEP 2,** Create python file ``web.py``:
+**STEP 2,** Create python file ``http_web.py``:
 
 ```python
 from asyncio import StreamReader, StreamWriter, start_server
@@ -101,7 +101,7 @@ async def hello(event: Event):
 **STEP 3,** Run your web:
 
 ```shell
-$ tiny-listener web:app
+$ tiny-listener http_web:app
 $ INFO:     Tiny-listener HTTP server running on on localhost:8000
 ```
 
