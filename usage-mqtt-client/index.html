@@ -17,7 +17,7 @@
     
     
       
-        <title>TCP listener - Tiny-listener</title>
+        <title>Usage: MQTT client - Tiny-listener</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tcp-listener" class="md-skip">
+        <a href="#mqtt-client" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              TCP listener
+              Usage: MQTT client
             
           </span>
         </div>
@@ -246,23 +246,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../web-framework/" class="md-nav__link">
+      <a href="../usage-http-web/" class="md-nav__link">
         Usage: Tiny "Web Framwork"
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../mqtt-listener/" class="md-nav__link">
-        MQTT listener
       </a>
     </li>
   
@@ -286,9 +271,24 @@
       
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        TCP listener
+        Usage: MQTT client
       </a>
       
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage-tcp-chat-bot/" class="md-nav__link">
+        Usage: "Chat Bot" with TCP
+      </a>
     </li>
   
 
@@ -324,8 +324,78 @@
               
                 
 
-<h1 id="tcp-listener">TCP Listener<a class="headerlink" href="#tcp-listener" title="Permanent link">&para;</a></h1>
-<p>TODO</p>
+<h1 id="mqtt-client">MQTT Client<a class="headerlink" href="#mqtt-client" title="Permanent link">&para;</a></h1>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p><strong><a href="https://mqtt.org/">MQTT</a></strong> is a lightweight IOT protocol.</p>
+<p><strong><a href="https://github.com/Yakifo/amqtt">amqtt</a></strong> is an open source MQTT client and broker implementation with asyncio.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Most of time, MQTT client requires an available MQTT server.</p>
+<p>We use a publicly test MQTT server <a href="http://test.mosquitto.org/">http://test.mosquitto.org/</a> here.</p>
+<p><strong>Please don't publish anything sensitive, anybody could be listening.</strong></p>
+</div>
+<p><strong>STEP 1,</strong> Install Tiny-listener and <a href="https://github.com/Yakifo/amqtt">amqtt</a>:</p>
+<div class="highlight"><pre><span></span><code>$ pip install tiny-listener amqtt 
+</code></pre></div>
+<p><strong>STEP 2,</strong> Create python file <code>mqtt_client.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">amqtt.client</span> <span class="kn">import</span> <span class="n">MQTTClient</span>
+<span class="kn">from</span> <span class="nn">amqtt.mqtt.constants</span> <span class="kn">import</span> <span class="n">QOS_0</span>
+<span class="kn">from</span> <span class="nn">amqtt.mqtt.publish</span> <span class="kn">import</span> <span class="n">PublishPacket</span>
+
+<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span>
+
+<span class="n">SERVER_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;mqtt://test.mosquitto.org&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">App</span><span class="p">(</span><span class="n">Listener</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">listen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">()</span>
+        <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">SERVER_ADDRESS</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">(</span><span class="s2">&quot;/test/home/+/temperature&quot;</span><span class="p">,</span> <span class="n">QOS_0</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_ctx</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="n">client</span><span class="p">})</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="s2">&quot;/send&quot;</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="s2">&quot;/recv&quot;</span><span class="p">)</span>
+
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">App</span><span class="p">()</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/send&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">scope</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span>
+    <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/test/home/living_room/temperature&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;13&quot;</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/test/home/kitchen/temperature&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;15&quot;</span><span class="p">)</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/recv&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">scope</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">deliver_message</span><span class="p">()</span>
+        <span class="n">packet</span><span class="p">:</span> <span class="n">PublishPacket</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">publish_packet</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">packet</span><span class="o">.</span><span class="n">variable_header</span><span class="o">.</span><span class="n">topic_name</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="n">packet</span><span class="o">.</span><span class="n">payload</span><span class="p">})</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/test/home/</span><span class="si">{room}</span><span class="s2">/temperature&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="n">room</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;room&quot;</span><span class="p">]</span>
+    <span class="n">temperature</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;INFO: </span><span class="si">{:&lt;13}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> ℃&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">room</span><span class="p">,</span> <span class="n">temperature</span><span class="p">))</span>
+</code></pre></div>
+<p><strong>STEP 3,</strong> Run your client:</p>
+<div class="highlight"><pre><span></span><code>$ tiny-listener mqtt_client:app
+</code></pre></div>
+<p>And check the log:</p>
+<div class="highlight"><pre><span></span><code>INFO: living_room   13 °C
+INFO: kitchen       15 °C
+...
+</code></pre></div>
 
               
             </article>
@@ -339,7 +409,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../mqtt-listener/" class="md-footer__link md-footer__link--prev" aria-label="Previous: MQTT listener" rel="prev">
+        <a href="../usage-http-web/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Usage: Tiny &#34;Web Framwork&#34;" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -348,11 +418,26 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              MQTT listener
+              Usage: Tiny "Web Framwork"
             </div>
           </div>
         </a>
       
+      
+        
+        <a href="../usage-tcp-chat-bot/" class="md-footer__link md-footer__link--next" aria-label="Next: Usage: &#34;Chat Bot&#34; with TCP" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Usage: "Chat Bot" with TCP
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
       
     </nav>
   

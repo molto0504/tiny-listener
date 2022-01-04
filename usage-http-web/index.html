@@ -17,7 +17,7 @@
     
     
       
-        <title>MQTT listener - Tiny-listener</title>
+        <title>Usage: Tiny "Web Framwork" - Tiny-listener</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mqtt-listener" class="md-skip">
+        <a href="#tiny-web-framework" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              MQTT listener
+              Usage: Tiny "Web Framwork"
             
           </span>
         </div>
@@ -244,21 +244,6 @@
 
   
   
-  
-    <li class="md-nav__item">
-      <a href="../web-framework/" class="md-nav__link">
-        Usage: Tiny "Web Framwork"
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
     
   
   
@@ -271,7 +256,7 @@
       
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        MQTT listener
+        Usage: Tiny "Web Framwork"
       </a>
       
     </li>
@@ -286,8 +271,23 @@
   
   
     <li class="md-nav__item">
-      <a href="../tcp-listener/" class="md-nav__link">
-        TCP listener
+      <a href="../usage-mqtt-client/" class="md-nav__link">
+        Usage: MQTT client
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage-tcp-chat-bot/" class="md-nav__link">
+        Usage: "Chat Bot" with TCP
       </a>
     </li>
   
@@ -324,77 +324,103 @@
               
                 
 
-<h1 id="mqtt-listener">MQTT Listener<a class="headerlink" href="#mqtt-listener" title="Permanent link">&para;</a></h1>
+<h1 id="tiny-web-framework">Tiny "Web Framework"<a class="headerlink" href="#tiny-web-framework" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p><strong><a href="https://mqtt.org/">MQTT</a></strong> is a lightweight IOT protocol.</p>
-<p><strong><a href="https://github.com/Yakifo/amqtt">amqtt</a></strong> is an open source MQTT client and broker implementation with asyncio.</p>
+<p><strong><a href="https://github.com/MagicStack/httptools">httptools</a></strong> is a fast HTTP parser lib.</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Most of time, MQTT client requires an available MQTT server.</p>
-<p>We use a publicly test MQTT server <a href="http://test.mosquitto.org/">http://test.mosquitto.org/</a> here.</p>
-<p>Therefore, <strong>please don't publish anything sensitive, anybody could be listening.</strong></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This tiny "web framework" is just intended to show how tiny-listener works.</p>
+<p>If your really need a web framework for production environment,
+using <a href="https://fastapi.tiangolo.com/">FastAPI</a> / <a href="https://www.djangoproject.com/">Django</a> / <a href="https://flask.palletsprojects.com/">Flask</a> instead.</p>
 </div>
-<p><strong>STEP 1,</strong> Install Tiny-listener and <a href="https://github.com/Yakifo/amqtt">amqtt</a>:</p>
-<div class="highlight"><pre><span></span><code>$ pip install tiny-listener amqtt 
+<p><strong>STEP 1,</strong> Install Tiny-listener and <a href="https://github.com/MagicStack/httptools">httptools</a>:</p>
+<div class="highlight"><pre><span></span><code>$ pip install tiny-listener httptools 
 </code></pre></div>
-<p><strong>STEP 2,</strong> Create python file <code>mqtt_client.py</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">amqtt.client</span> <span class="kn">import</span> <span class="n">MQTTClient</span>
-<span class="kn">from</span> <span class="nn">amqtt.mqtt.constants</span> <span class="kn">import</span> <span class="n">QOS_0</span>
-<span class="kn">from</span> <span class="nn">amqtt.mqtt.publish</span> <span class="kn">import</span> <span class="n">PublishPacket</span>
+<p><strong>STEP 2,</strong> Create python file <code>http_web.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">asyncio</span> <span class="kn">import</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">StreamWriter</span><span class="p">,</span> <span class="n">start_server</span>
 
-<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span>
+<span class="kn">from</span> <span class="nn">httptools</span> <span class="kn">import</span> <span class="n">HttpRequestParser</span>
 
-<span class="n">SERVER_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;mqtt://test.mosquitto.org&quot;</span>
+<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">RouteNotFound</span>
+
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">8000</span>
+
+
+<span class="k">class</span> <span class="nc">Request</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parser</span> <span class="o">=</span> <span class="n">HttpRequestParser</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">get_method</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">http_version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">get_http_version</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">on_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">on_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
 
 <span class="k">class</span> <span class="nc">App</span><span class="p">(</span><span class="n">Listener</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">writer</span><span class="p">:</span> <span class="n">StreamWriter</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">readuntil</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\r\n\r\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">req</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;writer&quot;</span><span class="p">:</span> <span class="n">writer</span><span class="p">,</span> <span class="s2">&quot;request&quot;</span><span class="p">:</span> <span class="n">req</span><span class="p">}</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="n">RouteNotFound</span><span class="p">:</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;HTTP/1.1 404</span><span class="se">\n\n</span><span class="s2">Page Not Found&quot;</span><span class="p">)</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
     <span class="k">async</span> <span class="k">def</span> <span class="nf">listen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">()</span>
-        <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">SERVER_ADDRESS</span><span class="p">)</span>
-        <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="p">(</span><span class="s2">&quot;/test/home/+/temperature&quot;</span><span class="p">,</span> <span class="n">QOS_0</span><span class="p">),</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
-        <span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_ctx</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="n">client</span><span class="p">})</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="s2">&quot;/send&quot;</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="s2">&quot;/recv&quot;</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">start_server</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">PORT</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;INFO:     HTTP server running on on http://127.0.0.1:</span><span class="si">{</span><span class="n">PORT</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">App</span><span class="p">()</span>
 
 
-<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/send&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="n">client</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">scope</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span>
-    <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/test/home/living_room/temperature&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;13&quot;</span><span class="p">)</span>
-    <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/test/home/kitchen/temperature&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;15&quot;</span><span class="p">)</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">after_event</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">response</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;writer&quot;</span><span class="p">]</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;request&quot;</span><span class="p">]</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;HTTP/1.1 200</span><span class="se">\n\n</span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s1">&#39;INFO:     </span><span class="si">{}</span><span class="s1">:</span><span class="si">{}</span><span class="s1"> - &quot;</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> HTTP/</span><span class="si">{}</span><span class="s1">&quot; 200 OK&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">writer</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s2">&quot;peername&quot;</span><span class="p">),</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">http_version</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
 
 
-<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/recv&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="n">client</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">scope</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">message</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">deliver_message</span><span class="p">()</span>
-        <span class="n">packet</span><span class="p">:</span> <span class="n">PublishPacket</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">publish_packet</span>
-        <span class="n">app</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">packet</span><span class="o">.</span><span class="n">variable_header</span><span class="o">.</span><span class="n">topic_name</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="n">packet</span><span class="o">.</span><span class="n">payload</span><span class="p">})</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;GET:/&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">home</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s2">&quot;Welcome!&quot;</span>
 
 
-<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/test/home/</span><span class="si">{room}</span><span class="s2">/temperature&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="n">room</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;room&quot;</span><span class="p">]</span>
-    <span class="n">temperature</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;INFO: </span><span class="si">{:&lt;13}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> ℃&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">room</span><span class="p">,</span> <span class="n">temperature</span><span class="p">))</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;GET:/user/</span><span class="si">{username}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">!&quot;</span>
 </code></pre></div>
-<p><strong>STEP 3,</strong> Run your client:</p>
-<div class="highlight"><pre><span></span><code>$ tiny-listener my_mqtt_client:app
+<p><strong>STEP 3,</strong> Run your web:</p>
+<div class="highlight"><pre><span></span><code>$ tiny-listener http_web:app
+$ INFO:     Tiny-listener HTTP server running on on localhost:8000
 </code></pre></div>
-<p>And check the log:</p>
-<div class="highlight"><pre><span></span><code>INFO: living_room   13 °C
-INFO: kitchen       15 °C
-...
+<p><strong>STEP 4,</strong> Try this on your browser: <a href="http://127.0.0.1:8000/user/Bob">http://127.0.0.1:8000/user/Bob</a></p>
+<div class="highlight"><pre><span></span><code>...
+$ INFO:     <span class="m">127</span>.0.0.1:52579 - <span class="s2">&quot;GET /user/Bob HTTP/1.1&quot;</span> <span class="m">200</span> OK
 </code></pre></div>
 
               
@@ -409,7 +435,7 @@ INFO: kitchen       15 °C
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../web-framework/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Usage: Tiny &#34;Web Framwork&#34;" rel="prev">
+        <a href=".." class="md-footer__link md-footer__link--prev" aria-label="Previous: Introduction" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -418,20 +444,20 @@ INFO: kitchen       15 °C
               <span class="md-footer__direction">
                 Previous
               </span>
-              Usage: Tiny "Web Framwork"
+              Introduction
             </div>
           </div>
         </a>
       
       
         
-        <a href="../tcp-listener/" class="md-footer__link md-footer__link--next" aria-label="Next: TCP listener" rel="next">
+        <a href="../usage-mqtt-client/" class="md-footer__link md-footer__link--next" aria-label="Next: Usage: MQTT client" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              TCP listener
+              Usage: MQTT client
             </div>
           </div>
           <div class="md-footer__button md-icon">
