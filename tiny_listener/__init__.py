@@ -3,7 +3,7 @@
 
 __version__ = "0.0.11"
 
-from .context import Context, Scope, EventAlreadyExist
+from .context import Context, EventAlreadyExist, Scope
 from .event import Event
 from .hook import Depends, Hook, HookFunc
 from .listener import ContextNotFound, Listener, RouteNotFound

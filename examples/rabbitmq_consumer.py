@@ -1,5 +1,5 @@
 """
-See: https://molto0504.github.io/tiny-listener/rabbitmq-consumer/
+See: https://molto0504.github.io/tiny-listener/usage-rabbitmq-consumer/
 """
 
 import aio_pika

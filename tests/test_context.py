@@ -1,6 +1,6 @@
 import pytest
 
-from tiny_listener import Context, Listener, EventAlreadyExist
+from tiny_listener import Context, EventAlreadyExist, Listener
 
 
 @pytest.fixture()
