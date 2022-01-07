@@ -20,16 +20,22 @@ class TestListener(TestCase):
         app = App()
         self.assertEqual(app.ctxs, {})
         # create ctx
-        ctx = app.new_ctx("test_ctxs")
-        self.assertEqual(app.ctxs, {"test_ctxs": ctx})
+        ctx = app.new_ctx("my_ctx")
+        self.assertEqual(app.ctxs, {"my_ctx": ctx})
         # create ctx already exist
-        ctx = app.new_ctx("test_ctxs")
-        self.assertEqual(app.ctxs, {"test_ctxs": ctx})
+        ctx = app.new_ctx("my_ctx")
+        self.assertEqual(app.ctxs, {"my_ctx": ctx})
         # get ctx
-        self.assertIs(app.get_ctx("test_ctxs"), ctx)
+        self.assertIs(app.get_ctx("my_ctx"), ctx)
         # get ctx does not exist
         with pytest.raises(ContextNotFound):
             app.get_ctx("_not_exit_")
+        # ctx with auto increment id
+        app = App()
+        app.new_ctx()
+        self.assertEqual({"__1__"}, app.ctxs.keys())
+        app.new_ctx()
+        self.assertEqual({"__1__", "__2__"}, app.ctxs.keys())
 
     def test_match(self):
         app = App()

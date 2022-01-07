@@ -25,13 +25,20 @@ class Listener:
         self.__middleware_before_event: List[Hook] = []
         self.__middleware_after_event: List[Hook] = []
         self.__error_handlers: List[Tuple[Type[BaseException], Hook]] = []
+        self.__cid: int = 0
+
+    @property
+    def cid(self):
+        self.__cid += 1
+        return f"__{self.__cid}__"
 
     async def listen(self):
         raise NotImplementedError()
 
     def new_ctx(
-        self, cid: str = "__global__", scope: Optional[Dict[str, Any]] = None
+        self, cid: Optional[str] = None, scope: Optional[Dict[str, Any]] = None
     ) -> Context:
+        cid = self.cid if cid is None else cid
         try:
             ctx = self.get_ctx(cid)
         except ContextNotFound:
@@ -92,12 +99,12 @@ class Listener:
     def fire(
         self,
         name: str,
-        cid: str = "__global__",
+        cid: Optional[str] = None,
         timeout: Optional[float] = None,
         data: Optional[Dict] = None,
     ) -> asyncio.Task:
         """
-        :raises: RouteNotFound
+        :raises: RouteNotFound or EventAlreadyExist
         """
         ctx = self.new_ctx(cid)
         route, params = self.match_route(name)

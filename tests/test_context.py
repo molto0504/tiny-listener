@@ -27,18 +27,10 @@ def app():
 
 
 def test_ok(app):
-    # with id
     ctx = Context(listener=app, cid="test_ok", scope={"scope_key": "scope_val"})
     assert ctx.cid == "test_ok"
     assert ctx.listener == app
     assert ctx.scope == {"scope_key": "scope_val"}
-    assert ctx.events == {}
-    assert ctx.cache == {}
-    # without id
-    ctx = Context(listener=app)
-    assert ctx.cid == "__global__"
-    assert ctx.listener == app
-    assert ctx.scope == {}
     assert ctx.events == {}
     assert ctx.cache == {}
 
@@ -55,7 +47,7 @@ def test_alive_drop(app):
 
 
 def test_new_event(app):
-    ctx = Context(listener=app)
+    ctx = Context(listener=app, cid="_cid_")
     route = app.routes[0]
     event = ctx.new_event(name="/thing/1", route=route)
     assert event.route is app.routes[0]
@@ -64,7 +56,7 @@ def test_new_event(app):
 
 
 def test_get_events(app):
-    ctx = Context(listener=app)
+    ctx = Context(listener=app, cid="_cid_")
     event_1 = ctx.new_event(name="/user/foo", route=app.routes[1])
     event_2 = ctx.new_event(name="/user/bar", route=app.routes[2])
     # match all
@@ -80,5 +72,5 @@ def test_get_events(app):
 
 @pytest.mark.asyncio
 async def test_fire(event_loop, app):
-    ctx = Context(listener=app, scope={"scope_key": "scope_val"})
+    ctx = Context(listener=app, cid="_cid_", scope={"scope_key": "scope_val"})
     await ctx.fire("/thing/1")
