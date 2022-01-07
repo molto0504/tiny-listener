@@ -13,11 +13,15 @@ if TYPE_CHECKING:
 Scope = Dict[str, Any]
 
 
+class EventAlreadyExist(BaseException):
+    pass
+
+
 class Context:
     def __init__(
         self,
         listener: "Listener",
-        cid: str = "__global__",
+        cid: str,
         scope: Optional[Scope] = None,
     ) -> None:
         self.cid = cid
@@ -51,6 +55,11 @@ class Context:
         data: Optional[Dict] = None,
         params: Optional[Dict[str, Any]] = None,
     ) -> "Event":
+        """
+        :raises: EventAlreadyExist
+        """
+        if name in self.events:
+            raise EventAlreadyExist(f"Event `{name}` already exist in context `{self}`")
         event = Event(
             name=name,
             ctx=self,

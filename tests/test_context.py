@@ -1,6 +1,6 @@
 import pytest
 
-from tiny_listener import Context, Listener
+from tiny_listener import Context, Listener, EventAlreadyExist
 
 
 @pytest.fixture()
@@ -53,6 +53,9 @@ def test_new_event(app):
     assert event.route is app.routes[0]
     assert event.route is route
     assert event.ctx is ctx
+    # event already exist
+    with pytest.raises(EventAlreadyExist):
+        ctx.new_event(name="/thing/1", route=route)
 
 
 def test_get_events(app):
