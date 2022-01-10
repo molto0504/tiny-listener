@@ -47,9 +47,10 @@ from tiny_listener import Listener, Event
 
 class App(Listener):
     async def listen(self):
-        self.fire("Say hi to Alice")
-        self.fire("Say hi to Bob")
-        self.fire("Say hi to Carol")
+        ctx = self.new_ctx()
+        ctx.fire("Say hi to Alice")
+        ctx.fire("Say hi to Bob")
+        ctx.fire("Say hi to Carol")
 
         
 app = App()
@@ -79,9 +80,10 @@ from tiny_listener import Listener, Event
 
 class App(Listener):
    async def listen(self):
-      self.fire("Say hi to Alice")
-      self.fire("Say hi to Bob")
-      self.fire("Say hi to Carol")
+       ctx = self.new_ctx()
+       ctx.fire("Say hi to Alice")
+       ctx.fire("Say hi to Bob")
+       ctx.fire("Say hi to Carol")
 ```
 
 
