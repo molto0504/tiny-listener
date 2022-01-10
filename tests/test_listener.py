@@ -143,7 +143,7 @@ async def test_middleware_callback(event_loop):
 
 
 @pytest.mark.asyncio
-async def test_error_handler(event_loop):
+async def test_on_error(event_loop):
     app = App()
     step = []
 
@@ -152,7 +152,7 @@ async def test_error_handler(event_loop):
         step.append(1)
         raise ValueError(...)
 
-    @app.error_handler(ValueError)
+    @app.on_error(ValueError)
     async def step_2():
         step.append(2)
 
@@ -168,7 +168,7 @@ async def test_error_raise(event_loop):
     async def _():
         raise ValueError(...)
 
-    @app.error_handler(KeyError)
+    @app.on_error(KeyError)
     async def _():
         ...
 

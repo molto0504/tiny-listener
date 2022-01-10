@@ -75,6 +75,30 @@ class Listener:
         except KeyError:
             raise ContextNotFound(f"Context `{cid}` not found")
 
+    def add_startup_callback(self, fn: Callable):
+        self.__startup.append(asyncio.coroutine(fn))
+
+    def add_shutdown_callback(self, fn: Callable):
+        self.__shutdown.append(asyncio.coroutine(fn))
+
+    def add_before_event_hook(self, fn: Callable):
+        self.__middleware_before_event.append(Hook(fn))
+
+    def add_after_event_hook(self, fn: Callable):
+        self.__middleware_after_event.append(Hook(fn))
+
+    def add_on_error_hook(self, fn: Callable, exc: Type[BaseException]):
+        self.__error_handlers.append((exc, Hook(fn)))
+
+    def add_on_event_hook(
+        self,
+        fn: Hook,
+        path: str = "{_:path}",
+        after: Union[None, str, List[str]] = None,
+        **opts: Any,
+    ):
+        self.routes.append(Route(path=path, fn=fn, after=after or [], opts=opts))
+
     def on_event(
         self,
         path: str = "{_:path}",
@@ -82,29 +106,29 @@ class Listener:
         **opts: Any,
     ) -> Callable[[Hook], None]:
         def _decorator(fn: Hook) -> None:
-            self.routes.append(Route(path=path, fn=fn, after=after or [], opts=opts))
+            self.add_on_event_hook(fn, path, after, **opts)
 
         return _decorator
 
     def startup(self, fn: Callable) -> Callable:
-        self.__startup.append(asyncio.coroutine(fn))
+        self.add_startup_callback(fn)
         return fn
 
     def shutdown(self, fn: Callable) -> Callable:
-        self.__shutdown.append(asyncio.coroutine(fn))
+        self.add_shutdown_callback(fn)
         return fn
 
     def before_event(self, fn: Callable) -> Callable:
-        self.__middleware_before_event.append(Hook(fn))
+        self.add_before_event_hook(fn)
         return fn
 
     def after_event(self, fn: Callable) -> Callable:
-        self.__middleware_after_event.append(Hook(fn))
+        self.add_after_event_hook(fn)
         return fn
 
-    def error_handler(self, exc: Type[BaseException]) -> Callable[[Callable], Callable]:
+    def on_error(self, exc: Type[BaseException]) -> Callable[[Callable], Callable]:
         def f(fn: Callable) -> Callable:
-            self.__error_handlers.append((exc, Hook(fn)))
+            self.add_on_error_hook(fn, exc)
             return fn
 
         return f
