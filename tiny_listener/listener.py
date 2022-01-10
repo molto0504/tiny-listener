@@ -15,6 +15,10 @@ class ContextNotFound(BaseException):
     pass
 
 
+class ContextAlreadyExist(BaseException):
+    pass
+
+
 class Listener:
     def __init__(self):
         self.ctxs: Dict[str, Context] = {}
@@ -27,8 +31,8 @@ class Listener:
         self.__error_handlers: List[Tuple[Type[BaseException], Hook]] = []
         self.__cid: int = 0
 
-    @property
-    def cid(self):
+    def gen_cid(self):
+        """Override this method to change how the cid generated."""
         self.__cid += 1
         return f"__{self.__cid}__"
 
@@ -36,15 +40,31 @@ class Listener:
         raise NotImplementedError()
 
     def new_ctx(
-        self, cid: Optional[str] = None, scope: Optional[Dict[str, Any]] = None
+        self,
+        cid: Optional[str] = None,
+        scope: Optional[Dict[str, Any]] = None,
+        update_existing: bool = True,
     ) -> Context:
-        cid = self.cid if cid is None else cid
-        try:
-            ctx = self.get_ctx(cid)
-        except ContextNotFound:
+        """
+        :raises: ContextAlreadyExist
+        """
+        if cid is None:
+            cid = self.gen_cid()
+
+        if scope is None:
+            scope = {}
+
+        if cid not in self.ctxs:
             ctx = Context(listener=self, cid=cid, scope=scope)
             self.add_ctx(ctx)
-        return ctx
+            return ctx
+
+        if cid in self.ctxs and update_existing:
+            ctx = self.ctxs[cid]
+            ctx.scope.update(scope)
+            return ctx
+
+        raise ContextAlreadyExist(f"Context `{cid}` already exist")
 
     def add_ctx(self, ctx: Context):
         self.ctxs[ctx.cid] = ctx

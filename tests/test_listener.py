@@ -2,7 +2,13 @@ from unittest import TestCase
 
 import pytest
 
-from tiny_listener import ContextNotFound, Listener, Route, RouteNotFound
+from tiny_listener import (
+    ContextAlreadyExist,
+    ContextNotFound,
+    Listener,
+    Route,
+    RouteNotFound,
+)
 
 
 class App(Listener):
@@ -16,26 +22,39 @@ class TestListener(TestCase):
         self.assertEqual(app.ctxs, {})
         self.assertEqual(app.routes, [])
 
-    def test_ctxs(self):
+    def test_new_ctx(self):
         app = App()
         self.assertEqual(app.ctxs, {})
-        # create ctx
-        ctx = app.new_ctx("my_ctx")
+
+        # new ctx not exist
+        ctx = app.new_ctx("my_ctx", scope={"foo": ...})
         self.assertEqual(app.ctxs, {"my_ctx": ctx})
-        # create ctx already exist
-        ctx = app.new_ctx("my_ctx")
+        self.assertEqual(app.ctxs[ctx.cid].scope, {"foo": ...})
+
+        # new ctx already exist
+        with pytest.raises(ContextAlreadyExist):
+            app.new_ctx("my_ctx", update_existing=False)
+
+        app.new_ctx("my_ctx", scope={"foo": "foo", "bar": "bar"})
         self.assertEqual(app.ctxs, {"my_ctx": ctx})
-        # get ctx
-        self.assertIs(app.get_ctx("my_ctx"), ctx)
-        # get ctx does not exist
-        with pytest.raises(ContextNotFound):
-            app.get_ctx("_not_exit_")
+        self.assertEqual(app.ctxs[ctx.cid].scope, {"foo": "foo", "bar": "bar"})
+
         # ctx with auto increment id
         app = App()
         app.new_ctx()
         self.assertEqual({"__1__"}, app.ctxs.keys())
         app.new_ctx()
         self.assertEqual({"__1__", "__2__"}, app.ctxs.keys())
+
+    def test_get_ctxs(self):
+        app = App()
+        self.assertEqual(app.ctxs, {})
+        ctx = app.new_ctx("my_ctx")
+        # get ctx
+        self.assertIs(app.get_ctx("my_ctx"), ctx)
+        # get ctx does not exist
+        with pytest.raises(ContextNotFound):
+            app.get_ctx("_not_exit_")
 
     def test_match(self):
         app = App()
