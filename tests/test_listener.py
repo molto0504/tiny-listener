@@ -87,6 +87,23 @@ class TestListener(TestCase):
         self.assertEqual(route.opts, {"cfg": ...})
         self.assertEqual(route.after, ["/..."])
 
+    def test_remove_on_event_hook(self):
+        app = App()
+
+        @app.on_event("/foo")
+        def _():
+            pass
+
+        @app.on_event("/bar")
+        def _():
+            pass
+
+        self.assertEqual(len(app.routes), 2)
+        app.remove_on_event_hook("/foo")
+        self.assertEqual(len(app.routes), 1)
+        route = app.routes[0]
+        self.assertEqual(route.path, "/bar")
+
     def test_startup_callback(self):
         app = App()
         step = []

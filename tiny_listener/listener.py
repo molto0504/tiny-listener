@@ -92,12 +92,16 @@ class Listener:
 
     def add_on_event_hook(
         self,
-        fn: Hook,
+        fn: Callable,
         path: str = "{_:path}",
         after: Union[None, str, List[str]] = None,
         **opts: Any,
     ):
         self.routes.append(Route(path=path, fn=fn, after=after or [], opts=opts))
+
+    def remove_on_event_hook(self, path: str) -> None:
+        """移除事件"""
+        self.routes = [route for route in self.routes if route.path != path]
 
     def on_event(
         self,
@@ -105,7 +109,7 @@ class Listener:
         after: Union[None, str, List[str]] = None,
         **opts: Any,
     ) -> Callable[[Hook], None]:
-        def _decorator(fn: Hook) -> None:
+        def _decorator(fn: Callable) -> None:
             self.add_on_event_hook(fn, path, after, **opts)
 
         return _decorator
