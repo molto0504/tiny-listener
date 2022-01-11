@@ -1,19 +1,22 @@
 import asyncio
 import weakref
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Optional, Set, TypeVar
 
 if TYPE_CHECKING:
-    from .context import Context
+    from .context import Context  # noqa # pylint: disable=unused-import
     from .listener import Listener
     from .routing import Route
 
 
-class Event:
+CTXType = TypeVar("CTXType", bound="Context")
+
+
+class Event(Generic[CTXType]):
     def __init__(
         self,
         name: str,
-        ctx: "Context",
+        ctx: CTXType,
         route: "Route",
         timeout: Optional[float] = None,
         data: Optional[Dict] = None,
@@ -25,7 +28,7 @@ class Event:
         self.params: Dict[str, Any] = params or {}
         self.error: Optional[BaseException] = None
         self.__route = route
-        self.__ctx: Callable[..., "Context"] = weakref.ref(ctx)  # type: ignore
+        self.__ctx: Callable[..., CTXType] = weakref.ref(ctx)  # type: ignore
         self.__done = asyncio.Event()
         self.__result: Any = None
 
@@ -34,7 +37,7 @@ class Event:
         return self.__route
 
     @property
-    def ctx(self) -> "Context":
+    def ctx(self) -> "CTXType":
         return self.__ctx()
 
     @property

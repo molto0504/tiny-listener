@@ -1,6 +1,18 @@
 import asyncio
 import sys
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from .context import Context
 from .hook import Hook
@@ -19,9 +31,12 @@ class ContextAlreadyExist(BaseException):
     pass
 
 
-class Listener:
+CTXType = TypeVar("CTXType", bound=Context)
+
+
+class Listener(Generic[CTXType]):
     def __init__(self):
-        self.ctxs: Dict[str, Context] = {}
+        self.ctxs: Dict[str, CTXType] = {}
         self.routes: List[Route] = []
 
         self.__startup: List[Callable[..., Awaitable[Any]]] = []
@@ -30,6 +45,11 @@ class Listener:
         self.__middleware_after_event: List[Hook] = []
         self.__error_handlers: List[Tuple[Type[BaseException], Hook]] = []
         self.__cid: int = 0
+        self.__context_cls: Type[CTXType] = Context
+
+    def set_context_cls(self, kls: Type[CTXType]):
+        assert issubclass(kls, Context), "kls must inherit from Context"
+        self.__context_cls = kls
 
     def gen_cid(self):
         """Override this method to change how the cid generated."""
@@ -44,7 +64,7 @@ class Listener:
         cid: Optional[str] = None,
         scope: Optional[Dict[str, Any]] = None,
         update_existing: bool = True,
-    ) -> Context:
+    ) -> CTXType:
         """
         :raises: ContextAlreadyExist
         """
@@ -55,7 +75,7 @@ class Listener:
             scope = {}
 
         if cid not in self.ctxs:
-            ctx = Context(listener=self, cid=cid, scope=scope)
+            ctx = self.__context_cls(listener=self, cid=cid, scope=scope)
             self.add_ctx(ctx)
             return ctx
 
@@ -66,10 +86,10 @@ class Listener:
 
         raise ContextAlreadyExist(f"Context `{cid}` already exist")
 
-    def add_ctx(self, ctx: Context):
+    def add_ctx(self, ctx: CTXType):
         self.ctxs[ctx.cid] = ctx
 
-    def get_ctx(self, cid: str) -> Context:
+    def get_ctx(self, cid: str) -> CTXType:
         try:
             return self.ctxs[cid]
         except KeyError:

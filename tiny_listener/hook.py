@@ -29,7 +29,7 @@ class Hook:
                     else:
                         actual = await depends(event, executor)
                         ctx.cache[depends] = actual
-                elif param.annotation is Event:
+                elif issubclass(param.annotation, Event):
                     actual = event
 
                 if param.kind == Parameter.KEYWORD_ONLY:

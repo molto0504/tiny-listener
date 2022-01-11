@@ -3,6 +3,7 @@ from unittest import TestCase
 import pytest
 
 from tiny_listener import (
+    Context,
     ContextAlreadyExist,
     ContextNotFound,
     Listener,
@@ -21,6 +22,16 @@ class TestListener(TestCase):
         app = App()
         self.assertEqual(app.ctxs, {})
         self.assertEqual(app.routes, [])
+
+    def test_set_context_cls(self):
+        class MyContext(Context):
+            foo = None
+
+        app = App()
+        app.set_context_cls(MyContext)
+        ctx = app.new_ctx()
+        self.assertTrue(isinstance(ctx, MyContext))
+        self.assertIsNone(ctx.foo)
 
     def test_new_ctx(self):
         app = App()
