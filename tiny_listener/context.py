@@ -23,7 +23,7 @@ ListenerType = TypeVar("ListenerType", bound="Listener[Context]")
 class Context:
     def __init__(
         self,
-        listener: Listener,
+        listener: "Listener",
         cid: str,
         scope: Optional[Scope] = None,
     ) -> None:
