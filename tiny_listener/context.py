@@ -1,13 +1,13 @@
 import asyncio
 import re
 import weakref
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, TypeVar
 
 from .event import Event
 
 if TYPE_CHECKING:
     from .hook import Depends
-    from .listener import Listener
+    from .listener import Listener  # noqa # pylint: disable=unused-import
     from .routing import Route
 
 Scope = Dict[str, Any]
@@ -17,10 +17,13 @@ class EventAlreadyExist(BaseException):
     pass
 
 
+ListenerType = TypeVar("ListenerType", bound="Listener[Context]")
+
+
 class Context:
     def __init__(
         self,
-        listener: "Listener",
+        listener: Listener,
         cid: str,
         scope: Optional[Scope] = None,
     ) -> None:
@@ -28,10 +31,10 @@ class Context:
         self.cache: Dict[Depends, Any] = {}
         self.scope: Scope = scope or {}
         self.events: Dict[str, Event] = {}
-        self.__listener: Callable[..., "Listener"] = weakref.ref(listener)  # type: ignore
+        self.__listener: Callable[..., ListenerType] = weakref.ref(listener)  # type: ignore
 
     @property
-    def listener(self) -> "Listener":
+    def listener(self) -> ListenerType:
         return self.__listener()
 
     @property
