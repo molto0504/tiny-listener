@@ -90,6 +90,9 @@ class Listener(Generic[CTXType]):
         self.ctxs[ctx.cid] = ctx
 
     def get_ctx(self, cid: str) -> CTXType:
+        """
+        :raises: ContextNotFound
+        """
         try:
             return self.ctxs[cid]
         except KeyError:
@@ -120,7 +123,6 @@ class Listener(Generic[CTXType]):
         self.routes.append(Route(path=path, fn=fn, after=after or [], opts=opts))
 
     def remove_on_event_hook(self, path: str) -> None:
-        """移除事件"""
         self.routes = [route for route in self.routes if route.path != path]
 
     def on_event(
@@ -158,6 +160,9 @@ class Listener(Generic[CTXType]):
         return f
 
     def match_route(self, name: str) -> Tuple[Route, Params]:
+        """
+        :raises: RouteNotFound
+        """
         for route in self.routes:
             params = route.match(name)
             if params is not None:
