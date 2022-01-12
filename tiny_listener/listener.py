@@ -201,7 +201,8 @@ class Listener(Generic[CTXType]):
                 else:
                     [await handler(event) for handler in handlers]
             finally:
-                event.done()
+                if not event.prevent_done:
+                    event.done()
 
         return asyncio.get_event_loop().create_task(_fire())
 

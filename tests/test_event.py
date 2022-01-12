@@ -79,6 +79,14 @@ async def test_done(event_loop, app, route_final):
 
 
 @pytest.mark.asyncio
+async def test_not_done_yet(event_loop, app, route_final):
+    event = Event(name="", ctx=app.new_ctx("test_not_done_yet"), route=route_final)
+    assert event.prevent_done is False
+    event.not_done_yet()
+    assert event.prevent_done is True
+
+
+@pytest.mark.asyncio
 async def test_timeout(event_loop, app, route_final):
     event = Event(name="/final", ctx=app.new_ctx("test_timeout"), route=route_final)
     assert event.is_done is False

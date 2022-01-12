@@ -31,6 +31,11 @@ class Event(Generic[CTXType]):
         self.__ctx: Callable[..., CTXType] = weakref.ref(ctx)  # type: ignore
         self.__done = asyncio.Event()
         self.__result: Any = None
+        self.__prevent_done: bool = False
+
+    @property
+    def prevent_done(self) -> bool:
+        return self.__prevent_done
 
     @property
     def route(self) -> "Route":
@@ -55,6 +60,9 @@ class Event(Generic[CTXType]):
     @property
     def is_done(self) -> bool:
         return self.__done.is_set()
+
+    def not_done_yet(self) -> None:
+        self.__prevent_done = True
 
     def done(self) -> None:
         self.__done.set()
