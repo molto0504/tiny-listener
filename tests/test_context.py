@@ -4,29 +4,29 @@ from tiny_listener import Context, EventAlreadyExist, Listener
 
 
 @pytest.fixture()
-def app():
+def app() -> Listener:
     class App(Listener):
-        async def listen(self):
+        async def listen(self) -> None:
             ...
 
     app = App()
 
     @app.on_event(path="/thing/{uid}")
-    async def _():
+    async def _thing() -> None:
         ...
 
     @app.on_event(path="/user/foo")
-    async def _():
+    async def _user_foo() -> None:
         ...
 
     @app.on_event(path="/user/bar")
-    async def _():
+    async def _user_bar() -> None:
         ...
 
     return app
 
 
-def test_ok(app):
+def test_ok(app: Listener) -> None:
     ctx = Context(listener=app, cid="test_ok", scope={"scope_key": "scope_val"})
     assert ctx.cid == "test_ok"
     assert ctx.listener == app
@@ -35,7 +35,7 @@ def test_ok(app):
     assert ctx.cache == {}
 
 
-def test_alive_drop(app):
+def test_alive_drop(app: Listener) -> None:
     ctx = Context(listener=app, cid="test_alive_drop")
     assert ctx.is_alive is False
     app.add_ctx(ctx)
@@ -46,7 +46,7 @@ def test_alive_drop(app):
     assert ctx.drop() is False
 
 
-def test_new_event(app):
+def test_new_event(app: Listener) -> None:
     ctx = Context(listener=app, cid="_cid_")
     route = app.routes[0]
     event = ctx.new_event(name="/thing/1", route=route)
@@ -58,7 +58,7 @@ def test_new_event(app):
         ctx.new_event(name="/thing/1", route=route)
 
 
-def test_get_events(app):
+def test_get_events(app: Listener) -> None:
     ctx = Context(listener=app, cid="_cid_")
     event_1 = ctx.new_event(name="/user/foo", route=app.routes[1])
     event_2 = ctx.new_event(name="/user/bar", route=app.routes[2])
@@ -74,6 +74,6 @@ def test_get_events(app):
 
 
 @pytest.mark.asyncio
-async def test_fire(event_loop, app):
+async def test_fire(app: Listener) -> None:
     ctx = Context(listener=app, cid="_cid_", scope={"scope_key": "scope_val"})
     await ctx.fire("/thing/1")

@@ -1,11 +1,12 @@
 import sys
+from typing import Any
 
 import click
 
 import tiny_listener
 
 
-def show_version(ctx, _, value) -> None:
+def show_version(ctx: click.Context, _: Any, value: Any) -> None:
     if value and not ctx.resilient_parsing:
         click.echo(f"tiny-listener {tiny_listener.__version__}")
         ctx.exit()
@@ -22,15 +23,15 @@ def show_version(ctx, _, value) -> None:
     help="Display version info.",
 )
 @click.argument("app")
-def main(app_dir, app):
+def main(app_dir: str, app: str) -> None:
     sys.path.insert(0, app_dir)
     try:
-        app = tiny_listener.import_from_string(app)
+        listener: tiny_listener.Listener = tiny_listener.import_from_string(app)
     except BaseException as e:
         click.echo(e)
         sys.exit(1)
     else:
-        app.run()
+        listener.run()
 
 
 if __name__ == "__main__":

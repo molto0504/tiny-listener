@@ -35,7 +35,7 @@ CTXType = TypeVar("CTXType", bound=Context)
 
 
 class Listener(Generic[CTXType]):
-    def __init__(self):
+    def __init__(self) -> None:
         self.ctxs: Dict[str, CTXType] = {}
         self.routes: List[Route] = []
 
@@ -47,16 +47,16 @@ class Listener(Generic[CTXType]):
         self.__cid: int = 0
         self.__context_cls: Type[CTXType] = Context
 
-    def set_context_cls(self, kls: Type[CTXType]):
+    def set_context_cls(self, kls: Type[CTXType]) -> None:
         assert issubclass(kls, Context), "kls must inherit from Context"
         self.__context_cls = kls
 
-    def gen_cid(self):
+    def gen_cid(self) -> str:
         """Override this method to change how the cid generated."""
         self.__cid += 1
         return f"__{self.__cid}__"
 
-    async def listen(self):
+    async def listen(self) -> None:
         raise NotImplementedError()
 
     def new_ctx(
@@ -86,7 +86,7 @@ class Listener(Generic[CTXType]):
 
         raise ContextAlreadyExist(f"Context `{cid}` already exist")
 
-    def add_ctx(self, ctx: CTXType):
+    def add_ctx(self, ctx: CTXType) -> None:
         self.ctxs[ctx.cid] = ctx
 
     def get_ctx(self, cid: str) -> CTXType:
@@ -98,19 +98,19 @@ class Listener(Generic[CTXType]):
         except KeyError:
             raise ContextNotFound(f"Context `{cid}` not found")
 
-    def add_startup_callback(self, fn: Callable):
+    def add_startup_callback(self, fn: Callable) -> None:
         self.__startup.append(asyncio.coroutine(fn))
 
-    def add_shutdown_callback(self, fn: Callable):
+    def add_shutdown_callback(self, fn: Callable) -> None:
         self.__shutdown.append(asyncio.coroutine(fn))
 
-    def add_before_event_hook(self, fn: Callable):
+    def add_before_event_hook(self, fn: Callable) -> None:
         self.__middleware_before_event.append(Hook(fn))
 
-    def add_after_event_hook(self, fn: Callable):
+    def add_after_event_hook(self, fn: Callable) -> None:
         self.__middleware_after_event.append(Hook(fn))
 
-    def add_on_error_hook(self, fn: Callable, exc: Type[BaseException]):
+    def add_on_error_hook(self, fn: Callable, exc: Type[BaseException]) -> None:
         self.__error_handlers.append((exc, Hook(fn)))
 
     def add_on_event_hook(
@@ -119,7 +119,7 @@ class Listener(Generic[CTXType]):
         path: str = "{_:path}",
         after: Union[None, str, List[str]] = None,
         **opts: Any,
-    ):
+    ) -> None:
         self.routes.append(Route(path=path, fn=fn, after=after or [], opts=opts))
 
     def remove_on_event_hook(self, path: str) -> None:
@@ -183,7 +183,7 @@ class Listener(Generic[CTXType]):
         route, params = self.match_route(name)
         event = ctx.new_event(name=name, timeout=timeout, route=route, data=data or {}, params=params)
 
-        async def _fire():
+        async def _fire() -> None:
             try:
                 [await evt.wait_until_done(evt.timeout) for evt in event.after]
                 [await fn(event) for fn in self.__middleware_before_event]
@@ -202,7 +202,7 @@ class Listener(Generic[CTXType]):
 
         return asyncio.get_event_loop().create_task(_fire())
 
-    def stop(self):
+    def stop(self) -> None:
         loop = asyncio.get_event_loop()
         loop.stop()
 
