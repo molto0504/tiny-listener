@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial, wraps
-from inspect import Parameter, signature
+from inspect import Parameter, signature, isclass
 from typing import Any, Awaitable, Callable
 
 from .context import Event
@@ -29,7 +29,7 @@ class Hook:
                     else:
                         actual = await depends(event, executor)
                         ctx.cache[depends] = actual
-                elif issubclass(param.annotation, Event):
+                elif isclass(param.annotation) and issubclass(param.annotation, Event):
                     actual = event
 
                 if param.kind == Parameter.KEYWORD_ONLY:
