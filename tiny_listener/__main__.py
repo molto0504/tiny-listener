@@ -12,9 +12,7 @@ def show_version(ctx, _, value) -> None:
 
 
 @click.command()
-@click.option(
-    "--app-dir", "app_dir", default=".", show_default=True, help="Your APP directory."
-)
+@click.option("--app-dir", "app_dir", default=".", show_default=True, help="Your APP directory.")
 @click.option(
     "--version",
     is_flag=True,

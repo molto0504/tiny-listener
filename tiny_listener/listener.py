@@ -181,9 +181,7 @@ class Listener(Generic[CTXType]):
         """
         ctx = self.new_ctx(cid)
         route, params = self.match_route(name)
-        event = ctx.new_event(
-            name=name, timeout=timeout, route=route, data=data or {}, params=params
-        )
+        event = ctx.new_event(name=name, timeout=timeout, route=route, data=data or {}, params=params)
 
         async def _fire():
             try:
@@ -193,9 +191,7 @@ class Listener(Generic[CTXType]):
                 [await fn(event) for fn in self.__middleware_after_event]
             except BaseException as e:
                 event.error = e
-                handlers = [
-                    fn for kls, fn in self.__error_handlers if isinstance(e, kls)
-                ]
+                handlers = [fn for kls, fn in self.__error_handlers if isinstance(e, kls)]
                 if not handlers:
                     raise e
                 else:
@@ -218,9 +214,7 @@ class Listener(Generic[CTXType]):
             loop.run_until_complete(fn())
         sys.exit()
 
-    def set_event_loop(
-        self, loop: Optional[asyncio.AbstractEventLoop] = None
-    ) -> asyncio.AbstractEventLoop:
+    def set_event_loop(self, loop: Optional[asyncio.AbstractEventLoop] = None) -> asyncio.AbstractEventLoop:
         """Override this method to change default event loop"""
         if loop is None:
             loop = asyncio.new_event_loop()

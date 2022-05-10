@@ -3,7 +3,33 @@
 set -e
 set -x
 
-mypy tiny_listener
-flake8 tiny_listener tests examples
-isort tiny_listener tests examples
-black tiny_listener tests examples
+paths=( "tiny_listener" "tests" )
+
+isort \
+--combine-as \
+--profile black \
+--project=tiny_listener \
+"${paths[@]}"
+
+autoflake \
+--recursive \
+--in-place \
+--remove-all-unused-imports \
+"${paths[@]}"
+
+black \
+--target-version=py38 \
+--line-length=120 \
+"${paths[@]}"
+
+flake8 \
+--ignore=E203,E501,W503 \
+--max-line-length=120 \
+"${paths[@]}"
+
+mypy \
+--ignore-missing-imports \
+--disallow-untyped-defs \
+--follow-imports=silent \
+tests \
+tiny_listener

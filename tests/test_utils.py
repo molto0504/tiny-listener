@@ -20,12 +20,8 @@ class TestImportFromString(TestCase):
         self.assertRaises(AssertionError, import_from_string, ":Listener")
 
     def test_bad_module(self):
-        self.assertRaises(
-            ModuleNotFoundError, import_from_string, "bad_module:Listener"
-        )
+        self.assertRaises(ModuleNotFoundError, import_from_string, "bad_module:Listener")
 
     def test_bad_attr(self):
         self.assertRaises(AttributeError, import_from_string, "tiny_listener:bad_attr")
-        self.assertRaises(
-            AttributeError, import_from_string, "tiny_listener:Listener.bad_attr"
-        )
+        self.assertRaises(AttributeError, import_from_string, "tiny_listener:Listener.bad_attr")

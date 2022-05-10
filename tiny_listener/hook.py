@@ -40,9 +40,7 @@ class Hook:
                 return await self.__fn(*args, **kwargs)
             else:
                 loop = asyncio.get_event_loop()
-                return await loop.run_in_executor(
-                    executor, partial(self.__fn, *args, **kwargs)
-                )
+                return await loop.run_in_executor(executor, partial(self.__fn, *args, **kwargs))
 
         return f
 

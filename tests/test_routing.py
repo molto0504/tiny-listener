@@ -57,9 +57,7 @@ class TestRoute(TestCase):
 
     def test_convertor_path(self):
         route = Route(path="/user/{file:path}", fn=self.handler)
-        self.assertEqual(
-            {"file": "document/repo/foo.py"}, route.match("/user/document/repo/foo.py")
-        )
+        self.assertEqual({"file": "document/repo/foo.py"}, route.match("/user/document/repo/foo.py"))
         self.assertEqual(
             {"file": "http://localhost/home"},
             route.match("/user/http://localhost/home"),
@@ -80,9 +78,7 @@ class TestRoute(TestCase):
             fn=self.handler,
         )
         self.assertEqual(
-            route.match(
-                "/user/18baadd0-9225-4cc0-a13b-69098168689f/bob/document/repo/foo.py/18/1.1"
-            ),
+            route.match("/user/18baadd0-9225-4cc0-a13b-69098168689f/bob/document/repo/foo.py/18/1.1"),
             {
                 "id": uuid.UUID("18baadd0-9225-4cc0-a13b-69098168689f"),
                 "name": "bob",

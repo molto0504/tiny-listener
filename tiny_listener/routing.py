@@ -71,9 +71,7 @@ class Route:
         return params
 
     def __repr__(self) -> str:
-        return "{}(path={}, opts={})".format(
-            self.__class__.__name__, self.path, self.opts
-        )
+        return "{}(path={}, opts={})".format(self.__class__.__name__, self.path, self.opts)
 
 
 def compile_path(path: str) -> Tuple[Pattern[str], Dict[str, Convertor]]:
