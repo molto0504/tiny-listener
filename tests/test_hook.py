@@ -90,7 +90,7 @@ class TestHookDepends(TestCase):
         def fn(
             event_1: Event,
             event_2: Event,
-            field_1: Any,
+            field_1,
             dep_1: object = Depends(my_dep),
             *,
             field_2: Any = None,
