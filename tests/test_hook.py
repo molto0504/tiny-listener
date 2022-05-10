@@ -53,7 +53,7 @@ class TestHookDepends(TestCase):
             assert event is self.fake_event
             return ...
 
-        def fn(event: Event, foo: object = Depends(my_dep)) -> None:
+        def fn(event: Event, foo=Depends(my_dep)) -> None:
             assert event is self.fake_event
             assert foo is ...
 
@@ -76,7 +76,7 @@ class TestHookDepends(TestCase):
             assert event is self.fake_event
             return ...
 
-        async def fn(event: Event, foo: object = Depends(my_dep)) -> None:
+        async def fn(event: Event, foo=Depends(my_dep)) -> None:
             assert event is self.fake_event
             assert foo is ...
 
@@ -91,10 +91,10 @@ class TestHookDepends(TestCase):
             event_1: Event,
             event_2: Event,
             field_1,
-            dep_1: object = Depends(my_dep),
+            dep_1=Depends(my_dep),
             *,
             field_2: Any = None,
-            dep_2: object = Depends(my_dep),
+            dep_2=Depends(my_dep),
         ) -> None:
             assert event_1 is event_2 is self.fake_event
             assert field_1 is field_2 is None

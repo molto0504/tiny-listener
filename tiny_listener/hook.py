@@ -53,7 +53,7 @@ class Hook:
     def __hash__(self) -> int:
         return hash(self.__fn)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other) -> bool:
         return hash(self) == hash(other)
 
 
