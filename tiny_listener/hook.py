@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial, wraps
-from inspect import Parameter, signature, isclass
+from inspect import Parameter, isclass, signature
 from typing import Any, Awaitable, Callable
 
 from .context import Event
@@ -48,12 +48,12 @@ class Hook:
         return await self.__hook(event, executor)
 
     def __repr__(self) -> str:
-        return "{}({})".format(self.__class__.__name__, self.__hook.__name__)
+        return f"{self.__class__.__name__}({self.__hook.__name__})"
 
     def __hash__(self) -> int:
         return hash(self.__fn)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return hash(self) == hash(other)
 
 
