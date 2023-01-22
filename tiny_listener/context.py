@@ -77,12 +77,8 @@ class Context:
     def get_events(self, pat: str = ".*") -> List[Event]:
         return [event for name, event in self.events.items() if re.match(pat, name)]
 
-    def fire(
-        self, name: str, timeout: Optional[float] = None, data: Optional[Dict] = None
-    ) -> asyncio.Task:
+    def fire(self, name: str, timeout: Optional[float] = None, data: Optional[Dict] = None) -> asyncio.Task:
         return self.listener.fire(name=name, cid=self.cid, timeout=timeout, data=data)
 
     def __repr__(self) -> str:
-        return "{}(cid={}, scope={})".format(
-            self.__class__.__name__, self.cid, self.scope
-        )
+        return "{}(cid={}, scope={})".format(self.__class__.__name__, self.cid, self.scope)

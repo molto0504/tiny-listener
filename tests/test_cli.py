@@ -8,20 +8,20 @@ from tiny_listener import __version__
 from tiny_listener.__main__ import main
 
 
-def test_cli_version():
+def test_cli_version() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
     assert result.output == f"tiny-listener {__version__}\n"
 
 
-def test_cli_run_bad_app():
+def test_cli_run_bad_app() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["bad:app"])
     assert result.exit_code == 1
 
 
-def test_cli_run_ok():
+def test_cli_run_ok() -> None:
     code = """
 from tiny_listener import Listener
 

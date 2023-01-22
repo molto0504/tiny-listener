@@ -35,7 +35,7 @@ $ pip install tiny-listener
 ## Why use tiny-listener
 
 - ✔ Pure Python.
-- ✔ Lighting-fast, based on native coroutine.
+- ✔ Lightning-fast, based on native coroutine.
 - ✔ 100% test coverage.
 
 ## Example

@@ -13,17 +13,17 @@ from tiny_listener import (
 
 
 class App(Listener):
-    async def listen(self):
+    async def listen(self) -> None:
         pass
 
 
 class TestListener(TestCase):
-    def test_ok(self):
+    def test_ok(self) -> None:
         app = App()
         self.assertEqual(app.ctxs, {})
         self.assertEqual(app.routes, [])
 
-    def test_set_context_cls(self):
+    def test_set_context_cls(self) -> None:
         class MyContext(Context):
             foo = None
 
@@ -33,7 +33,7 @@ class TestListener(TestCase):
         self.assertTrue(isinstance(ctx, MyContext))
         self.assertIsNone(ctx.foo)
 
-    def test_new_ctx(self):
+    def test_new_ctx(self) -> None:
         app = App()
         self.assertEqual(app.ctxs, {})
 
@@ -57,7 +57,7 @@ class TestListener(TestCase):
         app.new_ctx()
         self.assertEqual({"__1__", "__2__"}, app.ctxs.keys())
 
-    def test_get_ctxs(self):
+    def test_get_ctxs(self) -> None:
         app = App()
         self.assertEqual(app.ctxs, {})
         ctx = app.new_ctx("my_ctx")
@@ -67,7 +67,7 @@ class TestListener(TestCase):
         with pytest.raises(ContextNotFound):
             app.get_ctx("_not_exit_")
 
-    def test_match(self):
+    def test_match(self) -> None:
         app = App()
 
         route_user_list = Route("/users", fn=lambda: ...)
@@ -85,11 +85,11 @@ class TestListener(TestCase):
         with pytest.raises(RouteNotFound):
             app.match_route("/_not_exist_")
 
-    def test_on_event_callback(self):
+    def test_on_event_callback(self) -> None:
         app = App()
 
         @app.on_event("/foo", after="/...", cfg=...)
-        def _():
+        def _() -> None:
             pass
 
         self.assertEqual(len(app.routes), 1)
@@ -98,15 +98,15 @@ class TestListener(TestCase):
         self.assertEqual(route.opts, {"cfg": ...})
         self.assertEqual(route.after, ["/..."])
 
-    def test_remove_on_event_hook(self):
+    def test_remove_on_event_hook(self) -> None:
         app = App()
 
         @app.on_event("/foo")
-        def _():
+        def _foo() -> None:
             pass
 
         @app.on_event("/bar")
-        def _():
+        def _bar() -> None:
             pass
 
         self.assertEqual(len(app.routes), 2)
@@ -115,16 +115,16 @@ class TestListener(TestCase):
         route = app.routes[0]
         self.assertEqual(route.path, "/bar")
 
-    def test_startup_callback(self):
+    def test_startup_callback(self) -> None:
         app = App()
         step = []
 
         @app.startup
-        def step_1():
+        def step_1() -> None:
             step.append(1)
 
         @app.startup
-        async def step_2():
+        async def step_2() -> None:
             step.append(2)
             app.exit()
 
@@ -132,16 +132,16 @@ class TestListener(TestCase):
             app.run()
         self.assertEqual(step, [1, 2])
 
-    def test_shutdown_callback(self):
+    def test_shutdown_callback(self) -> None:
         app = App()
         step = []
 
         @app.shutdown
-        def step_1():
+        def step_1() -> None:
             step.append(1)
 
         @app.shutdown
-        def step_2():
+        def step_2() -> None:
             step.append(2)
 
         with pytest.raises(SystemExit):
@@ -150,20 +150,20 @@ class TestListener(TestCase):
 
 
 @pytest.mark.asyncio
-async def test_middleware_callback(event_loop):
+async def test_middleware_callback() -> None:
     app = App()
     step = []
 
     @app.before_event
-    def step_1():
+    def step_1() -> None:
         step.append(1)
 
     @app.on_event()
-    def step_2():
+    def step_2() -> None:
         step.append(2)
 
     @app.after_event
-    async def step_3():
+    async def step_3() -> None:
         step.append(3)
 
     await app.fire("/go")
@@ -171,17 +171,17 @@ async def test_middleware_callback(event_loop):
 
 
 @pytest.mark.asyncio
-async def test_on_error(event_loop):
+async def test_on_error() -> None:
     app = App()
     step = []
 
     @app.on_event()
-    async def step_1():
+    async def step_1() -> None:
         step.append(1)
         raise ValueError(...)
 
     @app.on_error(ValueError)
-    async def step_2():
+    async def step_2() -> None:
         step.append(2)
 
     await app.fire("/go")
@@ -189,15 +189,15 @@ async def test_on_error(event_loop):
 
 
 @pytest.mark.asyncio
-async def test_error_raise(event_loop):
+async def test_error_raise() -> None:
     app = App()
 
     @app.on_event()
-    async def _():
+    async def _value_error() -> None:
         raise ValueError(...)
 
     @app.on_error(KeyError)
-    async def _():
+    async def _key_error() -> None:
         ...
 
     with pytest.raises(ValueError):

@@ -1,6 +1,6 @@
 # Packaging
-setuptools
-wheel
+setuptools>=45.2.0
+wheel>=0.34.2
 
 # Docs
 mkdocs==1.2.3
@@ -8,15 +8,16 @@ mkdocs-material==8.1.3
 
 # Testing
 pytest==6.2.5
-pytest-asyncio
-pytest-cov
+pytest-asyncio==0.16.0
+pytest-cov==3.0.0
 
 # Lint
-flake8>=3.8.3,<4.0.0
-isort>=5.0.6
-black==21.9b0
-mypy
+flake8==3.9.2
+isort==5.10.1
+black==22.3.0
+mypy==0.910
+autoflake==1.4
 
 # Dependencies
-click>=8.0.1
-typing-extensions>=3.7.4
+click==8.0.1
+typing-extensions==4.0.1
