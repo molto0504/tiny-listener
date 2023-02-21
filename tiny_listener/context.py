@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 Scope = Dict[str, Any]
 
 
-class EventAlreadyExist(BaseException):
+class EventAlreadyExist(Exception):
     pass
 
 

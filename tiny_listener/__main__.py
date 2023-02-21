@@ -27,7 +27,7 @@ def main(app_dir: str, app: str) -> None:
     sys.path.insert(0, app_dir)
     try:
         listener: tiny_listener.Listener = tiny_listener.import_from_string(app)
-    except BaseException as e:
+    except Exception as e:
         click.echo(e)
         sys.exit(1)
     else:

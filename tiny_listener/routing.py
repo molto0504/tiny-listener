@@ -26,7 +26,7 @@ PARAM_REGEX = re.compile(r"{([a-zA-Z_]\w*)(:[a-zA-Z_]\w*)?}")
 Params = Dict[str, Any]
 
 
-class RouteError(BaseException):
+class RouteError(Exception):
     pass
 
 

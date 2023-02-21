@@ -18,15 +18,15 @@ from .hook import Hook
 from .routing import Params, Route
 
 
-class RouteNotFound(BaseException):
+class RouteNotFound(Exception):
     pass
 
 
-class ContextNotFound(BaseException):
+class ContextNotFound(Exception):
     pass
 
 
-class ContextAlreadyExist(BaseException):
+class ContextAlreadyExist(Exception):
     pass
 
 
@@ -42,7 +42,7 @@ class Listener(Generic[CTXType]):
         self.__shutdown: List[Callable[..., Awaitable[Any]]] = []
         self.__middleware_before_event: List[Hook] = []
         self.__middleware_after_event: List[Hook] = []
-        self.__error_handlers: List[Tuple[Type[BaseException], Hook]] = []
+        self.__error_handlers: List[Tuple[Type[Exception], Hook]] = []
         self.__cid: int = 0
         self.__context_cls: Type = Context
 
@@ -109,7 +109,7 @@ class Listener(Generic[CTXType]):
     def add_after_event_hook(self, fn: Callable) -> None:
         self.__middleware_after_event.append(Hook(fn))
 
-    def add_on_error_hook(self, fn: Callable, exc: Type[BaseException]) -> None:
+    def add_on_error_hook(self, fn: Callable, exc: Type[Exception]) -> None:
         self.__error_handlers.append((exc, Hook(fn)))
 
     def add_on_event_hook(
@@ -151,7 +151,7 @@ class Listener(Generic[CTXType]):
         self.add_after_event_hook(fn)
         return fn
 
-    def on_error(self, exc: Type[BaseException]) -> Callable[[Callable], Callable]:
+    def on_error(self, exc: Type[Exception]) -> Callable[[Callable], Callable]:
         def f(fn: Callable) -> Callable:
             self.add_on_error_hook(fn, exc)
             return fn
@@ -188,7 +188,7 @@ class Listener(Generic[CTXType]):
                 [await fn(event) for fn in self.__middleware_before_event]
                 await event()
                 [await fn(event) for fn in self.__middleware_after_event]
-            except BaseException as e:
+            except Exception as e:
                 event.error = e
                 handlers = [fn for kls, fn in self.__error_handlers if isinstance(e, kls)]
                 if not handlers:

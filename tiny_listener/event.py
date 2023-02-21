@@ -26,7 +26,7 @@ class Event(Generic[CTXType]):
         self.timeout: Union[float, None] = timeout
         self.data = data or {}
         self.params: Dict[str, Any] = params or {}
-        self.error: Union[BaseException, None] = None
+        self.error: Union[Exception, None] = None
         self.__route = route
         self.__ctx: Callable[..., CTXType] = weakref.ref(ctx)  # type: ignore
         self.__done = asyncio.Event()
