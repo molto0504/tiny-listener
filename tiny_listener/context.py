@@ -1,7 +1,7 @@
 import asyncio
 import re
 import weakref
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar, Union
 
 from .event import Event
 
@@ -25,7 +25,7 @@ class Context:
         self,
         listener: "Listener",
         cid: str,
-        scope: Optional[Scope] = None,
+        scope: Union[Scope, None] = None,
     ) -> None:
         self.cid = cid
         self.cache: Dict[Depends, Any] = {}
@@ -54,9 +54,9 @@ class Context:
         self,
         name: str,
         route: "Route",
-        timeout: Optional[float] = None,
-        data: Optional[Dict] = None,
-        params: Optional[Dict[str, Any]] = None,
+        timeout: Union[float, None] = None,
+        data: Union[Dict, None] = None,
+        params: Union[Dict[str, Any], None] = None,
     ) -> "Event":
         """
         :raises: EventAlreadyExist
@@ -77,7 +77,7 @@ class Context:
     def get_events(self, pat: str = ".*") -> List[Event]:
         return [event for name, event in self.events.items() if re.match(pat, name)]
 
-    def fire(self, name: str, timeout: Optional[float] = None, data: Optional[Dict] = None) -> asyncio.Task:
+    def fire(self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None) -> asyncio.Task:
         return self.listener.fire(name=name, cid=self.cid, timeout=timeout, data=data)
 
     def __repr__(self) -> str:

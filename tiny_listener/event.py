@@ -1,7 +1,7 @@
 import asyncio
 import weakref
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Optional, Set, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Set, TypeVar, Union
 
 if TYPE_CHECKING:
     from .context import Context  # noqa # pylint: disable=unused-import
@@ -18,15 +18,15 @@ class Event(Generic[CTXType]):
         name: str,
         ctx: CTXType,
         route: "Route",
-        timeout: Optional[float] = None,
-        data: Optional[Dict] = None,
-        params: Optional[Dict] = None,
+        timeout: Union[float, None] = None,
+        data: Union[Dict, None] = None,
+        params: Union[Dict, None] = None,
     ) -> None:
         self.name = name
-        self.timeout: Optional[float] = timeout
+        self.timeout: Union[float, None] = timeout
         self.data = data or {}
         self.params: Dict[str, Any] = params or {}
-        self.error: Optional[BaseException] = None
+        self.error: Union[BaseException, None] = None
         self.__route = route
         self.__ctx: Callable[..., CTXType] = weakref.ref(ctx)  # type: ignore
         self.__done = asyncio.Event()
@@ -67,7 +67,7 @@ class Event(Generic[CTXType]):
     def done(self) -> None:
         self.__done.set()
 
-    async def wait_until_done(self, timeout: Optional[float] = None) -> None:
+    async def wait_until_done(self, timeout: Union[float, None] = None) -> None:
         """
         :raises: asyncio.TimeoutError
         """

@@ -7,7 +7,6 @@ from typing import (
     Dict,
     Generic,
     List,
-    Optional,
     Tuple,
     Type,
     TypeVar,
@@ -61,8 +60,8 @@ class Listener(Generic[CTXType]):
 
     def new_ctx(
         self,
-        cid: Optional[str] = None,
-        scope: Optional[Dict[str, Any]] = None,
+        cid: Union[str, None] = None,
+        scope: Union[Dict[str, Any], None] = None,
         update_existing: bool = True,
     ) -> CTXType:
         """
@@ -172,9 +171,9 @@ class Listener(Generic[CTXType]):
     def fire(
         self,
         name: str,
-        cid: Optional[str] = None,
-        timeout: Optional[float] = None,
-        data: Optional[Dict] = None,
+        cid: Union[str, None] = None,
+        timeout: Union[float, None] = None,
+        data: Union[Dict, None] = None,
     ) -> asyncio.Task:
         """
         :raises: RouteNotFound or EventAlreadyExist
@@ -214,7 +213,7 @@ class Listener(Generic[CTXType]):
             loop.run_until_complete(fn())
         sys.exit()
 
-    def set_event_loop(self, loop: Optional[asyncio.AbstractEventLoop] = None) -> asyncio.AbstractEventLoop:
+    def set_event_loop(self, loop: Union[asyncio.AbstractEventLoop, None] = None) -> asyncio.AbstractEventLoop:
         """Override this method to change default event loop"""
         if loop is None:
             loop = asyncio.new_event_loop()

@@ -1,16 +1,6 @@
 import re
 import uuid
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Pattern,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, Dict, List, NamedTuple, Pattern, Tuple, Union
 
 from .hook import Hook
 
@@ -49,7 +39,7 @@ class Route:
         self,
         path: str,
         fn: Callable,
-        opts: Optional[Dict[str, Any]] = None,
+        opts: Union[Dict[str, Any], None] = None,
         after: Union[None, str, List[str]] = None,
     ):
         self.path = path
@@ -60,7 +50,7 @@ class Route:
             after = [after]
         self.after: List[str] = after or []
 
-    def match(self, name: str) -> Optional[Params]:
+    def match(self, name: str) -> Union[Params, None]:
         match = self.path_regex.match(name)
         if match is None:
             return None
