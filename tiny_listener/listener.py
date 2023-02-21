@@ -78,7 +78,7 @@ class Listener(Generic[CTXType]):
             self.add_ctx(ctx)
             return ctx
 
-        if cid in self.ctxs and update_existing:
+        if update_existing:
             ctx = self.ctxs[cid]
             ctx.scope.update(scope)
             return ctx
@@ -94,8 +94,8 @@ class Listener(Generic[CTXType]):
         """
         try:
             return self.ctxs[cid]
-        except KeyError:
-            raise ContextNotFound(f"Context `{cid}` not found")
+        except KeyError as e:
+            raise ContextNotFound(f"Context `{cid}` not found") from e
 
     def add_startup_callback(self, fn: Callable) -> None:
         self.__startup.append(asyncio.coroutine(fn))
@@ -201,7 +201,8 @@ class Listener(Generic[CTXType]):
 
         return asyncio.get_event_loop().create_task(_fire())
 
-    def stop(self) -> None:
+    @staticmethod
+    def stop() -> None:
         loop = asyncio.get_event_loop()
         loop.stop()
 
@@ -213,7 +214,8 @@ class Listener(Generic[CTXType]):
             loop.run_until_complete(fn())
         sys.exit()
 
-    def set_event_loop(self, loop: Union[asyncio.AbstractEventLoop, None] = None) -> asyncio.AbstractEventLoop:
+    @staticmethod
+    def set_event_loop(loop: Union[asyncio.AbstractEventLoop, None] = None) -> asyncio.AbstractEventLoop:
         """Override this method to change default event loop"""
         if loop is None:
             loop = asyncio.new_event_loop()
@@ -232,4 +234,4 @@ class Listener(Generic[CTXType]):
             self.exit()
 
     def __repr__(self) -> str:
-        return "{}(routes_count={})".format(self.__class__.__name__, len(self.routes))
+        return f"{self.__class__.__name__}(routes_count={len(self.routes)})"

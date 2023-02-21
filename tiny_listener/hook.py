@@ -38,9 +38,8 @@ class Hook:
                     args.append(actual)
             if self.__is_coro:
                 return await self.__fn(*args, **kwargs)
-            else:
-                loop = asyncio.get_event_loop()
-                return await loop.run_in_executor(executor, partial(self.__fn, *args, **kwargs))
+            loop = asyncio.get_event_loop()
+            return await loop.run_in_executor(executor, partial(self.__fn, *args, **kwargs))
 
         return f
 

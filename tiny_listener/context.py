@@ -81,4 +81,4 @@ class Context:
         return self.listener.fire(name=name, cid=self.cid, timeout=timeout, data=data)
 
     def __repr__(self) -> str:
-        return "{}(cid={}, scope={})".format(self.__class__.__name__, self.cid, self.scope)
+        return f"{self.__class__.__name__}(cid={self.cid}, scope={self.scope})"
