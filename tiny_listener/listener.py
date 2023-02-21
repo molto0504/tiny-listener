@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import warnings
 from typing import (
     Any,
     Awaitable,
@@ -175,6 +176,16 @@ class Listener(Generic[CTXType]):
         timeout: Union[float, None] = None,
         data: Union[Dict, None] = None,
     ) -> asyncio.Task:
+        warnings.warn("`fire` is deprecated since ver0.0.13, use trigger_event instead", DeprecationWarning)
+        return self.trigger_event(name, cid, timeout, data)
+
+    def trigger_event(
+        self,
+        name: str,
+        cid: Union[str, None] = None,
+        timeout: Union[float, None] = None,
+        data: Union[Dict, None] = None,
+    ) -> asyncio.Task:
         """
         :raises: RouteNotFound or EventAlreadyExist
         """
@@ -182,7 +193,7 @@ class Listener(Generic[CTXType]):
         route, params = self.match_route(name)
         event = ctx.new_event(name=name, timeout=timeout, route=route, data=data or {}, params=params)
 
-        async def _fire() -> None:
+        async def _trigger() -> None:
             try:
                 [await evt.wait_until_done(evt.timeout) for evt in event.after]
                 [await fn(event) for fn in self.__middleware_before_event]
@@ -199,7 +210,7 @@ class Listener(Generic[CTXType]):
                 if not event.prevent_done:
                     event.done()
 
-        return asyncio.get_event_loop().create_task(_fire())
+        return asyncio.get_event_loop().create_task(_trigger())
 
     @staticmethod
     def stop() -> None:

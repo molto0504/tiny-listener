@@ -1,5 +1,6 @@
 import asyncio
 import re
+import warnings
 import weakref
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar, Union
 
@@ -78,7 +79,13 @@ class Context:
         return [event for name, event in self.events.items() if re.match(pat, name)]
 
     def fire(self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None) -> asyncio.Task:
-        return self.listener.fire(name=name, cid=self.cid, timeout=timeout, data=data)
+        warnings.warn("`fire` is deprecated since ver0.0.13, use trigger_event instead", DeprecationWarning)
+        return self.trigger_event(name, timeout, data)
+
+    def trigger_event(
+        self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None
+    ) -> asyncio.Task:
+        return self.listener.trigger_event(name=name, cid=self.cid, timeout=timeout, data=data)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(cid={self.cid}, scope={self.scope})"

@@ -166,7 +166,7 @@ async def test_middleware_callback() -> None:
     async def step_3() -> None:
         step.append(3)
 
-    await app.fire("/go")
+    await app.trigger_event("/go")
     assert step == [1, 2, 3]
 
 
@@ -184,7 +184,7 @@ async def test_on_error() -> None:
     async def step_2() -> None:
         step.append(2)
 
-    await app.fire("/go")
+    await app.trigger_event("/go")
     assert step == [1, 2]
 
 
@@ -201,4 +201,4 @@ async def test_error_raise() -> None:
         ...
 
     with pytest.raises(ValueError):
-        await app.fire("/go")
+        await app.trigger_event("/go")

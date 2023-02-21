@@ -74,6 +74,6 @@ def test_get_events(app: Listener) -> None:
 
 
 @pytest.mark.asyncio
-async def test_fire(app: Listener) -> None:
+async def test_trigger_event(app: Listener) -> None:
     ctx = Context(listener=app, cid="_cid_", scope={"scope_key": "scope_val"})
-    await ctx.fire("/thing/1")
+    await ctx.trigger_event("/thing/1")
