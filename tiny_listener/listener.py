@@ -45,7 +45,7 @@ class Listener(Generic[CTXType]):
         self.__middleware_after_event: List[Hook] = []
         self.__error_handlers: List[Tuple[Type[BaseException], Hook]] = []
         self.__cid: int = 0
-        self.__context_cls: Type[CTXType] = Context
+        self.__context_cls: Type = Context
 
     def set_context_cls(self, kls: Type[CTXType]) -> None:
         assert issubclass(kls, Context), "kls must inherit from Context"

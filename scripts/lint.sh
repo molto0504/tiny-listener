@@ -31,5 +31,4 @@ mypy \
 --ignore-missing-imports \
 --disallow-untyped-defs \
 --follow-imports=silent \
-tests \
 tiny_listener
