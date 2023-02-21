@@ -18,7 +18,7 @@ class App(Listener):
                 break
 
             try:
-                app.fire(payload.strip().decode(), data={"writer": writer})
+                app.trigger_event(payload.strip().decode(), data={"writer": writer})
             except RouteNotFound:
                 writer.write(b"Huh, go on.\n")
 
