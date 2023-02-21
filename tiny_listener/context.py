@@ -17,13 +17,13 @@ class EventAlreadyExist(Exception):
     pass
 
 
-ListenerType = TypeVar("ListenerType", bound="Listener[Context]")
+ListenerType = TypeVar("ListenerType", bound="Listener")
 
 
 class Context:
     def __init__(
         self,
-        listener: "Listener",
+        listener: ListenerType,
         cid: str,
         scope: Union[Scope, None] = None,
     ) -> None:
