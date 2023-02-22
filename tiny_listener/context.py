@@ -4,6 +4,7 @@ import warnings
 import weakref
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar, Union
 
+from .errors import EventAlreadyExist
 from .event import Event
 
 if TYPE_CHECKING:
@@ -12,10 +13,6 @@ if TYPE_CHECKING:
     from .routing import Route
 
 Scope = Dict[str, Any]
-
-
-class EventAlreadyExist(Exception):
-    pass
 
 
 ListenerType = TypeVar("ListenerType", bound="Listener")

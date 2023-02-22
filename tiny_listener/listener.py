@@ -16,25 +16,9 @@ from typing import (
 from uuid import uuid4
 
 from .context import Context
+from .errors import ContextAlreadyExist, ContextNotFound, EventNotFound
 from .hook import Hook
 from .routing import Params, Route
-
-
-class EventNotFound(Exception):
-    pass
-
-
-class ContextNotFound(Exception):
-    pass
-
-
-class ContextAlreadyExist(Exception):
-    pass
-
-
-class ListenerAlreadyExist(Exception):
-    pass
-
 
 CTXType = TypeVar("CTXType", bound=Context)
 

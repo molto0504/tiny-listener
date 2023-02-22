@@ -2,6 +2,7 @@ import re
 import uuid
 from typing import Any, Callable, Dict, List, NamedTuple, Pattern, Tuple, Union
 
+from .errors import RouteError
 from .hook import Hook
 
 
@@ -24,10 +25,6 @@ CONVERTOR_TYPES: Dict[str, Convertor] = {
 PARAM_REGEX = re.compile(r"{([a-zA-Z_]\w*)(:[a-zA-Z_]\w*)?}")
 
 Params = Dict[str, Any]
-
-
-class RouteError(Exception):
-    pass
 
 
 class Route:
