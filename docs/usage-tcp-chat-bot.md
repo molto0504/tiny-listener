@@ -12,7 +12,7 @@ $ pip install tiny-listener
 ```python
 from asyncio import StreamReader, StreamWriter, start_server
 
-from tiny_listener import Depends, Event, Listener, RouteNotFound
+from tiny_listener import Depends, Event, Listener, EventNotFound
 
 ADDRESS = ("127.0.0.1", 12345)
 
@@ -27,7 +27,7 @@ class App(Listener):
 
             try:
                 app.fire(payload.strip().decode(), data={"writer": writer})
-            except RouteNotFound:
+            except EventNotFound:
                 writer.write(b"Huh, go on.\n")
 
     async def listen(self):

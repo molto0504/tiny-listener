@@ -20,7 +20,7 @@ from .hook import Hook
 from .routing import Params, Route
 
 
-class RouteNotFound(Exception):
+class EventNotFound(Exception):
     pass
 
 
@@ -156,13 +156,13 @@ class Listener(Generic[CTXType]):
 
     def match_route(self, name: str) -> Tuple[Route, Params]:
         """
-        :raises: RouteNotFound
+        :raises: EventNotFound
         """
         for route in self.routes:
             params = route.match(name)
             if params is not None:
                 return route, params
-        raise RouteNotFound(f"route `{name}` not found")
+        raise EventNotFound(f"route `{name}` not found")
 
     def fire(
         self,
@@ -182,7 +182,7 @@ class Listener(Generic[CTXType]):
         data: Union[Dict, None] = None,
     ) -> asyncio.Task:
         """
-        :raises: RouteNotFound or EventAlreadyExist
+        :raises: EventNotFound or EventAlreadyExist
         """
         ctx = self.new_ctx(cid)
         route, params = self.match_route(name)

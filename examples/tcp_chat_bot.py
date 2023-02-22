@@ -4,7 +4,7 @@ See: https://molto0504.github.io/tiny-listener/usage-tcp-chat-bot/
 
 from asyncio import StreamReader, StreamWriter, start_server
 
-from tiny_listener import Depends, Event, Listener, RouteNotFound
+from tiny_listener import Depends, Event, EventNotFound, Listener
 
 ADDRESS = ("127.0.0.1", 12345)
 
@@ -19,7 +19,7 @@ class App(Listener):
 
             try:
                 app.trigger_event(payload.strip().decode(), data={"writer": writer})
-            except RouteNotFound:
+            except EventNotFound:
                 writer.write(b"Huh, go on.\n")
 
     async def listen(self):

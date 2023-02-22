@@ -6,9 +6,9 @@ from tiny_listener import (
     Context,
     ContextAlreadyExist,
     ContextNotFound,
+    EventNotFound,
     Listener,
     Route,
-    RouteNotFound,
 )
 
 
@@ -79,7 +79,7 @@ def test_match(app: Listener) -> None:
     assert route is route_user_detail
     assert "name" in params
 
-    with pytest.raises(RouteNotFound):
+    with pytest.raises(EventNotFound):
         app.match_route("/_not_exist_")
 
 

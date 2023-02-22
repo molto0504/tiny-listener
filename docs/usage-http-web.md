@@ -26,7 +26,7 @@ from asyncio import StreamReader, StreamWriter, start_server
 
 from httptools import HttpRequestParser
 
-from tiny_listener import Event, Listener, RouteNotFound
+from tiny_listener import Event, Listener, EventNotFound
 
 PORT = 8000
 
@@ -62,7 +62,7 @@ class App(Listener):
                 self.fire(
                     f"{req.method}:{req.url}", data={"writer": writer, "request": req}
                 )
-            except RouteNotFound:
+            except EventNotFound:
                 writer.write(b"HTTP/1.1 404\n\nPage Not Found")
                 writer.close()
 
