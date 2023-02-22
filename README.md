@@ -31,7 +31,7 @@ Tiny-listener is a lightweight and flexible event framework.
 
 ## Requirements
 
-Python 3.6+
+Python 3.*+
 
 ## Installation
 

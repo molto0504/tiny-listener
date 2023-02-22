@@ -3,21 +3,20 @@ setuptools>=45.2.0
 wheel>=0.34.2
 
 # Docs
-mkdocs==1.2.3
-mkdocs-material==8.1.3
+mkdocs==1.4.2
+mkdocs-material==9.0.13
 
 # Testing
-pytest==6.2.5
-pytest-asyncio==0.16.0
-pytest-cov==3.0.0
+pytest==7.2.1
+pytest-asyncio==0.20.3
+pytest-cov==4.0.0
 
 # Lint
-flake8==3.9.2
-isort==5.10.1
-black==22.3.0
-mypy==0.910
-autoflake==1.4
+flake8==6.0.0
+isort==5.12.0
+black==23.1.0
+mypy==1.0.1
+autoflake==2.0.1
 
 # Dependencies
-click==8.0.1
-typing-extensions==4.0.1
+click>=8.1.3

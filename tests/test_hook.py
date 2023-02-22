@@ -1,9 +1,8 @@
 import asyncio
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 from unittest import TestCase
 
 import pytest
-from typing_extensions import Literal
 
 from tiny_listener import Depends, Event
 

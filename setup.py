@@ -16,8 +16,7 @@ setup(
     ],
     zip_safe=False,
     install_requires=[
-        "click>=8.0.1",
-        "typing-extensions>=3.7.4",
+        "click>=8.1.3",
     ],
     license="MIT",
     classifiers=[
@@ -32,7 +31,6 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Typing :: Typed",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: CPython",
