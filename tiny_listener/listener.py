@@ -52,6 +52,9 @@ class Listener(Generic[CTXType]):
         self.__context_cls: Type = Context
 
     def set_context_cls(self, kls: Type[Context]) -> None:
+        """
+        :param kls: Context class
+        """
         assert issubclass(kls, Context), "kls must inherit from Context"
         self.__context_cls = kls
 
@@ -68,7 +71,10 @@ class Listener(Generic[CTXType]):
         cid: Union[str, None] = None,
         scope: Union[Dict[str, Any], None] = None,
     ) -> CTXType:
-        """
+        """Create a new context with the given cid and scope.
+
+        :param cid: Context ID
+        :param scope: Context scope
         :raises: ContextAlreadyExist
         """
         if cid is None:
@@ -79,13 +85,10 @@ class Listener(Generic[CTXType]):
 
         if cid not in self.ctxs:
             ctx = self.__context_cls(listener=self, cid=cid, scope=scope)
-            self.add_ctx(ctx)
+            self.ctxs[ctx.cid] = ctx
             return ctx
 
         raise ContextAlreadyExist(f"Context `{cid}` already exist")
-
-    def add_ctx(self, ctx: CTXType) -> None:
-        self.ctxs[ctx.cid] = ctx
 
     def get_ctx(self, cid: str) -> CTXType:
         """

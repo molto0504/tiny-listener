@@ -38,12 +38,11 @@ def test_ok(app: Listener) -> None:
 
 
 def test_alive_drop(app: Listener) -> None:
-    ctx = Context(listener=app, cid="test_alive_drop")
-    assert ctx.is_alive is False
-    app.add_ctx(ctx)
-    assert ctx.is_alive is True
+    ctx = app.new_ctx(cid="foo")
 
+    assert ctx.is_alive is True
     assert ctx.drop() is True
+
     assert ctx.is_alive is False
     assert ctx.drop() is False
 
