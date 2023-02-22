@@ -47,7 +47,7 @@ class Listener(Generic[CTXType]):
         self.__cid: int = 0
         self.__context_cls: Type = Context
 
-    def set_context_cls(self, kls: Type[CTXType]) -> None:
+    def set_context_cls(self, kls: Type[Context]) -> None:
         assert issubclass(kls, Context), "kls must inherit from Context"
         self.__context_cls = kls
 
@@ -93,10 +93,9 @@ class Listener(Generic[CTXType]):
         """
         :raises: ContextNotFound
         """
-        try:
-            return self.ctxs[cid]
-        except KeyError as e:
-            raise ContextNotFound(f"Context `{cid}` not found") from e
+        if cid not in self.ctxs:
+            raise ContextNotFound(f"Context `{cid}` not found")
+        return self.ctxs[cid]
 
     def add_startup_callback(self, fn: Callable) -> None:
         self.__startup.append(asyncio.coroutine(fn))
