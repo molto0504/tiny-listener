@@ -195,10 +195,13 @@ class Listener(Generic[CTXType]):
 
         async def _trigger() -> None:
             try:
-                [await evt.wait_until_done(evt.timeout) for evt in event.after]
-                [await fn(event) for fn in self.__middleware_before_event]
+                for evt in event.after:
+                    await evt.wait_until_done(evt.timeout)
+                for fn in self.__middleware_before_event:
+                    await fn(event)
                 await event()
-                [await fn(event) for fn in self.__middleware_after_event]
+                for fn in self.__middleware_after_event:
+                    await fn(event)
             except Exception as e:
                 event.error = e
                 handlers = [fn for kls, fn in self.__error_handlers if isinstance(e, kls)]

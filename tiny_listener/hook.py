@@ -43,7 +43,7 @@ class Hook:
 
         return f
 
-    async def __call__(self, event: "Event", executor: Any = None) -> None:
+    async def __call__(self, event: "Event", executor: Any = None) -> Any:
         return await self.__hook(event, executor)
 
     def __repr__(self) -> str:
