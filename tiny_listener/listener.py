@@ -127,12 +127,12 @@ class Listener(Generic[CTXType]):
 
     def on_event(
         self,
-        path: str = "{_:path}",
+        name: str = "{_:path}",
         after: Union[None, str, List[str]] = None,
         **opts: Any,
     ) -> Callable[[Hook], None]:
         def _decorator(fn: Callable) -> None:
-            self.add_on_event_hook(fn, path, after, **opts)
+            self.add_on_event_hook(fn, name, after, **opts)
 
         return _decorator
 

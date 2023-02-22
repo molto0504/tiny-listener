@@ -11,15 +11,15 @@ def app() -> Listener:
 
     app = App()
 
-    @app.on_event(path="/thing/{uid}")
+    @app.on_event(name="/thing/{uid}")
     async def _thing() -> None:
         ...
 
-    @app.on_event(path="/user/foo")
+    @app.on_event(name="/user/foo")
     async def _user_foo() -> None:
         ...
 
-    @app.on_event(path="/user/bar")
+    @app.on_event(name="/user/bar")
     async def _user_bar() -> None:
         ...
 
