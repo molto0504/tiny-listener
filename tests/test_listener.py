@@ -1,4 +1,4 @@
-from unittest import TestCase
+from typing import Any
 
 import pytest
 
@@ -12,146 +12,145 @@ from tiny_listener import (
 )
 
 
-class App(Listener):
-    async def listen(self) -> None:
+@pytest.fixture
+def app() -> Listener:
+    class App(Listener):
+        async def listen(self, *_: Any) -> None:
+            ...
+
+    return App()
+
+
+def test_ok(app: Listener) -> None:
+    assert app.ctxs == {}
+    assert app.routes == []
+
+
+def test_set_context_cls(app: Listener) -> None:
+    class MyContext(Context):
+        foo = None
+
+    app.set_context_cls(MyContext)
+    ctx = app.new_ctx()
+    assert isinstance(ctx, MyContext)
+    assert ctx.foo is None
+
+
+def test_new_ctx(app: Listener) -> None:
+    assert app.ctxs == {}
+
+    # new ctx not exist
+    ctx = app.new_ctx("my_ctx", scope={"foo": ...})
+    assert app.ctxs == {"my_ctx": ctx}
+    assert app.ctxs[ctx.cid].scope == {"foo": ...}
+
+    # new ctx already exist
+    with pytest.raises(ContextAlreadyExist):
+        app.new_ctx("my_ctx", update_existing=False)
+
+    app.new_ctx("my_ctx", scope={"foo": "foo", "bar": "bar"})
+    assert app.ctxs == {"my_ctx": ctx}
+    assert app.ctxs[ctx.cid].scope == {"foo": "foo", "bar": "bar"}
+
+    # ctx with auto increment id
+    app.new_ctx()
+    assert set(app.ctxs.keys()) == {"my_ctx", "__1__"}
+    app.new_ctx()
+    assert app.ctxs.keys() == {"my_ctx", "__1__", "__2__"}
+
+
+def test_get_ctxs(app: Listener) -> None:
+    assert app.ctxs == {}
+    ctx = app.new_ctx("my_ctx")
+    # get ctx
+    assert app.get_ctx("my_ctx") is ctx
+    # get ctx does not exist
+    with pytest.raises(ContextNotFound):
+        app.get_ctx("_not_exit_")
+
+
+def test_match(app: Listener) -> None:
+    route_user_list = Route("/users", fn=lambda: ...)
+    route_user_detail = Route("/user/{name}", fn=lambda: ...)
+    app.routes = [route_user_detail, route_user_list]
+
+    route, params = app.match_route("/users")
+    assert route is route_user_list
+    assert params == {}
+
+    route, params = app.match_route("/user/bob")
+    assert route is route_user_detail
+    assert "name" in params
+
+    with pytest.raises(RouteNotFound):
+        app.match_route("/_not_exist_")
+
+
+def test_on_event_callback(app: Listener) -> None:
+    @app.on_event("/foo", after="/...", cfg=...)
+    def _() -> None:
         pass
 
+    assert len(app.routes) == 1
+    route = app.routes[0]
+    assert route.path == "/foo"
+    assert route.opts == {"cfg": ...}
+    assert route.after == ["/..."]
 
-class TestListener(TestCase):
-    def test_ok(self) -> None:
-        app = App()
-        self.assertEqual(app.ctxs, {})
-        self.assertEqual(app.routes, [])
 
-    def test_set_context_cls(self) -> None:
-        class MyContext(Context):
-            foo = None
+def test_remove_on_event_hook(app: Listener) -> None:
+    @app.on_event("/foo")
+    def _foo() -> None:
+        pass
 
-        app = App()
-        app.set_context_cls(MyContext)
-        ctx = app.new_ctx()
-        self.assertTrue(isinstance(ctx, MyContext))
-        self.assertIsNone(ctx.foo)
+    @app.on_event("/bar")
+    def _bar() -> None:
+        pass
 
-    def test_new_ctx(self) -> None:
-        app = App()
-        self.assertEqual(app.ctxs, {})
+    assert len(app.routes) == 2
+    app.remove_on_event_hook("/foo")
+    assert len(app.routes) == 1
+    route = app.routes[0]
+    assert route.path == "/bar"
 
-        # new ctx not exist
-        ctx = app.new_ctx("my_ctx", scope={"foo": ...})
-        self.assertEqual(app.ctxs, {"my_ctx": ctx})
-        self.assertEqual(app.ctxs[ctx.cid].scope, {"foo": ...})
 
-        # new ctx already exist
-        with pytest.raises(ContextAlreadyExist):
-            app.new_ctx("my_ctx", update_existing=False)
+def test_startup_callback(app: Listener) -> None:
+    step = []
 
-        app.new_ctx("my_ctx", scope={"foo": "foo", "bar": "bar"})
-        self.assertEqual(app.ctxs, {"my_ctx": ctx})
-        self.assertEqual(app.ctxs[ctx.cid].scope, {"foo": "foo", "bar": "bar"})
+    @app.startup
+    def step_1() -> None:
+        step.append(1)
 
-        # ctx with auto increment id
-        app = App()
-        app.new_ctx()
-        self.assertEqual({"__1__"}, app.ctxs.keys())
-        app.new_ctx()
-        self.assertEqual({"__1__", "__2__"}, app.ctxs.keys())
+    @app.startup
+    async def step_2() -> None:
+        step.append(2)
+        app.exit()
 
-    def test_get_ctxs(self) -> None:
-        app = App()
-        self.assertEqual(app.ctxs, {})
-        ctx = app.new_ctx("my_ctx")
-        # get ctx
-        self.assertIs(app.get_ctx("my_ctx"), ctx)
-        # get ctx does not exist
-        with pytest.raises(ContextNotFound):
-            app.get_ctx("_not_exit_")
+    with pytest.raises(SystemExit):
+        app.run()
 
-    def test_match(self) -> None:
-        app = App()
+    assert step == [1, 2]
 
-        route_user_list = Route("/users", fn=lambda: ...)
-        route_user_detail = Route("/user/{name}", fn=lambda: ...)
-        app.routes = [route_user_detail, route_user_list]
 
-        route, params = app.match_route("/users")
-        self.assertIs(route, route_user_list)
-        self.assertEqual(params, {})
+def test_shutdown_callback(app: Listener) -> None:
+    step = []
 
-        route, params = app.match_route("/user/bob")
-        self.assertIs(route, route_user_detail)
-        self.assertIn("name", params)
+    @app.shutdown
+    def step_1() -> None:
+        step.append(1)
 
-        with pytest.raises(RouteNotFound):
-            app.match_route("/_not_exist_")
+    @app.shutdown
+    def step_2() -> None:
+        step.append(2)
 
-    def test_on_event_callback(self) -> None:
-        app = App()
+    with pytest.raises(SystemExit):
+        app.exit()
 
-        @app.on_event("/foo", after="/...", cfg=...)
-        def _() -> None:
-            pass
-
-        self.assertEqual(len(app.routes), 1)
-        route = app.routes[0]
-        self.assertEqual(route.path, "/foo")
-        self.assertEqual(route.opts, {"cfg": ...})
-        self.assertEqual(route.after, ["/..."])
-
-    def test_remove_on_event_hook(self) -> None:
-        app = App()
-
-        @app.on_event("/foo")
-        def _foo() -> None:
-            pass
-
-        @app.on_event("/bar")
-        def _bar() -> None:
-            pass
-
-        self.assertEqual(len(app.routes), 2)
-        app.remove_on_event_hook("/foo")
-        self.assertEqual(len(app.routes), 1)
-        route = app.routes[0]
-        self.assertEqual(route.path, "/bar")
-
-    def test_startup_callback(self) -> None:
-        app = App()
-        step = []
-
-        @app.startup
-        def step_1() -> None:
-            step.append(1)
-
-        @app.startup
-        async def step_2() -> None:
-            step.append(2)
-            app.exit()
-
-        with pytest.raises(SystemExit):
-            app.run()
-        self.assertEqual(step, [1, 2])
-
-    def test_shutdown_callback(self) -> None:
-        app = App()
-        step = []
-
-        @app.shutdown
-        def step_1() -> None:
-            step.append(1)
-
-        @app.shutdown
-        def step_2() -> None:
-            step.append(2)
-
-        with pytest.raises(SystemExit):
-            app.exit()
-        self.assertEqual(step, [1, 2])
+    assert step == [1, 2]
 
 
 @pytest.mark.asyncio
-async def test_middleware_callback() -> None:
-    app = App()
+async def test_middleware_callback(app: Listener) -> None:
     step = []
 
     @app.before_event
@@ -171,8 +170,7 @@ async def test_middleware_callback() -> None:
 
 
 @pytest.mark.asyncio
-async def test_on_error() -> None:
-    app = App()
+async def test_on_error(app: Listener) -> None:
     step = []
 
     @app.on_event()
@@ -189,9 +187,7 @@ async def test_on_error() -> None:
 
 
 @pytest.mark.asyncio
-async def test_error_raise() -> None:
-    app = App()
-
+async def test_error_raise(app: Listener) -> None:
     @app.on_event()
     async def _value_error() -> None:
         raise ValueError(...)

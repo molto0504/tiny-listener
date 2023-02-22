@@ -24,11 +24,11 @@ def route_final() -> Route:
 
 @pytest.fixture()
 def app(route_final: Route, route_stuff_1: Route, route_stuff_2: Route) -> Listener:
-    class _App(Listener):
+    class App(Listener):
         async def listen(self, *_: Any) -> None:
             ...
 
-    app = _App()
+    app = App()
     app.routes = [route_final, route_stuff_1, route_stuff_2]
     return app
 

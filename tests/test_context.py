@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from tiny_listener import Context, EventAlreadyExist, Listener
@@ -6,7 +8,7 @@ from tiny_listener import Context, EventAlreadyExist, Listener
 @pytest.fixture()
 def app() -> Listener:
     class App(Listener):
-        async def listen(self) -> None:
+        async def listen(self, *_: Any) -> None:
             ...
 
     app = App()

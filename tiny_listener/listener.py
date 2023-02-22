@@ -31,6 +31,10 @@ class ContextAlreadyExist(Exception):
     pass
 
 
+class ListenerAlreadyExist(Exception):
+    pass
+
+
 CTXType = TypeVar("CTXType", bound=Context)
 
 
