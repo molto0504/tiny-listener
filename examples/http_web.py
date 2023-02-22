@@ -39,9 +39,7 @@ class App(Listener):
         if data:
             req = Request(data)
             try:
-                self.trigger_event(
-                    f"{req.method}:{req.url}", data={"writer": writer, "request": req}
-                )
+                self.trigger_event(f"{req.method}:{req.url}", data={"writer": writer, "request": req})
             except RouteNotFound:
                 writer.write(b"HTTP/1.1 404\n\nPage Not Found")
                 writer.close()

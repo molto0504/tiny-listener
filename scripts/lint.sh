@@ -3,7 +3,7 @@
 set -e
 set -x
 
-paths=( "tiny_listener" "tests" )
+paths=( "tiny_listener" "tests" "examples")
 
 isort \
 --combine-as \
