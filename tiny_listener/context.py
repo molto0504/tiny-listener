@@ -78,7 +78,7 @@ class Context:
     def get_events(self, pat: str = ".*") -> List[Event]:
         return [event for name, event in self.events.items() if re.match(pat, name)]
 
-    def fire(self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None) -> asyncio.Task:
+    def fire(self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None) -> asyncio.Task:  # pragma: no cover
         warnings.warn("`fire` is deprecated since ver0.0.13, use trigger_event instead", DeprecationWarning)
         return self.trigger_event(name, timeout, data)
 

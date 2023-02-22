@@ -175,7 +175,7 @@ class Listener(Generic[CTXType]):
         cid: Union[str, None] = None,
         timeout: Union[float, None] = None,
         data: Union[Dict, None] = None,
-    ) -> asyncio.Task:
+    ) -> asyncio.Task:  # pragma: no cover
         warnings.warn("`fire` is deprecated since ver0.0.13, use trigger_event instead", DeprecationWarning)
         return self.trigger_event(name, cid, timeout, data)
 
