@@ -166,9 +166,10 @@ class Listener(Generic[CTXType]):
         data: Union[Dict, None] = None,
     ) -> asyncio.Task:
         """
-        :raises: EventNotFound or EventAlreadyExist
+        :raises EventNotFound:
+        :raises EventAlreadyExist:
         """
-        ctx = self.new_ctx(cid)
+        ctx = self.new_ctx() if cid not in self.ctxs else self.ctxs[cid]
         route, params = self.match_route(name)
         event = ctx.new_event(name=name, timeout=timeout, route=route, data=data or {}, params=params)
 
