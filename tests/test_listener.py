@@ -46,11 +46,7 @@ def test_new_ctx(app: Listener) -> None:
 
     # new ctx already exist
     with pytest.raises(ContextAlreadyExist):
-        app.new_ctx("my_ctx", update_existing=False)
-
-    app.new_ctx("my_ctx", scope={"foo": "foo", "bar": "bar"})
-    assert app.ctxs == {"my_ctx": ctx}
-    assert app.ctxs[ctx.cid].scope == {"foo": "foo", "bar": "bar"}
+        app.new_ctx("my_ctx")
 
     # ctx with auto increment id
     app.new_ctx()

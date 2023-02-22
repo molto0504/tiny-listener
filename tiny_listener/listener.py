@@ -67,7 +67,6 @@ class Listener(Generic[CTXType]):
         self,
         cid: Union[str, None] = None,
         scope: Union[Dict[str, Any], None] = None,
-        update_existing: bool = True,
     ) -> CTXType:
         """
         :raises: ContextAlreadyExist
@@ -81,11 +80,6 @@ class Listener(Generic[CTXType]):
         if cid not in self.ctxs:
             ctx = self.__context_cls(listener=self, cid=cid, scope=scope)
             self.add_ctx(ctx)
-            return ctx
-
-        if update_existing:
-            ctx = self.ctxs[cid]
-            ctx.scope.update(scope)
             return ctx
 
         raise ContextAlreadyExist(f"Context `{cid}` already exist")
