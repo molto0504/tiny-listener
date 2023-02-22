@@ -49,10 +49,11 @@ def test_new_ctx(app: Listener) -> None:
         app.new_ctx("my_ctx")
 
     # ctx with auto increment id
+    assert len(app.ctxs) == 1
     app.new_ctx()
-    assert set(app.ctxs.keys()) == {"my_ctx", "__1__"}
+    assert len(app.ctxs) == 2
     app.new_ctx()
-    assert app.ctxs.keys() == {"my_ctx", "__1__", "__2__"}
+    assert len(app.ctxs) == 3
 
 
 def test_get_ctxs(app: Listener) -> None:

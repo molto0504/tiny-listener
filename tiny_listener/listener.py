@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from uuid import uuid4
 
 from .context import Context
 from .hook import Hook
@@ -48,7 +49,6 @@ class Listener(Generic[CTXType]):
         self.__middleware_before_event: List[Hook] = []
         self.__middleware_after_event: List[Hook] = []
         self.__error_handlers: List[Tuple[Type[Exception], Hook]] = []
-        self.__cid: int = 0
         self.__context_cls: Type = Context
 
     def set_context_cls(self, kls: Type[Context]) -> None:
@@ -57,11 +57,6 @@ class Listener(Generic[CTXType]):
         """
         assert issubclass(kls, Context), "kls must inherit from Context"
         self.__context_cls = kls
-
-    def gen_cid(self) -> str:
-        """Override this method to change how the cid generated."""
-        self.__cid += 1
-        return f"__{self.__cid}__"
 
     async def listen(self) -> None:
         raise NotImplementedError()
@@ -78,7 +73,7 @@ class Listener(Generic[CTXType]):
         :raises: ContextAlreadyExist
         """
         if cid is None:
-            cid = self.gen_cid()
+            cid = str(uuid4())
 
         if scope is None:
             scope = {}
