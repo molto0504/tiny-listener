@@ -50,7 +50,6 @@ def test_ok(route_final: Route, app: Listener) -> None:
     assert event.error is None
     assert event.route is route_final
     assert event.ctx is ctx
-    assert event.listener is app
     assert event.after == set()
     assert event.is_done is False
 

@@ -1,9 +1,9 @@
 import asyncio
 import re
 import weakref
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
-from .errors import EventAlreadyExists
+from .errors import EventAlreadyExists, ListenerNotFound
 from .event import Event
 
 if TYPE_CHECKING:
@@ -14,18 +14,14 @@ if TYPE_CHECKING:
 Scope = Dict[str, Any]
 
 
-ListenerType = TypeVar("ListenerType", bound="Listener")
-
-
 class Context:
     def __init__(
         self,
-        listener: ListenerType,
+        listener: Any,  # todo remove
         cid: str,
         scope: Union[Scope, None] = None,
     ) -> None:
         """
-        :param listener: Listener instance
         :param cid: Context ID
         :param scope: Context scope
         """
@@ -33,15 +29,23 @@ class Context:
         self.cache: Dict[Depends, Any] = {}
         self.scope: Scope = scope or {}
         self.events: Dict[str, Event] = {}
-        self.__listener: Callable[..., ListenerType] = weakref.ref(listener)  # type: ignore
+        self.__listener: Union[weakref.ReferenceType["Listener"], None] = None
 
     @property
-    def listener(self) -> ListenerType:
-        return self.__listener()
+    def listener(self) -> "Listener":
+        if self.__listener is None:
+            from .listener import get_current_running_listener
+
+            self.__listener = weakref.ref(get_current_running_listener())
+
+        return self.__listener()  # type: ignore
 
     @property
     def is_alive(self) -> bool:
-        return self.cid in self.listener.ctxs
+        try:
+            return self.cid in self.listener.ctxs
+        except ListenerNotFound:
+            return False
 
     def drop(self) -> bool:
         if self.is_alive:

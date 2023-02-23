@@ -252,7 +252,7 @@ class Listener(Generic[CTXType]):
         return f"{self.__class__.__name__}(routes_count={len(self.routes)})"
 
 
-def get_current_listener() -> Union[Listener, None]:
+def get_current_running_listener() -> Listener:
     """
     :raises ListenerNotFound:
     """
@@ -260,4 +260,4 @@ def get_current_listener() -> Union[Listener, None]:
     try:
         return Listener._instances[ident]  # noqa
     except KeyError as e:
-        raise ListenerNotFound(f"Listener not found for current thread, {ident=}") from e
+        raise ListenerNotFound(f"Running Listener not found for current thread, {ident=}") from e
