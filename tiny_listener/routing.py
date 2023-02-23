@@ -34,13 +34,15 @@ class Route:
 
     def __init__(
         self,
-        path: str,
+        name: str,
         fn: Callable,
+        path: Union[str, None] = None,
         opts: Union[Dict[str, Any], None] = None,
         after: Union[None, str, List[str]] = None,
     ):
-        self.path = path
-        self.path_regex, self.convertors = compile_path(path)
+        self.name = name
+        self.path = path if path is not None else name
+        self.path_regex, self.convertors = compile_path(self.path)
         self.opts: Dict[str, Any] = opts or {}
         self.hook = Hook(fn)
         if isinstance(after, str):

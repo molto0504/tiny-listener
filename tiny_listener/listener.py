@@ -21,6 +21,7 @@ from .errors import (
     ContextAlreadyExists,
     ContextNotFound,
     DuplicateListener,
+    EventAlreadyExists,
     EventNotFound,
     ListenerNotFound,
 )
@@ -49,7 +50,7 @@ class Listener(Generic[CTXType]):
 
     def __init__(self) -> None:
         self.ctxs: Dict[str, CTXType] = {}
-        self.routes: List[Route] = []
+        self.routes: Dict[str, Route] = {}
 
         self.__startup: List[Callback] = []
         self.__shutdown: List[Callback] = []
@@ -122,10 +123,20 @@ class Listener(Generic[CTXType]):
         after: Union[None, str, List[str]] = None,
         **opts: Any,
     ) -> None:
-        self.routes.append(Route(path=path, fn=fn, after=after or [], opts=opts))
+        name = fn.__name__
+        if name in self.routes:
+            raise EventAlreadyExists(f"Event `{name}` already exists")
+        self.routes[name] = Route(name=name, path=path, fn=fn, after=after or [], opts=opts)
 
-    def remove_on_event_hook(self, path: str) -> None:
-        self.routes = [route for route in self.routes if route.path != path]
+    def remove_on_event_hook(self, name: Union[str, Callable]) -> bool:
+        """
+        :param name: Event name or callback function
+        """
+        try:
+            del self.routes[str(name)]
+            return True
+        except KeyError:
+            return False
 
     def on_event(
         self,
@@ -161,15 +172,15 @@ class Listener(Generic[CTXType]):
 
         return f
 
-    def match_route(self, name: str) -> Tuple[Route, Params]:
+    def match_route(self, path: str) -> Tuple[Route, Params]:
         """
         :raises: EventNotFound
         """
-        for route in self.routes:
-            params = route.match(name)
+        for route in self.routes.values():
+            params = route.match(path)
             if params is not None:
                 return route, params
-        raise EventNotFound(f"route `{name}` not found")
+        raise EventNotFound(f"route `{path}` not found")
 
     def trigger_event(
         self,

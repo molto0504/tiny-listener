@@ -26,7 +26,7 @@ def app() -> Listener:
 
 def test_ok(app: Listener) -> None:
     assert app.ctxs == {}
-    assert app.routes == []
+    assert app.routes == {}
 
 
 def test_set_context_cls(app: Listener) -> None:
@@ -72,7 +72,7 @@ def test_get_ctxs(app: Listener) -> None:
 def test_match(app: Listener) -> None:
     route_user_list = Route("/users", fn=lambda: ...)
     route_user_detail = Route("/user/{name}", fn=lambda: ...)
-    app.routes = [route_user_detail, route_user_list]
+    app.routes = {route_user_detail.name: route_user_detail, route_user_list.name: route_user_list}
 
     route, params = app.match_route("/users")
     assert route is route_user_list
@@ -88,11 +88,11 @@ def test_match(app: Listener) -> None:
 
 def test_on_event_callback(app: Listener) -> None:
     @app.on_event("/foo", after="/...", cfg=...)
-    def _() -> None:
+    def foo() -> None:
         pass
 
     assert len(app.routes) == 1
-    route = app.routes[0]
+    route = app.routes["foo"]
     assert route.path == "/foo"
     assert route.opts == {"cfg": ...}
     assert route.after == ["/..."]
@@ -108,9 +108,9 @@ def test_remove_on_event_hook(app: Listener) -> None:
         pass
 
     assert len(app.routes) == 2
-    app.remove_on_event_hook("/foo")
+    app.remove_on_event_hook("_foo")
     assert len(app.routes) == 1
-    route = app.routes[0]
+    route = app.routes["_bar"]
     assert route.path == "/bar"
 
 

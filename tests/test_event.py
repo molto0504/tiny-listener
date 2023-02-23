@@ -9,17 +9,17 @@ from tiny_listener import Event, Listener, Route
 
 @pytest.fixture()
 def route_stuff_1() -> Route:
-    return Route(path="/stuff_1", fn=lambda: ...)
+    return Route(name="/stuff_1", fn=lambda: ...)
 
 
 @pytest.fixture()
 def route_stuff_2() -> Route:
-    return Route(path="/stuff_2", fn=lambda: ...)
+    return Route(name="/stuff_2", fn=lambda: ...)
 
 
 @pytest.fixture()
 def route_final() -> Route:
-    return Route(path="/final", fn=lambda: ..., after=["/stuff_.*"])
+    return Route(name="/final", fn=lambda: ..., after=["/stuff_.*"])
 
 
 @pytest.fixture()
@@ -29,7 +29,11 @@ def app(route_final: Route, route_stuff_1: Route, route_stuff_2: Route) -> Liste
             ...
 
     app = App()
-    app.routes = [route_final, route_stuff_1, route_stuff_2]
+    app.routes = {
+        route_final.name: route_final,
+        route_stuff_1.name: route_stuff_1,
+        route_stuff_2.name: route_stuff_2,
+    }
     return app
 
 

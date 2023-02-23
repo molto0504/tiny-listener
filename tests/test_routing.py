@@ -24,7 +24,7 @@ class TestRoute(TestCase):
 
     def test_ok(self) -> None:
         route = Route(
-            path="/user/bob",
+            name="/user/bob",
             fn=self.handler,
             after="/user/{name}",
             opts={"foo": "bar"},
@@ -37,26 +37,26 @@ class TestRoute(TestCase):
         self.assertEqual(["/user/{name}"], route.after)
 
     def test_convertor_str(self) -> None:
-        route = Route(path="/user/{name}", fn=self.handler)
+        route = Route(name="/user/{name}", fn=self.handler)
         self.assertEqual({"name": "bob"}, route.match("/user/bob"))
         self.assertIsNone(route.match("/user"))
 
-        route = Route(path="/user/{name:str}", fn=self.handler)
+        route = Route(name="/user/{name:str}", fn=self.handler)
         self.assertEqual({"name": "bob"}, route.match("/user/bob"))
         self.assertIsNone(route.match("/user"))
 
     def test_convertor_int(self) -> None:
-        route = Route(path="/user/{age:int}", fn=self.handler)
+        route = Route(name="/user/{age:int}", fn=self.handler)
         self.assertEqual({"age": 18}, route.match("/user/18"))
         self.assertIsNone(route.match("/user"))
 
     def test_convertor_float(self) -> None:
-        route = Route(path="/user/{score:float}", fn=self.handler)
+        route = Route(name="/user/{score:float}", fn=self.handler)
         self.assertEqual({"score": 1.1}, route.match("/user/1.1"))
         self.assertIsNone(route.match("/user"))
 
     def test_convertor_path(self) -> None:
-        route = Route(path="/user/{file:path}", fn=self.handler)
+        route = Route(name="/user/{file:path}", fn=self.handler)
         self.assertEqual({"file": "document/repo/foo.py"}, route.match("/user/document/repo/foo.py"))
         self.assertEqual(
             {"file": "http://localhost/home"},
@@ -65,7 +65,7 @@ class TestRoute(TestCase):
         self.assertIsNone(route.match("/user"))
 
     def test_convertor_uuid(self) -> None:
-        route = Route(path="/user/{id:uuid}", fn=self.handler)
+        route = Route(name="/user/{id:uuid}", fn=self.handler)
         self.assertEqual(
             {"id": uuid.UUID("18baadd0-9225-4cc0-a13b-69098168689f")},
             route.match("/user/18baadd0-9225-4cc0-a13b-69098168689f"),
@@ -74,7 +74,7 @@ class TestRoute(TestCase):
 
     def test_convertor_complex(self) -> None:
         route = Route(
-            path="/user/{id:uuid}/{name}/{file:path}/{age:int}/{score:float}",
+            name="/user/{id:uuid}/{name}/{file:path}/{age:int}/{score:float}",
             fn=self.handler,
         )
         self.assertEqual(
@@ -90,4 +90,4 @@ class TestRoute(TestCase):
 
     def test_convertor_not_exist(self) -> None:
         with pytest.raises(RouteError):
-            Route(path="/user/{name:int128}", fn=self.handler)
+            Route(name="/user/{name:int128}", fn=self.handler)

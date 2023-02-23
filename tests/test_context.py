@@ -48,9 +48,8 @@ def test_alive_drop(app: Listener) -> None:
 
 def test_new_event(app: Listener) -> None:
     ctx = Context(app, cid="_cid_")
-    route = app.routes[0]
+    route = app.routes["_thing"]
     event = ctx.new_event(name="/thing/1", route=route)
-    assert event.route is app.routes[0]
     assert event.route is route
     assert event.ctx is ctx
     # event already exist
@@ -60,8 +59,8 @@ def test_new_event(app: Listener) -> None:
 
 def test_get_events(app: Listener) -> None:
     ctx = Context(app, cid="_cid_")
-    event_1 = ctx.new_event(name="/user/foo", route=app.routes[1])
-    event_2 = ctx.new_event(name="/user/bar", route=app.routes[2])
+    event_1 = ctx.new_event(name="/user/foo", route=app.routes["_user_foo"])
+    event_2 = ctx.new_event(name="/user/bar", route=app.routes["_user_bar"])
     # match all
     assert [event_1, event_2] == ctx.get_events()
     assert [event_1, event_2] == ctx.get_events("/")
