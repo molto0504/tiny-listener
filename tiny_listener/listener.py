@@ -217,13 +217,6 @@ class Listener(Generic[CTXType]):
 
         return asyncio.get_event_loop()
 
-    def __run(self) -> None:
-        loop = self.setup_event_loop()
-        for fn in self.__startup:
-            loop.run_until_complete(fn())
-        asyncio.run_coroutine_threadsafe(self.listen(), loop)
-        loop.run_forever()
-
     def run(self) -> None:
         ident = threading.get_ident()
         if ident in Listener._instances:
@@ -231,7 +224,11 @@ class Listener(Generic[CTXType]):
 
         Listener._instances[ident] = self
         try:
-            self.__run()
+            loop = self.setup_event_loop()
+            for fn in self.__startup:
+                loop.run_until_complete(fn())
+            asyncio.run_coroutine_threadsafe(self.listen(), loop)
+            loop.run_forever()
         finally:
             del Listener._instances[ident]
 
