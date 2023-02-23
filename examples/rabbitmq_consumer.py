@@ -1,4 +1,8 @@
 """
+Before running this example, you need to install RabbitMQ and start it.
+
+    $ pip install aio-pika
+
 See: https://molto0504.github.io/tiny-listener/usage-rabbitmq-consumer/
 """
 
@@ -25,7 +29,7 @@ app = App()
 
 
 @app.on_event("/produce")
-async def _(event: Event):
+async def produce(event: Event):
     channel = event.data["channel"]
     await channel.default_exchange.publish(
         aio_pika.Message(body=b"Hello, Alice!", app_id="001"), routing_key="test_queue"
@@ -36,7 +40,7 @@ async def _(event: Event):
 
 
 @app.on_event("/app/{app_id}/consume")
-async def _(event: Event):
+async def consume(event: Event):
     app_id = event.params["app_id"]
     data = event.data["data"]
     print(f"INFO: App[{app_id}] consume: {data}")

@@ -34,10 +34,10 @@ async def get_writer(event: Event):
 
 
 @app.on_event("{_}?")
-async def _(writer: StreamWriter = Depends(get_writer)):
+async def ask(writer: StreamWriter = Depends(get_writer)):
     writer.write(b"I am confused, may be you should google it.\n")
 
 
 @app.on_event("{_}.")
-async def _(writer: StreamWriter = Depends(get_writer)):
+async def answer(writer: StreamWriter = Depends(get_writer)):
     writer.write(b"Yes, it makes sense to me.\n")

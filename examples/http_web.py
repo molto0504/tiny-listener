@@ -1,4 +1,8 @@
 """
+Before running this example, you need to install the httptools package.
+
+    $ pip install httptools
+
 See: https://molto0504.github.io/tiny-listener/usage-http-web/
 """
 

@@ -38,16 +38,18 @@ class Route:
         fn: Callable,
         path: Union[str, None] = None,
         opts: Union[Dict[str, Any], None] = None,
-        after: Union[None, str, List[str]] = None,
+        after: Union[None, str, Callable, List[Union[str, Callable]]] = None,
     ):
         self.name = name
         self.path = path if path is not None else name
         self.path_regex, self.convertors = compile_path(self.path)
         self.opts: Dict[str, Any] = opts or {}
         self.hook = Hook(fn)
-        if isinstance(after, str):
-            after = [after]
-        self.after: List[str] = after or []
+        self.after: List[str] = []
+        if isinstance(after, list):
+            self.after = [str(i) for i in after]
+        elif after is not None:
+            self.after = [str(after)]
 
     def match(self, name: str) -> Union[Params, None]:
         match = self.path_regex.match(name)

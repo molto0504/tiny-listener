@@ -1,51 +1,49 @@
 """
+Before run this example, you need to install amqtt first:
+
+    $ pip install asyncio-mqtt
+
 See: https://molto0504.github.io/tiny-listener/usage-mqtt-client/
 """
 
-from amqtt.client import MQTTClient
-from amqtt.mqtt.constants import QOS_0
-from amqtt.mqtt.publish import PublishPacket
+import asyncio
+import random
+
+from asyncio_mqtt import Client
 
 from tiny_listener import Event, Listener
 
-SERVER_ADDRESS = "mqtt://test.mosquitto.org"
+SERVER_HOST = "test.mosquitto.org"
 
 
 class App(Listener):
     async def listen(self):
-        client = MQTTClient()
-        await client.connect(SERVER_ADDRESS)
-        await client.subscribe(
-            [
-                ("/test/home/+/temperature", QOS_0),
-            ]
-        )
-        ctx = self.new_ctx(scope={"client": client})
-        ctx.trigger_event("/send")
-        ctx.trigger_event("/recv")
+        async with Client(SERVER_HOST) as client:
+            await client.subscribe("/iot/home/+/temperature")
+            self.trigger_event("/mock_iot_device", data={"client": client})
+            async with client.messages() as messages:
+                # keep listening mqtt messages and trigger `handle_mqtt_msg` event
+                async for msg in messages:
+                    ctx = app.new_ctx()
+                    ctx.trigger_event(msg.topic.value, data={"payload": msg.payload})
 
 
 app = App()
 
 
-@app.on_event("/send")
-async def _(event: Event):
-    client = event.ctx.scope["client"]
-    await client.publish("/test/home/living_room/temperature", b"13")
-    await client.publish("/test/home/kitchen/temperature", b"15")
-
-
-@app.on_event("/recv")
-async def _(event: Event):
-    client = event.ctx.scope["client"]
+@app.on_event("/mock_iot_device")
+async def mock_iot_device(event: Event):
+    """Mock an IoT device that publishes temperature data"""
+    client: Client = event.data["client"]
     while True:
-        message = await client.deliver_message()
-        packet: PublishPacket = message.publish_packet
-        app.trigger_event(packet.variable_header.topic_name, data={"payload": packet.payload})
+        room = random.choices(["living_room", "kitchen", "bedroom", "bathroom", "balcony"])[0]
+        temperature = random.randint(10, 30)
+        await client.publish(f"/iot/home/{room}/temperature", temperature)
+        await asyncio.sleep(1)
 
 
-@app.on_event("/test/home/{room}/temperature")
-async def _(event: Event):
+@app.on_event("/iot/home/{room}/temperature")
+async def handle_mqtt_msg(event: Event):
     room = event.params["room"]
-    temperature = event.data["payload"].data.decode()
+    temperature = event.data["payload"].decode()
     print("INFO: {:<13} {} ℃".format(room, temperature))
