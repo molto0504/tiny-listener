@@ -17,6 +17,7 @@ Scope = Dict[str, Any]
 class Context:
     def __init__(
         self,
+        listener: "Listener",
         cid: str,
         scope: Union[Scope, None] = None,
     ) -> None:
@@ -28,15 +29,10 @@ class Context:
         self.cache: Dict[Depends, Any] = {}
         self.scope: Scope = scope or {}
         self.events: Dict[str, Event] = {}
-        self.__listener: Union[weakref.ReferenceType["Listener"], None] = None
+        self.__listener: weakref.ReferenceType["Listener"] = weakref.ref(listener)
 
     @property
     def listener(self) -> "Listener":
-        if self.__listener is None:
-            from .listener import get_current_running_listener
-
-            self.__listener = weakref.ref(get_current_running_listener())
-
         return self.__listener()  # type: ignore
 
     @property

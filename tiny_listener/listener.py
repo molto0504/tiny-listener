@@ -86,7 +86,7 @@ class Listener(Generic[CTXType]):
             scope = {}
 
         if cid not in self.ctxs:
-            ctx = self.__context_cls(cid=cid, scope=scope)
+            ctx = self.__context_cls(self, cid=cid, scope=scope)
             self.ctxs[ctx.cid] = ctx
             return ctx
 
