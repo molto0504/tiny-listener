@@ -118,7 +118,7 @@ def test_startup_callback(app: Listener) -> None:
     step = []
 
     @app.startup
-    def step_1() -> None:
+    async def step_1() -> None:
         step.append(1)
 
     @app.startup
@@ -136,11 +136,11 @@ def test_shutdown_callback(app: Listener) -> None:
     step = []
 
     @app.shutdown
-    def step_1() -> None:
+    async def step_1() -> None:
         step.append(1)
 
     @app.shutdown
-    def step_2() -> None:
+    async def step_2() -> None:
         step.append(2)
 
     with pytest.raises(SystemExit):

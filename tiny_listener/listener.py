@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import threading
+from functools import wraps
 from typing import (
     Any,
     Awaitable,
@@ -28,6 +29,19 @@ from .routing import Params, Route
 CTXType = TypeVar("CTXType", bound=Context)
 
 
+Callback = Callable[..., Awaitable[Any]]
+
+
+def check_hook(fn: Callable) -> Callback:
+    @wraps(fn)
+    async def wrapper(f: Callable, *args: Any, **kwargs: Any) -> Any:
+        if not asyncio.iscoroutinefunction(f):
+            raise TypeError("Hook must be a coroutine function")
+        return await fn(f, *args, **kwargs)
+
+    return wrapper
+
+
 class Listener(Generic[CTXType]):
     _instances: Dict[int, "Listener"] = {}
 
@@ -35,8 +49,8 @@ class Listener(Generic[CTXType]):
         self.ctxs: Dict[str, CTXType] = {}
         self.routes: List[Route] = []
 
-        self.__startup: List[Callable[..., Awaitable[Any]]] = []
-        self.__shutdown: List[Callable[..., Awaitable[Any]]] = []
+        self.__startup: List[Callback] = []
+        self.__shutdown: List[Callback] = []
         self.__middleware_before_event: List[Hook] = []
         self.__middleware_after_event: List[Hook] = []
         self.__error_handlers: List[Tuple[Type[Exception], Hook]] = []
@@ -84,16 +98,16 @@ class Listener(Generic[CTXType]):
             raise ContextNotFound(f"Context `{cid}` not found")
         return self.ctxs[cid]
 
-    def add_startup_callback(self, fn: Callable) -> None:
-        self.__startup.append(asyncio.coroutine(fn))
+    def add_startup_callback(self, fn: Callback) -> None:
+        self.__startup.append(fn)
 
-    def add_shutdown_callback(self, fn: Callable) -> None:
-        self.__shutdown.append(asyncio.coroutine(fn))
+    def add_shutdown_callback(self, fn: Callback) -> None:
+        self.__shutdown.append(fn)
 
     def add_before_event_hook(self, fn: Callable) -> None:
         self.__middleware_before_event.append(Hook(fn))
 
-    def add_after_event_hook(self, fn: Callable) -> None:
+    def add_after_event_hook(self, fn: Callback) -> None:
         self.__middleware_after_event.append(Hook(fn))
 
     def add_on_error_hook(self, fn: Callable, exc: Type[Exception]) -> None:
