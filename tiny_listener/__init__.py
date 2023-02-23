@@ -10,6 +10,7 @@ from .errors import (
     DuplicateListener,
     EventAlreadyExists,
     EventNotFound,
+    ListenerNotFound,
     RouteError,
 )
 from .event import Event
@@ -24,6 +25,7 @@ __all__ = [
     "ContextNotFound",
     "Context",
     "DuplicateListener",
+    "ListenerNotFound",
     "Scope",
     "Event",
     "Depends",

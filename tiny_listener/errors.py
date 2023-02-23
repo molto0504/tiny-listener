@@ -20,3 +20,7 @@ class ContextAlreadyExists(Exception):
 
 class DuplicateListener(Exception):
     pass
+
+
+class ListenerNotFound(Exception):
+    pass

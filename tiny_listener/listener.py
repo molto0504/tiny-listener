@@ -22,6 +22,7 @@ from .errors import (
     ContextNotFound,
     DuplicateListener,
     EventNotFound,
+    ListenerNotFound,
 )
 from .hook import Hook
 from .routing import Params, Route
@@ -235,7 +236,7 @@ class Listener(Generic[CTXType]):
     def run(self) -> None:
         ident = threading.get_ident()
         if ident in Listener._instances:
-            raise DuplicateListener("Only one instance of Listener can be run per thread.")
+            raise DuplicateListener(f"Only one instance of Listener can be run per thread, {ident=}.")
 
         Listener._instances[ident] = self
         try:
@@ -249,3 +250,14 @@ class Listener(Generic[CTXType]):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(routes_count={len(self.routes)})"
+
+
+def get_current_listener() -> Union[Listener, None]:
+    """
+    :raises ListenerNotFound:
+    """
+    ident = threading.get_ident()
+    try:
+        return Listener._instances[ident]  # noqa
+    except KeyError as e:
+        raise ListenerNotFound(f"Listener not found for current thread, {ident=}") from e
