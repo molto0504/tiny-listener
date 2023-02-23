@@ -7,6 +7,7 @@ from .context import Context, Scope
 from .errors import (
     ContextAlreadyExist,
     ContextNotFound,
+    DuplicateListener,
     EventAlreadyExist,
     EventNotFound,
     RouteError,
@@ -22,6 +23,7 @@ __all__ = [
     "ContextAlreadyExist",
     "ContextNotFound",
     "Context",
+    "DuplicateListener",
     "Scope",
     "Event",
     "Depends",

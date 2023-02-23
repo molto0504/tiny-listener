@@ -16,3 +16,7 @@ class ContextNotFound(Exception):
 
 class ContextAlreadyExist(Exception):
     pass
+
+
+class DuplicateListener(Exception):
+    pass
