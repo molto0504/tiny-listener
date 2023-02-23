@@ -34,12 +34,12 @@ class App(Listener):
         async with connection:
             channel = await connection.channel()
             queue = await channel.declare_queue("test_queue", auto_delete=True)
-            app.fire("/produce", data={"channel": channel})
+            app.trigger_event("/produce", data={"channel": channel})
 
             async with queue.iterator() as msg_queue:
                 async for msg in msg_queue:
                     async with msg.process():
-                        app.fire(f"/app/{msg.app_id}/consume", data={"data": msg.body})
+                        app.trigger_event(f"/app/{msg.app_id}/consume", data={"data": msg.body})
 
 
 app = App()

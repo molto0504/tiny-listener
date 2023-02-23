@@ -1,6 +1,5 @@
 import asyncio
 import re
-import warnings
 import weakref
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar, Union
 
@@ -90,12 +89,6 @@ class Context:
         :param pat: Pattern
         """
         return [event for name, event in self.events.items() if re.match(pat, name)]
-
-    def fire(
-        self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None
-    ) -> asyncio.Task:  # pragma: no cover
-        warnings.warn("`fire` is deprecated since ver0.0.13, use trigger_event instead", DeprecationWarning)
-        return self.trigger_event(name, timeout, data)
 
     def trigger_event(
         self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None

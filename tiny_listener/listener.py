@@ -1,6 +1,5 @@
 import asyncio
 import sys
-import warnings
 from typing import (
     Any,
     Awaitable,
@@ -147,16 +146,6 @@ class Listener(Generic[CTXType]):
             if params is not None:
                 return route, params
         raise EventNotFound(f"route `{name}` not found")
-
-    def fire(
-        self,
-        name: str,
-        cid: Union[str, None] = None,
-        timeout: Union[float, None] = None,
-        data: Union[Dict, None] = None,
-    ) -> asyncio.Task:  # pragma: no cover
-        warnings.warn("`fire` is deprecated since ver0.0.13, use trigger_event instead", DeprecationWarning)
-        return self.trigger_event(name, cid, timeout, data)
 
     def trigger_event(
         self,

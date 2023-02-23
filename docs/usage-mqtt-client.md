@@ -45,8 +45,8 @@ class App(Listener):
             ]
         )
         ctx = self.new_ctx(scope={"client": client})
-        ctx.fire("/send")
-        ctx.fire("/recv")
+        ctx.trigger_event("/send")
+        ctx.trigger_event("/recv")
 
 
 app = App()
@@ -65,7 +65,7 @@ async def _(event: Event):
     while True:
         message = await client.deliver_message()
         packet: PublishPacket = message.publish_packet
-        app.fire(packet.variable_header.topic_name, data={"payload": packet.payload})
+        app.trigger_event(packet.variable_header.topic_name, data={"payload": packet.payload})
 
 
 @app.on_event("/test/home/{room}/temperature")

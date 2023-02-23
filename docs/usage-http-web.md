@@ -59,7 +59,7 @@ class App(Listener):
         if data:
             req = Request(data)
             try:
-                self.fire(
+                self.trigger_event(
                     f"{req.method}:{req.url}", data={"writer": writer, "request": req}
                 )
             except EventNotFound:
