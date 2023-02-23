@@ -1,4 +1,6 @@
+import asyncio
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
@@ -18,6 +20,7 @@ def app() -> Listener:
         async def listen(self, *_: Any) -> None:
             ...
 
+    App._instances.clear()  # noqa
     return App()
 
 
@@ -195,3 +198,12 @@ async def test_error_raise(app: Listener) -> None:
 
     with pytest.raises(ValueError):
         await app.trigger_event("/go")
+
+
+def test_setup_event_loop(app: Listener) -> None:
+    loop = asyncio.get_event_loop()
+    assert loop is app.setup_event_loop()
+
+    with patch("tiny_listener.listener.Listener.is_main_thread", return_value=False):
+        loop = app.setup_event_loop()
+        assert loop is asyncio.get_event_loop()

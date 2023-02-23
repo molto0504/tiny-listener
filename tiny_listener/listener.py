@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import threading
 from typing import (
     Any,
     Awaitable,
@@ -15,7 +16,12 @@ from typing import (
 from uuid import uuid4
 
 from .context import Context
-from .errors import ContextAlreadyExist, ContextNotFound, EventNotFound
+from .errors import (
+    ContextAlreadyExist,
+    ContextNotFound,
+    DuplicateListener,
+    EventNotFound,
+)
 from .hook import Hook
 from .routing import Params, Route
 
@@ -23,6 +29,8 @@ CTXType = TypeVar("CTXType", bound=Context)
 
 
 class Listener(Generic[CTXType]):
+    _instances: Dict[int, "Listener"] = {}
+
     def __init__(self) -> None:
         self.ctxs: Dict[str, CTXType] = {}
         self.routes: List[Route] = []
@@ -198,23 +206,34 @@ class Listener(Generic[CTXType]):
         sys.exit()
 
     @staticmethod
-    def set_event_loop(loop: Union[asyncio.AbstractEventLoop, None] = None) -> asyncio.AbstractEventLoop:
-        """Override this method to change default event loop"""
-        if loop is None:
-            loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        return loop
+    def is_main_thread() -> bool:
+        return threading.current_thread() is threading.main_thread()
 
-    def run(self) -> None:
-        """Override this method to change how the app run."""
-        loop = self.set_event_loop()
+    def setup_event_loop(self) -> asyncio.AbstractEventLoop:
+        """Override this method to change default event loop"""
+        if not self.is_main_thread():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return asyncio.get_event_loop()
+
+    def __run(self) -> None:
+        loop = self.setup_event_loop()
         for fn in self.__startup:
             loop.run_until_complete(fn())
         asyncio.run_coroutine_threadsafe(self.listen(), loop)
+        loop.run_forever()
+
+    def run(self) -> None:
+        ident = threading.get_ident()
+        if ident in Listener._instances:
+            raise DuplicateListener("Only one instance of Listener can be run per thread.")
+
+        Listener._instances[ident] = self
         try:
-            loop.run_forever()
-        except (KeyboardInterrupt, SystemExit):
-            self.exit()
+            self.__run()
+        finally:
+            del Listener._instances[ident]
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(routes_count={len(self.routes)})"
