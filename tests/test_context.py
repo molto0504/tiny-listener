@@ -1,5 +1,4 @@
 from typing import Any
-from unittest import skip
 
 import pytest
 
@@ -37,7 +36,6 @@ def test_ok(app: Listener) -> None:
     assert ctx.cache == {}
 
 
-@skip("TODO")
 def test_alive_drop(app: Listener) -> None:
     ctx = app.new_ctx(cid="foo")
 
@@ -75,7 +73,6 @@ def test_get_events(app: Listener) -> None:
     assert [] == ctx.get_events("/user/baz")
 
 
-@skip("TODO")
 @pytest.mark.asyncio
 async def test_trigger_event(app: Listener) -> None:
     ctx = Context(listener=app, cid="_cid_", scope={"scope_key": "scope_val"})

@@ -1,9 +1,9 @@
 import asyncio
 import re
 import weakref
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, Final, List, Union
 
-from .errors import EventAlreadyExists, ListenerNotFound
+from .errors import EventAlreadyExists
 from .event import Event
 
 if TYPE_CHECKING:
@@ -22,13 +22,14 @@ class Context:
         scope: Union[Scope, None] = None,
     ) -> None:
         """
+        :param listener: Listener instance
         :param cid: Context ID
         :param scope: Context scope
         """
-        self.cid = cid
-        self.cache: Dict[Depends, Any] = {}
-        self.scope: Scope = scope or {}
-        self.events: Dict[str, Event] = {}
+        self.cid: Final = cid
+        self.cache: Final[Dict[Depends, Any]] = {}
+        self.scope: Final[Scope] = scope or {}
+        self.events: Final[Dict[str, Event]] = {}
         self.__listener: weakref.ReferenceType["Listener"] = weakref.ref(listener)
 
     @property
@@ -37,10 +38,7 @@ class Context:
 
     @property
     def is_alive(self) -> bool:
-        try:
-            return self.cid in self.listener.ctxs
-        except ListenerNotFound:
-            return False
+        return self.cid in self.listener.ctxs
 
     def drop(self) -> bool:
         if self.is_alive:

@@ -1,6 +1,5 @@
 import asyncio
 from typing import Any
-from unittest import skip
 from unittest.mock import patch
 
 import pytest
@@ -150,7 +149,6 @@ def test_shutdown_callback(app: Listener) -> None:
     assert step == [1, 2]
 
 
-@skip("TODO")
 @pytest.mark.asyncio
 async def test_middleware_callback(app: Listener) -> None:
     step = []
@@ -171,7 +169,6 @@ async def test_middleware_callback(app: Listener) -> None:
     assert step == [1, 2, 3]
 
 
-@skip("TODO")
 @pytest.mark.asyncio
 async def test_on_error(app: Listener) -> None:
     step = []
@@ -189,7 +186,6 @@ async def test_on_error(app: Listener) -> None:
     assert step == [1, 2]
 
 
-@skip("TODO")
 @pytest.mark.asyncio
 async def test_error_raise(app: Listener) -> None:
     @app.on_event()
