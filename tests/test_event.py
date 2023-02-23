@@ -47,6 +47,7 @@ def test_ok(route_final: Route, app: Listener) -> None:
         data={"foo": ...},
         params={"bar": ...},
     )
+    assert event.listener is app
     assert event.name == "/final"
     assert event.timeout == 10
     assert event.data == {"foo": ...}

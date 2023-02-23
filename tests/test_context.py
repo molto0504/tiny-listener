@@ -30,6 +30,7 @@ def app() -> Listener:
 
 def test_ok(app: Listener) -> None:
     ctx = Context(app, cid="test_ok", scope={"scope_key": "scope_val"})
+    assert ctx.listener is app
     assert ctx.cid == "test_ok"
     assert ctx.scope == {"scope_key": "scope_val"}
     assert ctx.events == {}
