@@ -6,7 +6,7 @@ import pytest
 
 from tiny_listener import (
     Context,
-    ContextAlreadyExist,
+    ContextAlreadyExists,
     ContextNotFound,
     EventNotFound,
     Listener,
@@ -48,7 +48,7 @@ def test_new_ctx(app: Listener) -> None:
     assert app.ctxs[ctx.cid].scope == {"foo": ...}
 
     # new ctx already exist
-    with pytest.raises(ContextAlreadyExist):
+    with pytest.raises(ContextAlreadyExists):
         app.new_ctx("my_ctx")
 
     # ctx with auto increment id

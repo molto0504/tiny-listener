@@ -3,7 +3,7 @@ import re
 import weakref
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar, Union
 
-from .errors import EventAlreadyExist
+from .errors import EventAlreadyExists
 from .event import Event
 
 if TYPE_CHECKING:
@@ -69,10 +69,10 @@ class Context:
         :param timeout: Timeout
         :param data: Event data
         :param params: Event params
-        :raises: EventAlreadyExist
+        :raises: EventAlreadyExists
         """
         if name in self.events:
-            raise EventAlreadyExist(f"Event `{name}` already exist in context `{self}`")
+            raise EventAlreadyExists(f"Event `{name}` already exist in context `{self}`")
         event = Event(
             name=name,
             ctx=self,

@@ -2,7 +2,7 @@ class RouteError(Exception):
     pass
 
 
-class EventAlreadyExist(Exception):
+class EventAlreadyExists(Exception):
     pass
 
 
@@ -14,7 +14,7 @@ class ContextNotFound(Exception):
     pass
 
 
-class ContextAlreadyExist(Exception):
+class ContextAlreadyExists(Exception):
     pass
 
 

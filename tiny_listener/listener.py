@@ -18,7 +18,7 @@ from uuid import uuid4
 
 from .context import Context
 from .errors import (
-    ContextAlreadyExist,
+    ContextAlreadyExists,
     ContextNotFound,
     DuplicateListener,
     EventNotFound,
@@ -33,6 +33,7 @@ Callback = Callable[..., Awaitable[Any]]
 
 
 def check_hook(fn: Callable) -> Callback:
+    # todo impl
     @wraps(fn)
     async def wrapper(f: Callable, *args: Any, **kwargs: Any) -> Any:
         if not asyncio.iscoroutinefunction(f):
@@ -75,7 +76,7 @@ class Listener(Generic[CTXType]):
 
         :param cid: Context ID
         :param scope: Context scope
-        :raises: ContextAlreadyExist
+        :raises: ContextAlreadyExists
         """
         if cid is None:
             cid = str(uuid4())
@@ -88,7 +89,7 @@ class Listener(Generic[CTXType]):
             self.ctxs[ctx.cid] = ctx
             return ctx
 
-        raise ContextAlreadyExist(f"Context `{cid}` already exist")
+        raise ContextAlreadyExists(f"Context `{cid}` already exist")
 
     def get_ctx(self, cid: str) -> CTXType:
         """
@@ -178,7 +179,7 @@ class Listener(Generic[CTXType]):
     ) -> asyncio.Task:
         """
         :raises EventNotFound:
-        :raises EventAlreadyExist:
+        :raises EventAlreadyExists:
         """
         ctx = self.new_ctx() if cid not in self.ctxs else self.ctxs[cid]
         route, params = self.match_route(name)

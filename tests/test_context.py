@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from tiny_listener import Context, EventAlreadyExist, Listener
+from tiny_listener import Context, EventAlreadyExists, Listener
 
 
 @pytest.fixture()
@@ -55,7 +55,7 @@ def test_new_event(app: Listener) -> None:
     assert event.route is route
     assert event.ctx is ctx
     # event already exist
-    with pytest.raises(EventAlreadyExist):
+    with pytest.raises(EventAlreadyExists):
         ctx.new_event(name="/thing/1", route=route)
 
 

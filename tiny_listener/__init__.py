@@ -5,10 +5,10 @@ __version__ = "0.0.14"
 
 from .context import Context, Scope
 from .errors import (
-    ContextAlreadyExist,
+    ContextAlreadyExists,
     ContextNotFound,
     DuplicateListener,
-    EventAlreadyExist,
+    EventAlreadyExists,
     EventNotFound,
     RouteError,
 )
@@ -20,7 +20,7 @@ from .utils import import_from_string
 
 __all__ = [
     "__version__",
-    "ContextAlreadyExist",
+    "ContextAlreadyExists",
     "ContextNotFound",
     "Context",
     "DuplicateListener",
@@ -32,11 +32,11 @@ __all__ = [
     "ContextNotFound",
     "Listener",
     "EventNotFound",
-    "EventAlreadyExist",
+    "EventAlreadyExists",
     "Params",
     "Route",
     "RouteError",
     "compile_path",
     "import_from_string",
-    "EventAlreadyExist",
+    "EventAlreadyExists",
 ]
