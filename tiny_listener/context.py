@@ -17,7 +17,6 @@ Scope = Dict[str, Any]
 class Context:
     def __init__(
         self,
-        listener: Any,  # todo remove
         cid: str,
         scope: Union[Scope, None] = None,
     ) -> None:

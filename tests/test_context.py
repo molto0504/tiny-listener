@@ -30,7 +30,7 @@ def app() -> Listener:
 
 
 def test_ok(app: Listener) -> None:
-    ctx = Context(listener=app, cid="test_ok", scope={"scope_key": "scope_val"})
+    ctx = Context(cid="test_ok", scope={"scope_key": "scope_val"})
     assert ctx.cid == "test_ok"
     assert ctx.scope == {"scope_key": "scope_val"}
     assert ctx.events == {}
@@ -49,7 +49,7 @@ def test_alive_drop(app: Listener) -> None:
 
 
 def test_new_event(app: Listener) -> None:
-    ctx = Context(listener=app, cid="_cid_")
+    ctx = Context(cid="_cid_")
     route = app.routes[0]
     event = ctx.new_event(name="/thing/1", route=route)
     assert event.route is app.routes[0]
@@ -61,7 +61,7 @@ def test_new_event(app: Listener) -> None:
 
 
 def test_get_events(app: Listener) -> None:
-    ctx = Context(listener=app, cid="_cid_")
+    ctx = Context(cid="_cid_")
     event_1 = ctx.new_event(name="/user/foo", route=app.routes[1])
     event_2 = ctx.new_event(name="/user/bar", route=app.routes[2])
     # match all
