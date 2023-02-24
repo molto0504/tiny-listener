@@ -1,7 +1,6 @@
 import asyncio
 import sys
 import threading
-from functools import wraps
 from typing import (
     Any,
     Awaitable,
@@ -25,24 +24,13 @@ from .errors import (
     EventNotFound,
     ListenerNotFound,
 )
-from .hook import Hook
+from .hook import Hook, check_callback
 from .routing import Params, Route
 
 CTXType = TypeVar("CTXType", bound=Context)
 
 
 Callback = Callable[..., Awaitable[Any]]
-
-
-def check_hook(fn: Callable) -> Callback:
-    # todo impl
-    @wraps(fn)
-    async def wrapper(f: Callable, *args: Any, **kwargs: Any) -> Any:
-        if not asyncio.iscoroutinefunction(f):
-            raise TypeError("Hook must be a coroutine function")
-        return await fn(f, *args, **kwargs)
-
-    return wrapper
 
 
 class Listener(Generic[CTXType]):
@@ -145,28 +133,34 @@ class Listener(Generic[CTXType]):
         **opts: Any,
     ) -> Callable[[Hook], None]:
         def _decorator(fn: Callable) -> None:
+            check_callback(fn)
             self.add_on_event_hook(fn, name, after, **opts)
 
         return _decorator
 
     def startup(self, fn: Callable) -> Callable:
+        check_callback(fn)
         self.add_startup_callback(fn)
         return fn
 
     def shutdown(self, fn: Callable) -> Callable:
+        check_callback(fn)
         self.add_shutdown_callback(fn)
         return fn
 
     def before_event(self, fn: Callable) -> Callable:
+        check_callback(fn)
         self.add_before_event_hook(fn)
         return fn
 
     def after_event(self, fn: Callable) -> Callable:
+        check_callback(fn)
         self.add_after_event_hook(fn)
         return fn
 
     def on_error(self, exc: Type[Exception]) -> Callable[[Callable], Callable]:
         def f(fn: Callable) -> Callable:
+            check_callback(fn)
             self.add_on_error_hook(fn, exc)
             return fn
 

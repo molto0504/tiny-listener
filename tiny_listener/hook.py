@@ -60,3 +60,15 @@ class Depends(Hook):
     def __init__(self, fn: Callable, use_cache: bool = True) -> None:
         super().__init__(fn)
         self.use_cache = use_cache
+
+
+def check_callback(fn: Callable) -> None:
+    if not asyncio.iscoroutinefunction(fn):
+        raise TypeError(
+            """Hook must be a coroutine function, Such as:
+
+    @app.on_event()
+    async def foo():
+        ...
+"""
+        )

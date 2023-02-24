@@ -88,7 +88,7 @@ def test_match(app: Listener) -> None:
 
 def test_on_event_callback(app: Listener) -> None:
     @app.on_event("/foo", after="/...", cfg=...)
-    def foo() -> None:
+    async def foo() -> None:
         pass
 
     assert len(app.routes) == 1
@@ -100,11 +100,11 @@ def test_on_event_callback(app: Listener) -> None:
 
 def test_remove_on_event_hook(app: Listener) -> None:
     @app.on_event("/foo")
-    def _foo() -> None:
+    async def _foo() -> None:
         pass
 
     @app.on_event("/bar")
-    def _bar() -> None:
+    async def _bar() -> None:
         pass
 
     assert len(app.routes) == 2
@@ -154,11 +154,11 @@ async def test_middleware_callback(app: Listener) -> None:
     step = []
 
     @app.before_event
-    def step_1() -> None:
+    async def step_1() -> None:
         step.append(1)
 
     @app.on_event()
-    def step_2() -> None:
+    async def step_2() -> None:
         step.append(2)
 
     @app.after_event
