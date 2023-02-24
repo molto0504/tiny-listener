@@ -46,10 +46,13 @@ class Route:
         self.opts: Dict[str, Any] = opts or {}
         self.hook = Hook(fn)
         self.after: List[str] = []
-        if isinstance(after, list):
-            self.after = [str(i) for i in after]
-        elif after is not None:
-            self.after = [str(after)]
+
+        if after:
+            for i in after if isinstance(after, list) else [after]:
+                if isinstance(i, str):
+                    self.after.append(i)
+                elif callable(i):
+                    self.after.append(i.__name__)
 
     def match(self, name: str) -> Union[Params, None]:
         match = self.path_regex.match(name)

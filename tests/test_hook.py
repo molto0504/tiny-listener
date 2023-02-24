@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import pytest
 
-from tiny_listener import Depends, Event
+from tiny_listener import Depends, Event, Listener
 
 
 class FakeEvent:
@@ -147,3 +147,21 @@ class TestHookDepends(TestCase):
 
         dep = Depends(fn=fn)
         self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
+
+
+def test_check_callback():
+    class App(Listener):
+        async def listen(self) -> None:
+            ...
+
+    app = App()
+
+    @app.on_event()
+    async def foo():
+        ...
+
+    with pytest.raises(TypeError):
+
+        @app.on_event()
+        def bar():  # use normal function instead of async function
+            ...

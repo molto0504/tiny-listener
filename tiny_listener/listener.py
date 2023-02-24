@@ -114,14 +114,15 @@ class Listener(Generic[CTXType]):
         name = fn.__name__
         if name in self.routes:
             raise EventAlreadyExists(f"Event `{name}` already exists")
-        self.routes[name] = Route(name=name, path=path, fn=fn, after=after or [], opts=opts)
+        self.routes[name] = Route(name=name, path=path, fn=fn, after=after, opts=opts)
 
     def remove_on_event_hook(self, name: Union[str, Callable]) -> bool:
         """
         :param name: Event name or callback function
         """
         try:
-            del self.routes[str(name)]
+            name = name.__name__ if callable(name) else name
+            del self.routes[name]
             return True
         except KeyError:
             return False
