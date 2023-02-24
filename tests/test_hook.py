@@ -1,152 +1,128 @@
-import asyncio
-from typing import Any, Dict, Literal
-from unittest import TestCase
+from typing import Any, Dict
 
 import pytest
 
-from tiny_listener import Depends, Event, Listener
+from tiny_listener import Depends, Event, Listener, depend
 
 
-class FakeEvent:
-    def __init__(self) -> None:
-        class FakeContext:
-            def __init__(self) -> None:
-                self.cache: Dict[Depends, Any] = {}
+@pytest.fixture
+def fake_event() -> Event:
+    class FakeContext:
+        cache = {}
 
-        self.ctx = FakeContext()
+    class FakeEvent:
+        ctx = FakeContext()
+
+    return FakeEvent()  # noqa
 
 
-class TestHookDepends(TestCase):
-    def setUp(self) -> None:
-        self.fake_event = FakeEvent()
-        self.loop = asyncio.get_event_loop()
+@pytest.mark.parametrize("caller", [Depends, depend])
+def test_depend_ok(caller):
+    def normal_func():
+        pass
 
-    def test_ok(self) -> None:
-        def normal_func() -> None:
-            pass
+    dep = caller(normal_func)
+    assert dep.use_cache is True
+    dep = caller(normal_func, use_cache=False)
+    assert dep.use_cache is False
 
-        dep = Depends(fn=normal_func)
-        self.assertTrue(dep.use_cache)
 
-    def test_call(self) -> None:
-        def normal_func() -> None:
-            raise ValueError()
+@pytest.mark.asyncio
+@pytest.mark.parametrize("caller", [Depends, depend])
+async def test_call_dep(caller, fake_event):
+    def get_data():
+        return "data"
 
-        dep = Depends(fn=normal_func)
-        with pytest.raises(ValueError):
-            self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
+    dep = caller(get_data)
+    assert await dep(fake_event) == "data"
 
-    def test_run_simple_normal_hook(self) -> None:
-        def my_dep() -> None:
-            raise ValueError()
 
-        def normal_func(_: Any = Depends(my_dep)) -> None:
-            pass
+@pytest.mark.asyncio
+@pytest.mark.parametrize("caller", [Depends, depend])
+async def test_run_hook_with_depends(caller, fake_event):
+    def get_user(event: Event):
+        assert event is fake_event
+        return {"username": "bob"}
 
-        dep = Depends(fn=normal_func)
-        with pytest.raises(ValueError):
-            self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
+    def get_username(event: Event, user: Dict = caller(get_user)):
+        assert event is fake_event
+        return user.get("username")
 
-    def test_run_complex_normal_hook(self) -> None:
-        def my_dep(event: Event) -> object:
-            assert event is self.fake_event
-            return ...
+    dep = caller(get_username)
+    assert await dep(fake_event) == "bob"
 
-        def fn(event: Event, foo=Depends(my_dep)) -> None:
-            assert event is self.fake_event
-            assert foo is ...
 
-        dep = Depends(fn=fn)
-        self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
+@pytest.mark.asyncio
+@pytest.mark.parametrize("caller", [Depends, depend])
+async def test_run_complex_hook(caller, fake_event):
+    def get_user(event: Event):
+        assert event is fake_event
+        return {"username": "bob"}
 
-    def test_run_simple_async_hook(self) -> None:
-        async def my_dep() -> None:
-            raise ValueError()
+    async def get_data(event: Event):
+        assert event is fake_event
+        return {"bob": "bob's data"}
 
-        async def fn(_: Any = Depends(my_dep)) -> None:
-            pass
+    def get_user_data(event: Event, user: Dict = caller(get_user), data: Dict = caller(get_data)):
+        assert event is fake_event
+        username = user.get("username")
+        return data[username]
 
-        dep = Depends(fn=fn)
-        with pytest.raises(ValueError):
-            self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
+    dep = caller(get_user_data)
+    assert await dep(fake_event) == "bob's data"
 
-    def test_run_complex_async_hook(self) -> None:
-        async def my_dep(event: Event) -> object:
-            assert event is self.fake_event
-            return ...
 
-        async def fn(event: Event, foo=Depends(my_dep)) -> None:
-            assert event is self.fake_event
-            assert foo is ...
+@pytest.mark.asyncio
+@pytest.mark.parametrize("caller", [Depends, depend])
+async def test_signature(caller, fake_event):
+    async def get_user():
+        return {"username": "bob"}
 
-        dep = Depends(fn=fn)
-        self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
+    def get_user_name(
+        event_1: Event,
+        event_2: Event,
+        field_1,
+        dep_1=caller(get_user),
+        *,
+        field_2: Any = None,
+        dep_2=caller(get_user),
+    ) -> None:
+        assert event_1 is event_2 is fake_event
+        assert field_1 is field_2 is None
+        assert dep_1 == dep_2 == {"username": "bob"}
+        return dep_1.get("username")
 
-    def test_signature(self) -> None:
-        async def my_dep() -> object:
-            return ...
+    dep = caller(get_user_name)
+    assert await dep(fake_event) == "bob"
 
-        def fn(
-            event_1: Event,
-            event_2: Event,
-            field_1,
-            dep_1=Depends(my_dep),
-            *,
-            field_2: Any = None,
-            dep_2=Depends(my_dep),
-        ) -> None:
-            assert event_1 is event_2 is self.fake_event
-            assert field_1 is field_2 is None
-            assert dep_1 is dep_2 is ...
 
-        dep = Depends(fn=fn)
-        self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
+@pytest.mark.asyncio
+@pytest.mark.parametrize("caller", [Depends, depend])
+async def test_dep_with_cache(caller, fake_event):
+    def get_user():
+        return {"username": "bob"}
 
-    def test_use_cache(self) -> None:
-        seq = 0
+    def get_username(dep_1=caller(get_user, use_cache=True), dep_2=caller(get_user, use_cache=True)):
+        assert dep_1 is dep_2  # dep_1 and dep_2 are the same object, because use_cache=True
+        return dep_1.get("username")
 
-        def my_dep() -> int:
-            nonlocal seq
-            seq += 1
-            return seq
+    dep = caller(get_username)
+    assert await dep(fake_event) == "bob"
 
-        def fn(dep_1: int = Depends(my_dep, use_cache=True), dep_2: int = Depends(my_dep, use_cache=True)) -> None:
-            assert dep_1 == dep_2 == 1
 
-        dep = Depends(fn=fn)
-        self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
+@pytest.mark.asyncio
+@pytest.mark.parametrize("caller", [Depends, depend])
+async def test_dep_without_cache(caller, fake_event):
+    def get_user():
+        return {"username": "bob"}
 
-    def test_without_cache(self) -> None:
-        seq = 0
+    def get_username(dep_1=caller(get_user, use_cache=False), dep_2=caller(get_user, use_cache=False)):
+        assert dep_1 == dep_2
+        assert dep_1 is not dep_2  # dep_1 and dep_2 are different objects, because use_cache=False
+        return dep_1.get("username")
 
-        def my_dep() -> int:
-            nonlocal seq
-            seq += 1
-            return seq
-
-        def fn(
-            dep_1: int = Depends(my_dep, use_cache=False),
-            dep_2: int = Depends(my_dep, use_cache=False),
-        ) -> None:
-            assert dep_1 == 1
-            assert dep_2 == 2
-
-        dep = Depends(fn=fn)
-        self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
-
-    def test_async_normal_mix(self) -> None:
-        def get_foo() -> Literal["foo"]:
-            return "foo"
-
-        async def get_bar() -> Literal["bar"]:
-            return "bar"
-
-        def fn(foo: str = Depends(get_foo), bar: str = Depends(get_bar)) -> None:
-            assert foo == "foo"
-            assert bar == "bar"
-
-        dep = Depends(fn=fn)
-        self.loop.run_until_complete(dep(self.fake_event))  # type: ignore
+    dep = caller(get_username)
+    assert await dep(fake_event) == "bob"
 
 
 def test_check_callback():

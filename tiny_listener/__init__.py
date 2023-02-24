@@ -14,13 +14,14 @@ from .errors import (
     RouteError,
 )
 from .event import Event
-from .hook import Depends, Hook, HookFunc
+from .hook import Depends, Hook, HookFunc, depend
 from .listener import Listener
 from .routing import Params, Route, compile_path
 from .utils import import_from_string
 
 __all__ = [
     "__version__",
+    "depend",
     "ContextAlreadyExists",
     "ContextNotFound",
     "Context",

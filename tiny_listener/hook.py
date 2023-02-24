@@ -1,4 +1,5 @@
 import asyncio
+from abc import ABCMeta
 from functools import partial, wraps
 from inspect import Parameter, isclass, signature
 from typing import Any, Awaitable, Callable
@@ -8,7 +9,7 @@ from .context import Event
 HookFunc = Callable[["Event", Any], Awaitable[Any]]
 
 
-class Hook:
+class _Hook(metaclass=ABCMeta):
     def __init__(self, fn: Callable) -> None:
         self.__fn = fn
         self.__is_coro = asyncio.iscoroutinefunction(fn)
@@ -56,10 +57,18 @@ class Hook:
         return hash(self) == hash(other)
 
 
-class Depends(Hook):
+class Hook(_Hook):
+    pass
+
+
+class Depends(_Hook):
     def __init__(self, fn: Callable, use_cache: bool = True) -> None:
         super().__init__(fn)
         self.use_cache = use_cache
+
+
+def depend(fn: Callable[..., Any], use_cache: bool = True) -> Any:
+    return Depends(fn, use_cache)
 
 
 def check_callback(fn: Callable) -> None:
