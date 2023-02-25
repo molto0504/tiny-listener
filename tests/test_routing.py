@@ -1,5 +1,5 @@
 import uuid
-from typing import Callable, Awaitable
+from typing import Awaitable, Callable
 
 import pytest
 
@@ -29,7 +29,7 @@ def test_route(handler):
     assert route.after == ["/user/{name}", "mock_handler"]
 
 
-@pytest.mark.parametrize('name', ["/user/{name}", "/user/{name:str}"])
+@pytest.mark.parametrize("name", ["/user/{name}", "/user/{name:str}"])
 def test_convertor_str(handler, name) -> None:
     route = Route(name=name, fn=handler)
     assert route.match("/user/bob") == {"name": "bob"}
@@ -57,7 +57,9 @@ def test_convertor_path(handler):
 
 def test_convertor_uuid(handler):
     route = Route(name="/user/{id:uuid}", fn=handler)
-    assert route.match("/user/18baadd0-9225-4cc0-a13b-69098168689f") == {"id": uuid.UUID("18baadd0-9225-4cc0-a13b-69098168689f")}
+    assert route.match("/user/18baadd0-9225-4cc0-a13b-69098168689f") == {
+        "id": uuid.UUID("18baadd0-9225-4cc0-a13b-69098168689f")
+    }
     assert route.match("/user") is None
 
 

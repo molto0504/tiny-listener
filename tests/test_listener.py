@@ -1,6 +1,7 @@
 import asyncio
+import threading
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 import pytest
 
@@ -8,28 +9,31 @@ from tiny_listener import (
     Context,
     ContextAlreadyExists,
     ContextNotFound,
+    EventAlreadyExists,
     EventNotFound,
     Listener,
+    ListenerNotFound,
     Route,
+    get_current_running_listener,
 )
 
 
 @pytest.fixture
 def app() -> Listener:
     class App(Listener):
-        async def listen(self, *_: Any) -> None:
+        async def listen(self, *_: Any):
             ...
 
     App._instances.clear()  # noqa
     return App()
 
 
-def test_ok(app: Listener) -> None:
+def test_listener(app: Listener):
     assert app.ctxs == {}
     assert app.routes == {}
 
 
-def test_set_context_cls(app: Listener) -> None:
+def test_set_context_cls(app: Listener):
     class MyContext(Context):
         foo = None
 
@@ -39,7 +43,7 @@ def test_set_context_cls(app: Listener) -> None:
     assert ctx.foo is None
 
 
-def test_new_ctx(app: Listener) -> None:
+def test_new_ctx(app: Listener):
     assert app.ctxs == {}
 
     # new ctx not exist
@@ -59,7 +63,7 @@ def test_new_ctx(app: Listener) -> None:
     assert len(app.ctxs) == 3
 
 
-def test_get_ctxs(app: Listener) -> None:
+def test_get_ctxs(app: Listener):
     assert app.ctxs == {}
     ctx = app.new_ctx("my_ctx")
     # get ctx
@@ -69,7 +73,7 @@ def test_get_ctxs(app: Listener) -> None:
         app.get_ctx("_not_exit_")
 
 
-def test_match(app: Listener) -> None:
+def test_match(app: Listener):
     route_user_list = Route("/users", fn=lambda: ...)
     route_user_detail = Route("/user/{name}", fn=lambda: ...)
     app.routes = {route_user_detail.name: route_user_detail, route_user_list.name: route_user_list}
@@ -86,43 +90,61 @@ def test_match(app: Listener) -> None:
         app.match_route("/_not_exist_")
 
 
-def test_on_event_callback(app: Listener) -> None:
-    @app.on_event("/foo", after="/...", cfg=...)
-    async def foo() -> None:
-        pass
+@pytest.mark.asyncio
+async def test_on_event(app: Listener):
+    result = []
 
-    assert len(app.routes) == 1
-    route = app.routes["foo"]
-    assert route.path == "/foo"
-    assert route.opts == {"cfg": ...}
-    assert route.after == ["/..."]
+    @app.on_event("/step_1")
+    async def step_1():
+        result.append("step_1_done")
+
+    @app.on_event("/step_2", after="step_1", cfg={})
+    async def step_2():
+        result.append("step_2_done")
+
+    assert len(app.routes) == 2
+    route = app.routes["step_2"]
+    assert route.path == "/step_2"
+    assert route.opts == {"cfg": {}}
+    assert route.after == ["step_1"]
+    with pytest.raises(EventAlreadyExists):
+
+        @app.on_event("/step_2")
+        async def step_2():  # noqa
+            pass
+
+    ctx = Context(app, "my_ctx")
+    await ctx.trigger_event("/step_1", timeout=1)
+    await ctx.trigger_event("/step_2", timeout=1)  # todo
+    assert result == ["step_1_done", "step_2_done"]
 
 
-def test_remove_on_event_hook(app: Listener) -> None:
+def test_remove_on_event_hook(app: Listener):
     @app.on_event("/foo")
-    async def _foo() -> None:
+    async def foo():
         pass
 
     @app.on_event("/bar")
-    async def _bar() -> None:
+    async def bar():
         pass
 
     assert len(app.routes) == 2
-    app.remove_on_event_hook("_foo")
+    assert app.remove_on_event_hook("foo") is True
     assert len(app.routes) == 1
-    route = app.routes["_bar"]
-    assert route.path == "/bar"
+    assert app.remove_on_event_hook("foo") is False
+    assert len(app.routes) == 1
+    assert app.routes["bar"].path == "/bar"
 
 
-def test_startup_callback(app: Listener) -> None:
+def test_startup_callback(app: Listener):
     step = []
 
     @app.startup
-    async def step_1() -> None:
+    async def step_1():
         step.append(1)
 
     @app.startup
-    async def step_2() -> None:
+    async def step_2():
         step.append(2)
         app.exit()
 
@@ -132,15 +154,15 @@ def test_startup_callback(app: Listener) -> None:
     assert step == [1, 2]
 
 
-def test_shutdown_callback(app: Listener) -> None:
+def test_shutdown_callback(app: Listener):
     step = []
 
     @app.shutdown
-    async def step_1() -> None:
+    async def step_1():
         step.append(1)
 
     @app.shutdown
-    async def step_2() -> None:
+    async def step_2():
         step.append(2)
 
     with pytest.raises(SystemExit):
@@ -150,19 +172,19 @@ def test_shutdown_callback(app: Listener) -> None:
 
 
 @pytest.mark.asyncio
-async def test_middleware_callback(app: Listener) -> None:
+async def test_middleware_callback(app: Listener):
     step = []
 
     @app.before_event
-    async def step_1() -> None:
+    async def step_1():
         step.append(1)
 
     @app.on_event()
-    async def step_2() -> None:
+    async def step_2():
         step.append(2)
 
     @app.after_event
-    async def step_3() -> None:
+    async def step_3():
         step.append(3)
 
     await app.trigger_event("/go")
@@ -170,16 +192,16 @@ async def test_middleware_callback(app: Listener) -> None:
 
 
 @pytest.mark.asyncio
-async def test_on_error(app: Listener) -> None:
+async def test_on_error(app: Listener):
     step = []
 
     @app.on_event()
-    async def step_1() -> None:
+    async def step_1():
         step.append(1)
         raise ValueError(...)
 
     @app.on_error(ValueError)
-    async def step_2() -> None:
+    async def step_2():
         step.append(2)
 
     await app.trigger_event("/go")
@@ -187,23 +209,32 @@ async def test_on_error(app: Listener) -> None:
 
 
 @pytest.mark.asyncio
-async def test_error_raise(app: Listener) -> None:
+async def test_error_raise(app: Listener):
     @app.on_event()
-    async def _value_error() -> None:
+    async def _value_error():
         raise ValueError(...)
 
     @app.on_error(KeyError)
-    async def _key_error() -> None:
+    async def _key_error():
         ...
 
     with pytest.raises(ValueError):
         await app.trigger_event("/go")
 
 
-def test_setup_event_loop(app: Listener) -> None:
+def test_setup_event_loop(app: Listener):
     loop = asyncio.get_event_loop()
     assert loop is app.setup_event_loop()
 
     with patch("tiny_listener.listener.Listener.is_main_thread", return_value=False):
         loop = app.setup_event_loop()
         assert loop is asyncio.get_event_loop()
+
+
+def test_get_current_running_listener(app: Listener):
+    with pytest.raises(ListenerNotFound):
+        get_current_running_listener()
+
+    instances = {threading.get_ident(): app}
+    with patch("tiny_listener.listener.Listener._instances", new_callable=PropertyMock, return_value=instances):
+        assert get_current_running_listener() is app

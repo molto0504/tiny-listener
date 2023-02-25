@@ -15,7 +15,7 @@ from .errors import (
 )
 from .event import Event
 from .hook import Depends, Hook, HookFunc, depend
-from .listener import Listener
+from .listener import Listener, get_current_running_listener
 from .routing import Params, Route, compile_path
 from .utils import import_from_string
 
@@ -26,6 +26,7 @@ __all__ = [
     "ContextNotFound",
     "Context",
     "DuplicateListener",
+    "get_current_running_listener",
     "ListenerNotFound",
     "Scope",
     "Event",
