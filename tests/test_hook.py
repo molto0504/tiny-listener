@@ -86,7 +86,7 @@ async def test_signature(caller, fake_event):
         *,
         field_2: Any = None,
         dep_2=caller(get_user),
-    ) -> None:
+    ):
         assert event_1 is event_2 is fake_event
         assert field_1 is field_2 is None
         assert dep_1 == dep_2 == {"username": "bob"}
@@ -127,7 +127,7 @@ async def test_dep_without_cache(caller, fake_event):
 
 def test_check_callback():
     class App(Listener):
-        async def listen(self) -> None:
+        async def listen(self):
             ...
 
     app = App()

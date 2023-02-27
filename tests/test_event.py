@@ -76,7 +76,7 @@ async def test_done(event_loop: BaseEventLoop, app: Listener, work_final_route: 
 
 
 @pytest.mark.asyncio
-async def test_prevent_auto_done(app: Listener, work_final_route: Route) -> None:
+async def test_prevent_auto_done(app: Listener, work_final_route: Route):
     event = Event(ctx=app.new_ctx(), route=work_final_route)
     assert event.auto_done is True
     event.prevent_auto_done()
@@ -84,7 +84,7 @@ async def test_prevent_auto_done(app: Listener, work_final_route: Route) -> None
 
 
 @pytest.mark.asyncio
-async def test_call(app: Listener, work_1_route: Route) -> None:
+async def test_call(app: Listener, work_1_route: Route):
     event = Event(ctx=app.new_ctx(), route=work_1_route)
     await event()
     assert event.result == "work_1_result"

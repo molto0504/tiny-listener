@@ -1,5 +1,3 @@
-from typing import Any
-
 import pytest
 
 from tiny_listener import Context, EventAlreadyExists, EventNotFound, Listener, Route
@@ -32,7 +30,7 @@ def bob_route() -> Route:
 @pytest.fixture
 def app(thing_route: Route, alice_route: Route, bob_route: Route) -> Listener:
     class App(Listener):
-        async def listen(self, *_: Any) -> None:
+        async def listen(self):
             ...
 
     app = App()

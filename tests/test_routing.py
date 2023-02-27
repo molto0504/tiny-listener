@@ -30,7 +30,7 @@ def test_route(handler):
 
 
 @pytest.mark.parametrize("name", ["/user/{name}", "/user/{name:str}"])
-def test_convertor_str(handler, name) -> None:
+def test_convertor_str(handler, name):
     route = Route(name=name, fn=handler)
     assert route.match("/user/bob") == {"name": "bob"}
     assert route.match("/user") is None
@@ -82,7 +82,7 @@ def test_convertor_not_exist(handler):
         Route(name="/user/{name:int128}", fn=handler)
 
 
-def test_compile_path() -> None:
+def test_compile_path():
     reg, convertors = compile_path("/user")
     assert convertors == {}
 
