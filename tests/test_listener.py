@@ -92,14 +92,14 @@ def test_match(app: Listener):
 
 
 @pytest.mark.asyncio
-async def test_on_event(app: Listener):
+async def test_on_event_trigger_event(app: Listener):
     result = []
 
     @app.on_event("/step_1")
     async def step_1():
         result.append("step_1_done")
 
-    @app.on_event("/step_2", after="step_1", cfg={})
+    @app.on_event("/step_2", after="/step_1", cfg={})
     async def step_2():
         result.append("step_2_done")
 
@@ -107,7 +107,7 @@ async def test_on_event(app: Listener):
     route = app.routes["step_2"]
     assert route.path == "/step_2"
     assert route.opts == {"cfg": {}}
-    assert route.after == ["step_1"]
+    assert route.after == ["/step_1"]
     with pytest.raises(EventAlreadyExists):
 
         @app.on_event("/step_2")
@@ -118,6 +118,20 @@ async def test_on_event(app: Listener):
     await ctx.trigger_event("/step_1", timeout=1)
     await ctx.trigger_event("/step_2", timeout=1)
     assert result == ["step_1_done", "step_2_done"]
+
+
+def test_trigger_event_not_found(app: Listener):
+    with pytest.raises(EventNotFound):
+        app.trigger_event("not_exist")
+
+    @app.on_event("/go")
+    async def go():
+        pass
+
+    ctx = app.new_ctx()
+    ctx.trigger_event("/go")
+    with pytest.raises(EventAlreadyExists):
+        ctx.trigger_event("/go")
 
 
 def test_remove_on_event_hook(app: Listener):

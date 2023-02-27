@@ -62,7 +62,7 @@ class Listener(Generic[CTXType]):
         return threading.current_thread() is threading.main_thread()
 
     def install_signal_handlers(self) -> None:
-        if not self.is_main_thread():  # coverage: ignore
+        if not self.is_main_thread():  # pragma: no cover
             return
 
         loop = asyncio.get_event_loop()
@@ -228,9 +228,6 @@ class Listener(Generic[CTXType]):
         """
         route, params = self.match_route(name)
         ctx = self.new_ctx() if cid not in self.ctxs else self.ctxs[cid]
-        if route not in ctx.events:
-            raise EventNotFound(f"Event `{name}` not found")
-
         event = ctx.events[route]
         if event.running:
             raise EventAlreadyExists(f"Event `{name}` already exists")
