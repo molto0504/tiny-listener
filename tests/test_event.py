@@ -8,7 +8,7 @@ from tiny_listener import Event, Listener, Route
 @pytest.fixture
 def work_1_route() -> Route:
     async def work_1():
-        return
+        return "work_1_result"
 
     return Route(name="/work_1", fn=work_1)
 
@@ -16,7 +16,7 @@ def work_1_route() -> Route:
 @pytest.fixture
 def work_2_route() -> Route:
     async def work_2():
-        return
+        return "work_2_result"
 
     return Route(name="/work_2", fn=work_2)
 
@@ -87,3 +87,4 @@ async def test_prevent_auto_done(app: Listener, work_final_route: Route) -> None
 async def test_call(app: Listener, work_1_route: Route) -> None:
     event = Event(ctx=app.new_ctx(), route=work_1_route)
     await event()
+    assert event.result == "work_1_result"

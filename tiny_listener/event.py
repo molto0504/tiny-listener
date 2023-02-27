@@ -27,7 +27,12 @@ class Event(Generic[CTXType]):
         self.__ctx: Callable[..., CTXType] = weakref.ref(ctx)  # type: ignore
         self.__done = asyncio.Event()
         self.__auto_done: bool = True
+        self.__result: Any = None
         self.running: bool = False
+
+    @property
+    def result(self) -> Any:
+        return self.__result
 
     @property
     def auto_done(self) -> bool:
@@ -71,7 +76,8 @@ class Event(Generic[CTXType]):
         await self.__done.wait()
 
     async def __call__(self) -> Any:
-        return await self.route.hook(self)
+        self.__result = await self.route.hook(self)
+        return self.__result
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.route.path}, route={self.route}, params={self.params}, data={self.data})"
