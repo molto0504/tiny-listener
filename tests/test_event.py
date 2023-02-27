@@ -62,7 +62,7 @@ def test_after(app: Listener, work_1_route: Route, work_2_route: Route, work_fin
     assert event.error is None
     assert event.route is work_final_route
     assert event.ctx is ctx
-    assert len(event.after) == 2  # todo
+    assert len(event.after) == 2
     assert event.is_done is False
 
 
@@ -83,17 +83,6 @@ async def test_prevent_auto_done(app: Listener, work_final_route: Route) -> None
     assert event.auto_done is False
 
 
-# todo
-# @pytest.mark.asyncio
-# async def test_timeout(app: Listener, route_final: Route) -> None:
-#     event = Event(ctx=app.new_ctx("test_timeout"), route=route_final)
-#     assert event.is_done is False
-#     with pytest.raises(asyncio.TimeoutError):
-#         await event.wait_until_done(timeout=0.1)
-#     assert event.is_done is False
-
-
-# todo
 @pytest.mark.asyncio
 async def test_call(app: Listener, work_1_route: Route) -> None:
     event = Event(ctx=app.new_ctx(), route=work_1_route)

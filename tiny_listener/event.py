@@ -83,4 +83,4 @@ class Event(Generic[CTXType]):
         return self.__result
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.route.path}, route={self.route}, params={self.params}, data={self.data})"  # todo params
+        return f"{self.__class__.__name__}(name={self.route.path}, route={self.route}, params={self.params}, data={self.data})"

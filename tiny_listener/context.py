@@ -47,7 +47,7 @@ class Context:
         return False
 
     def new_event(self, route: "Route", data: Dict[str, Any], params: Dict[str, Any]) -> Event:
-        """todo private
+        """
         :param route: Route instance
         :param data: Event data
         :param params: Event params
@@ -61,35 +61,6 @@ class Context:
         event.params = params
         self.events[route] = event
         return event
-
-    # def new_event(
-    #     self,
-    #     name: str,
-    #     route: "Route",
-    #     timeout: Union[float, None] = None,
-    #     data: Union[Dict, None] = None,
-    #     params: Union[Dict[str, Any], None] = None,
-    # ) -> "Event":
-    #     """
-    #     :param name: Event name
-    #     :param route: Route instance
-    #     :param timeout: Timeout
-    #     :param data: Event data
-    #     :param params: Event params
-    #     :raises: EventAlreadyExists
-    #     """
-    #     if name in self.events:
-    #         raise EventAlreadyExists(f"Event `{name}` already exist in context `{self}`")
-    #     event = Event(
-    #         name=name,
-    #         ctx=self,
-    #         route=route,
-    #         timeout=timeout,
-    #         data=data or {},
-    #         params=params or {},
-    #     )
-    #     self.add_event(event)
-    #     return event
 
     def get_event(self, route: "Route") -> Event:
         """
@@ -105,12 +76,7 @@ class Context:
         """
         :param pat: Pattern
         """
-        events = []
-        for route, event in self.events.items():
-            if re.match(pat, route.path):
-                events.append(event)
-        return events
-        # return [event for route, event in self.events.items() if re.match(pat, route.name)]
+        return [event for route, event in self.events.items() if re.match(pat, route.name)]
 
     def trigger_event(
         self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None

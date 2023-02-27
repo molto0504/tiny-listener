@@ -115,7 +115,7 @@ async def test_on_event(app: Listener):
 
     ctx = app.new_ctx()
     await ctx.trigger_event("/step_1", timeout=1)
-    await ctx.trigger_event("/step_2", timeout=1)  # todo
+    await ctx.trigger_event("/step_2", timeout=1)
     assert result == ["step_1_done", "step_2_done"]
 
 
