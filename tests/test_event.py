@@ -33,7 +33,7 @@ def work_final_route() -> Route:
 def app(work_1_route: Route, work_2_route: Route, work_final_route: Route) -> Listener:
     class App(Listener):
         async def listen(self):
-            ...
+            pass
 
     app = App()
     app.routes = {

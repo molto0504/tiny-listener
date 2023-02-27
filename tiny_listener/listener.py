@@ -1,5 +1,5 @@
 import asyncio
-import sys
+import signal
 import threading
 from typing import (
     Any,
@@ -33,6 +33,12 @@ CTXType = TypeVar("CTXType", bound=Context)
 Callback = Callable[..., Awaitable[Any]]
 
 
+HANDLED_SIGNALS = (
+    signal.SIGINT,  # Unix signal 2
+    signal.SIGTERM,  # Unix signal 15
+)
+
+
 class Listener(Generic[CTXType]):
     _instances: Dict[int, "Listener"] = {}
 
@@ -46,6 +52,7 @@ class Listener(Generic[CTXType]):
         self.__middleware_after_event: List[Hook] = []
         self.__error_handlers: List[Tuple[Type[Exception], Hook]] = []
         self.__context_cls: Type = Context
+        self.__exiting = asyncio.Event()
 
     async def listen(self) -> None:
         raise NotImplementedError()
@@ -54,9 +61,30 @@ class Listener(Generic[CTXType]):
     def is_main_thread() -> bool:
         return threading.current_thread() is threading.main_thread()
 
-    # ==================================================
-    # CONTEXT
-    # ==================================================
+    def install_signal_handlers(self) -> None:
+        if not self.is_main_thread():  # coverage: ignore
+            return
+
+        loop = asyncio.get_event_loop()
+        for sig in HANDLED_SIGNALS:
+            loop.add_signal_handler(sig, lambda: asyncio.create_task(self.graceful_shutdown(sig)))
+
+    async def graceful_shutdown(self, _: int) -> None:
+        loop = asyncio.get_event_loop()
+        if self.__exiting.is_set():
+            loop.stop()
+            return
+
+        self.__exiting.set()
+        for cb in self.__shutdown:
+            await cb()
+        tasks = []
+        for task in asyncio.all_tasks(loop):
+            if task is not asyncio.current_task(loop):
+                task.cancel()
+                tasks.append(task)
+        await asyncio.gather(*tasks)
+
     def set_context_cls(self, kls: Type[Context]) -> None:
         """
         :param kls: Context class
@@ -241,22 +269,11 @@ class Listener(Generic[CTXType]):
 
         return asyncio.get_event_loop()
 
-    @staticmethod
-    def stop() -> None:
-        loop = asyncio.get_event_loop()
-        loop.stop()
-
-    def exit(self) -> None:
-        """Override this method to change how the app exit."""
-        self.stop()
-        loop = asyncio.get_event_loop()
-        for fn in self.__shutdown:
-            loop.run_until_complete(fn())
-        sys.exit()
-
     async def main(self) -> None:
+        for fn in self.__startup:
+            await fn()
         await self.listen()
-        await asyncio.Queue().get()  # todo signal exit
+        await self.__exiting.wait()
 
     def run(self) -> None:
         ident = threading.get_ident()
@@ -266,9 +283,10 @@ class Listener(Generic[CTXType]):
         Listener._instances[ident] = self
         try:
             loop = self.setup_event_loop()
-            for fn in self.__startup:
-                loop.run_until_complete(fn())
-            asyncio.run(self.main())
+            self.install_signal_handlers()
+            loop.run_until_complete(self.main())
+        except asyncio.CancelledError:
+            pass
         finally:
             del Listener._instances[ident]
 

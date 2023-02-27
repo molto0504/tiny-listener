@@ -1,6 +1,7 @@
 import asyncio
+import os
+import signal
 import threading
-from typing import Any
 from unittest.mock import PropertyMock, patch
 
 import pytest
@@ -21,7 +22,7 @@ from tiny_listener import (
 @pytest.fixture
 def app() -> Listener:
     class App(Listener):
-        async def listen(self, *_: Any):
+        async def listen(self):
             ...
 
     App._instances.clear()  # noqa
@@ -136,7 +137,7 @@ def test_remove_on_event_hook(app: Listener):
     assert app.routes["bar"].path == "/bar"
 
 
-def test_startup_callback(app: Listener):
+def test_startup_shutdown(app: Listener):
     step = []
 
     @app.startup
@@ -146,16 +147,19 @@ def test_startup_callback(app: Listener):
     @app.startup
     async def step_2():
         step.append(2)
-        app.exit()
+        os.kill(os.getpid(), signal.SIGINT)
 
-    with pytest.raises(SystemExit):
-        app.run()
-
+    app.run()
     assert step == [1, 2]
 
 
-def test_shutdown_callback(app: Listener):
+def test_graceful_shutdown(app: Listener):
     step = []
+
+    @app.startup
+    async def step_0():
+        step.append(0)
+        os.kill(os.getpid(), signal.SIGINT)
 
     @app.shutdown
     async def step_1():
@@ -165,10 +169,20 @@ def test_shutdown_callback(app: Listener):
     async def step_2():
         step.append(2)
 
-    with pytest.raises(SystemExit):
-        app.exit()
+    app.run()
 
-    assert step == [1, 2]
+    assert step == [0, 1, 2]
+
+
+def test_force_shutdown(app: Listener):
+    with patch.object(app._Listener__exiting, "is_set", return_value=True):  # noqa
+
+        @app.startup
+        async def step_0():
+            os.kill(os.getpid(), signal.SIGINT)
+
+        with pytest.raises(RuntimeError):
+            app.run()
 
 
 @pytest.mark.asyncio
