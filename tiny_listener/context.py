@@ -3,7 +3,7 @@ import re
 import weakref
 from typing import TYPE_CHECKING, Any, Dict, Final, List, Union
 
-from .errors import EventAlreadyExists, EventNotFound
+from .errors import EventAlreadyExists
 from .event import Event
 
 if TYPE_CHECKING:
@@ -61,16 +61,6 @@ class Context:
         event.params = params
         self.events[route] = event
         return event
-
-    def get_event(self, route: "Route") -> Event:
-        """
-        :param route: Route instance
-        :raises EventNotFound:
-        """
-        try:
-            return self.events[route]
-        except KeyError as e:
-            raise EventNotFound(f"Event `{route.name}` not found in context `{self}`") from e
 
     def get_events(self, pat: str = ".*") -> List[Event]:
         """
