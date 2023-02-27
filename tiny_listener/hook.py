@@ -1,23 +1,21 @@
 import asyncio
 from abc import ABCMeta
-from functools import partial, wraps
+from functools import wraps
 from inspect import Parameter, isclass, signature
-from typing import Any, Awaitable, Callable
+from typing import Any, Callable
 
+from ._typing import CoroutineFunc, HookFunc
 from .context import Event
-
-HookFunc = Callable[["Event", Any], Awaitable[Any]]
 
 
 class _Hook(metaclass=ABCMeta):
-    def __init__(self, fn: Callable) -> None:
-        self.__fn = fn
-        self.__is_coro = asyncio.iscoroutinefunction(fn)
-        self.__hook = self.as_hook()
+    def __init__(self, fn: CoroutineFunc) -> None:
+        self.__fn: CoroutineFunc = fn
+        self.__hook: HookFunc = self.as_hook()
 
     def as_hook(self) -> HookFunc:
         @wraps(self.__fn)
-        async def f(event: "Event", executor: Any = None) -> None:
+        async def f(event: "Event") -> None:
             args = []
             kwargs = {}
             ctx = event.ctx
@@ -28,7 +26,7 @@ class _Hook(metaclass=ABCMeta):
                     if depends.use_cache and depends in ctx.cache:
                         actual = ctx.cache.get(depends)
                     else:
-                        actual = await depends(event, executor)
+                        actual = await depends(event)
                         ctx.cache[depends] = actual
                 elif isclass(param.annotation) and issubclass(param.annotation, Event):
                     actual = event
@@ -37,15 +35,12 @@ class _Hook(metaclass=ABCMeta):
                     kwargs[name] = actual
                 else:
                     args.append(actual)
-            if self.__is_coro:
-                return await self.__fn(*args, **kwargs)
-            loop = asyncio.get_event_loop()
-            return await loop.run_in_executor(executor, partial(self.__fn, *args, **kwargs))
+            return await self.__fn(*args, **kwargs)
 
         return f
 
-    async def __call__(self, event: "Event", executor: Any = None) -> Any:
-        return await self.__hook(event, executor)
+    async def __call__(self, event: "Event") -> Any:
+        return await self.__hook(event)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.__hook.__name__})"

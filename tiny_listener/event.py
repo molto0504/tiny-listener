@@ -15,27 +15,24 @@ CTXType = TypeVar("CTXType", bound="Context")
 class Event(Generic[CTXType]):
     def __init__(
         self,
-        name: str,
         ctx: CTXType,
         route: "Route",
         timeout: Union[float, None] = None,
         data: Union[Dict, None] = None,
-        params: Union[Dict, None] = None,
     ) -> None:
-        self.name = name
         self.timeout: Union[float, None] = timeout
         self.data = data or {}
-        self.params: Dict[str, Any] = params or {}
+        self.params: Dict[str, Any] = {}
         self.error: Union[Exception, None] = None
         self.__route = route
         self.__ctx: Callable[..., CTXType] = weakref.ref(ctx)  # type: ignore
         self.__done = asyncio.Event()
         self.__result: Any = None
-        self.__prevent_done: bool = False
+        self.__auto_done: bool = True
 
     @property
-    def prevent_done(self) -> bool:
-        return self.__prevent_done
+    def auto_done(self) -> bool:
+        return self.__auto_done
 
     @property
     def route(self) -> "Route":
@@ -61,21 +58,21 @@ class Event(Generic[CTXType]):
     def is_done(self) -> bool:
         return self.__done.is_set()
 
-    def not_done_yet(self) -> None:
-        self.__prevent_done = True
+    def prevent_auto_done(self) -> None:
+        self.__auto_done = False
 
     def done(self) -> None:
         self.__done.set()
 
-    async def wait_until_done(self, timeout: Union[float, None] = None) -> None:
+    async def wait_until_done(self) -> None:
         """
         :raises: asyncio.TimeoutError
         """
-        await asyncio.wait_for(self.__done.wait(), timeout)
+        await self.__done.wait()
 
-    async def __call__(self, executor: Any = None) -> Any:
-        self.__result = await self.route.hook(self, executor)
+    async def __call__(self) -> Any:
+        self.__result = await self.route.hook(self)
         return self.__result
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.route.path}, route={self.name}, params={self.params}, data={self.data})"
+        return f"{self.__class__.__name__}(name={self.route.path}, route={self.route}, params={self.params}, data={self.data})"  # todo params

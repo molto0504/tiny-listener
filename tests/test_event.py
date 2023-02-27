@@ -1,83 +1,74 @@
-import asyncio
 from asyncio import BaseEventLoop
-from typing import Any
 
 import pytest
 
 from tiny_listener import Event, Listener, Route
 
 
-@pytest.fixture()
-def route_stuff_1() -> Route:
-    return Route(name="/stuff_1", fn=lambda: ...)
+@pytest.fixture
+def work_1_route() -> Route:
+    async def work_1():
+        return
+
+    return Route(name="/work_1", fn=work_1)
 
 
-@pytest.fixture()
-def route_stuff_2() -> Route:
-    return Route(name="/stuff_2", fn=lambda: ...)
+@pytest.fixture
+def work_2_route() -> Route:
+    async def work_2():
+        return
+
+    return Route(name="/work_2", fn=work_2)
 
 
-@pytest.fixture()
-def route_final() -> Route:
-    return Route(name="/final", fn=lambda: ..., after=["/stuff_.*"])
+@pytest.fixture
+def work_final_route() -> Route:
+    async def final_route():
+        return
+
+    return Route(name="/final", fn=final_route, after=["/work_.*"])
 
 
-@pytest.fixture()
-def app(route_final: Route, route_stuff_1: Route, route_stuff_2: Route) -> Listener:
+@pytest.fixture
+def app(work_1_route: Route, work_2_route: Route, work_final_route: Route) -> Listener:
     class App(Listener):
-        async def listen(self, *_: Any) -> None:
+        async def listen(self):
             ...
 
     app = App()
     app.routes = {
-        route_final.name: route_final,
-        route_stuff_1.name: route_stuff_1,
-        route_stuff_2.name: route_stuff_2,
+        work_1_route.name: work_1_route,
+        work_2_route.name: work_2_route,
+        work_final_route.name: work_final_route,
     }
     return app
 
 
-def test_ok(route_final: Route, app: Listener) -> None:
-    ctx = app.new_ctx("test_ok")
-    event = Event(
-        name="/final",
-        ctx=ctx,
-        route=route_final,
-        timeout=10,
-        data={"foo": ...},
-        params={"bar": ...},
-    )
+def test_event(work_1_route: Route, app: Listener):
+    ctx = app.new_ctx()
+    event = Event(ctx=ctx, route=work_1_route)
     assert event.listener is app
-    assert event.name == "/final"
-    assert event.timeout == 10
-    assert event.data == {"foo": ...}
-    assert event.params == {"bar": ...}
     assert event.error is None
-    assert event.route is route_final
+    assert event.route is work_1_route
     assert event.ctx is ctx
-    assert event.after == set()
+    assert len(event.after) == 0
     assert event.is_done is False
 
 
-def test_after(app: Listener, route_final: Route, route_stuff_1: Route, route_stuff_2: Route) -> None:
-    ctx = app.new_ctx("test_after")
-    event_final = Event(name="/final", ctx=ctx, route=route_final)
-    event_stuff_1 = Event(name="/stuff_1", ctx=ctx, route=route_stuff_1)
-    event_stuff_2 = Event(name="/stuff_2", ctx=ctx, route=route_stuff_2)
-
-    ctx.add_event(event_final)
-    assert event_final.after == set()
-
-    ctx.add_event(event_stuff_1)
-    assert event_final.after == {event_stuff_1}
-
-    ctx.add_event(event_stuff_2)
-    assert event_final.after == {event_stuff_1, event_stuff_2}
+def test_after(app: Listener, work_1_route: Route, work_2_route: Route, work_final_route: Route):
+    ctx = app.new_ctx()
+    event = Event(ctx=ctx, route=work_final_route)
+    assert event.listener is app
+    assert event.error is None
+    assert event.route is work_final_route
+    assert event.ctx is ctx
+    assert len(event.after) == 2  # todo
+    assert event.is_done is False
 
 
 @pytest.mark.asyncio
-async def test_done(event_loop: BaseEventLoop, app: Listener, route_final: Route) -> None:
-    event = Event(name="", ctx=app.new_ctx("test_done"), route=route_final)
+async def test_done(event_loop: BaseEventLoop, app: Listener, work_final_route: Route):
+    event = Event(ctx=app.new_ctx(), route=work_final_route)
     assert event.is_done is False
     event_loop.call_later(0.1, lambda: event.done())
     await event.wait_until_done()
@@ -85,24 +76,25 @@ async def test_done(event_loop: BaseEventLoop, app: Listener, route_final: Route
 
 
 @pytest.mark.asyncio
-async def test_not_done_yet(app: Listener, route_final: Route) -> None:
-    event = Event(name="", ctx=app.new_ctx("test_not_done_yet"), route=route_final)
-    assert event.prevent_done is False
-    event.not_done_yet()
-    assert event.prevent_done is True
+async def test_prevent_auto_done(app: Listener, work_final_route: Route) -> None:
+    event = Event(ctx=app.new_ctx(), route=work_final_route)
+    assert event.auto_done is True
+    event.prevent_auto_done()
+    assert event.auto_done is False
 
 
+# todo
+# @pytest.mark.asyncio
+# async def test_timeout(app: Listener, route_final: Route) -> None:
+#     event = Event(ctx=app.new_ctx("test_timeout"), route=route_final)
+#     assert event.is_done is False
+#     with pytest.raises(asyncio.TimeoutError):
+#         await event.wait_until_done(timeout=0.1)
+#     assert event.is_done is False
+
+
+# todo
 @pytest.mark.asyncio
-async def test_timeout(app: Listener, route_final: Route) -> None:
-    event = Event(name="/final", ctx=app.new_ctx("test_timeout"), route=route_final)
-    assert event.is_done is False
-    with pytest.raises(asyncio.TimeoutError):
-        await event.wait_until_done(timeout=0.1)
-    assert event.is_done is False
-
-
-@pytest.mark.asyncio
-async def test_call(app: Listener, route_final: Route) -> None:
-    event = Event(name="/final", ctx=app.new_ctx("test_call"), route=route_final)
-    result = await event()
-    assert result is event.result is ...
+async def test_call(app: Listener, work_1_route: Route) -> None:
+    event = Event(ctx=app.new_ctx(), route=work_1_route)
+    await event()

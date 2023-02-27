@@ -18,10 +18,10 @@ class App(Listener):
         ctx = app.new_ctx()
         ctx.trigger_event("I hate bugs.")
         ctx.trigger_event("I like dogs.")
-        ctx.trigger_event("I hate summer.")
         ctx.trigger_event("I like winter.")
-        ctx.trigger_event("I hate you.")
+        ctx.trigger_event("I hate summer.")
         ctx.trigger_event("I like you.")
+        ctx.trigger_event("I hate you.")
 
 
 app = App()

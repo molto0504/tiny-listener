@@ -10,6 +10,10 @@ class EventNotFound(Exception):
     pass
 
 
+class EventAlreadyDone(Exception):
+    pass
+
+
 class ContextNotFound(Exception):
     pass
 

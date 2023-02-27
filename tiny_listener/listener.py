@@ -47,15 +47,22 @@ class Listener(Generic[CTXType]):
         self.__error_handlers: List[Tuple[Type[Exception], Hook]] = []
         self.__context_cls: Type = Context
 
+    async def listen(self) -> None:
+        raise NotImplementedError()
+
+    @staticmethod
+    def is_main_thread() -> bool:
+        return threading.current_thread() is threading.main_thread()
+
+    # ==================================================
+    # CONTEXT
+    # ==================================================
     def set_context_cls(self, kls: Type[Context]) -> None:
         """
         :param kls: Context class
         """
         assert issubclass(kls, Context), "kls must inherit from Context"
         self.__context_cls = kls
-
-    async def listen(self) -> None:
-        raise NotImplementedError()
 
     def new_ctx(
         self,
@@ -74,12 +81,12 @@ class Listener(Generic[CTXType]):
         if scope is None:
             scope = {}
 
-        if cid not in self.ctxs:
-            ctx = self.__context_cls(self, cid=cid, scope=scope)
-            self.ctxs[ctx.cid] = ctx
-            return ctx
+        if cid in self.ctxs:
+            raise ContextAlreadyExists(f"Context `{cid}` already exist")
 
-        raise ContextAlreadyExists(f"Context `{cid}` already exist")
+        ctx = self.__context_cls(self, cid=cid, scope=scope)
+        self.ctxs[ctx.cid] = ctx
+        return ctx
 
     def get_ctx(self, cid: str) -> CTXType:
         """
@@ -189,19 +196,19 @@ class Listener(Generic[CTXType]):
         :raises EventNotFound:
         :raises EventAlreadyExists:
         """
-        ctx = self.new_ctx() if cid not in self.ctxs else self.ctxs[cid]
         route, params = self.match_route(name)
-        event = ctx.new_event(name=name, timeout=timeout, route=route, data=data or {}, params=params)
+        ctx = self.new_ctx() if cid not in self.ctxs else self.ctxs[cid]
+        event = ctx.new_event(route, data or {}, params)
 
         async def _trigger() -> None:
             try:
                 for evt in event.after:
-                    await evt.wait_until_done(evt.timeout)
-                for fn in self.__middleware_before_event:
-                    await fn(event)
-                await event()
-                for fn in self.__middleware_after_event:
-                    await fn(event)
+                    await evt.wait_until_done()
+                for f in self.__middleware_before_event:
+                    await f(event)
+                await asyncio.wait_for(event(), timeout=timeout)
+                for f in self.__middleware_after_event:
+                    await f(event)
             except Exception as e:
                 event.error = e
                 handlers = [fn for kls, fn in self.__error_handlers if isinstance(e, kls)]
@@ -210,10 +217,18 @@ class Listener(Generic[CTXType]):
                 else:
                     [await handler(event) for handler in handlers]
             finally:
-                if not event.prevent_done:
+                if event.auto_done:
                     event.done()
 
         return asyncio.get_event_loop().create_task(_trigger())
+
+    def setup_event_loop(self) -> asyncio.AbstractEventLoop:
+        """Override this method to change default event loop"""
+        if not self.is_main_thread():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return asyncio.get_event_loop()
 
     @staticmethod
     def stop() -> None:
@@ -228,18 +243,6 @@ class Listener(Generic[CTXType]):
             loop.run_until_complete(fn())
         sys.exit()
 
-    @staticmethod
-    def is_main_thread() -> bool:
-        return threading.current_thread() is threading.main_thread()
-
-    def setup_event_loop(self) -> asyncio.AbstractEventLoop:
-        """Override this method to change default event loop"""
-        if not self.is_main_thread():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        return asyncio.get_event_loop()
-
     def run(self) -> None:
         ident = threading.get_ident()
         if ident in Listener._instances:
@@ -250,8 +253,7 @@ class Listener(Generic[CTXType]):
             loop = self.setup_event_loop()
             for fn in self.__startup:
                 loop.run_until_complete(fn())
-            asyncio.run_coroutine_threadsafe(self.listen(), loop)
-            loop.run_forever()
+            loop.run_until_complete(self.listen())
         finally:
             del Listener._instances[ident]
 

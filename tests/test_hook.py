@@ -18,7 +18,7 @@ def fake_event() -> Event:
 
 @pytest.mark.parametrize("caller", [Depends, depend])
 def test_depend_ok(caller):
-    def normal_func():
+    async def normal_func():
         pass
 
     dep = caller(normal_func)
@@ -30,7 +30,7 @@ def test_depend_ok(caller):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("caller", [Depends, depend])
 async def test_call_dep(caller, fake_event):
-    def get_data():
+    async def get_data():
         return "data"
 
     dep = caller(get_data)
@@ -40,11 +40,11 @@ async def test_call_dep(caller, fake_event):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("caller", [Depends, depend])
 async def test_run_hook_with_depends(caller, fake_event):
-    def get_user(event: Event):
+    async def get_user(event: Event):
         assert event is fake_event
         return {"username": "bob"}
 
-    def get_username(event: Event, user: Dict = caller(get_user)):
+    async def get_username(event: Event, user: Dict = caller(get_user)):
         assert event is fake_event
         return user.get("username")
 
@@ -55,7 +55,7 @@ async def test_run_hook_with_depends(caller, fake_event):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("caller", [Depends, depend])
 async def test_run_complex_hook(caller, fake_event):
-    def get_user(event: Event):
+    async def get_user(event: Event):
         assert event is fake_event
         return {"username": "bob"}
 
@@ -63,7 +63,7 @@ async def test_run_complex_hook(caller, fake_event):
         assert event is fake_event
         return {"bob": "bob's data"}
 
-    def get_user_data(event: Event, user: Dict = caller(get_user), data: Dict = caller(get_data)):
+    async def get_user_data(event: Event, user: Dict = caller(get_user), data: Dict = caller(get_data)):
         assert event is fake_event
         username = user.get("username")
         return data[username]
@@ -78,7 +78,7 @@ async def test_signature(caller, fake_event):
     async def get_user():
         return {"username": "bob"}
 
-    def get_user_name(
+    async def get_user_name(
         event_1: Event,
         event_2: Event,
         field_1,
@@ -99,10 +99,10 @@ async def test_signature(caller, fake_event):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("caller", [Depends, depend])
 async def test_dep_with_cache(caller, fake_event):
-    def get_user():
+    async def get_user():
         return {"username": "bob"}
 
-    def get_username(dep_1=caller(get_user, use_cache=True), dep_2=caller(get_user, use_cache=True)):
+    async def get_username(dep_1=caller(get_user, use_cache=True), dep_2=caller(get_user, use_cache=True)):
         assert dep_1 is dep_2  # dep_1 and dep_2 are the same object, because use_cache=True
         return dep_1.get("username")
 
@@ -113,10 +113,10 @@ async def test_dep_with_cache(caller, fake_event):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("caller", [Depends, depend])
 async def test_dep_without_cache(caller, fake_event):
-    def get_user():
+    async def get_user():
         return {"username": "bob"}
 
-    def get_username(dep_1=caller(get_user, use_cache=False), dep_2=caller(get_user, use_cache=False)):
+    async def get_username(dep_1=caller(get_user, use_cache=False), dep_2=caller(get_user, use_cache=False)):
         assert dep_1 == dep_2
         assert dep_1 is not dep_2  # dep_1 and dep_2 are different objects, because use_cache=False
         return dep_1.get("username")

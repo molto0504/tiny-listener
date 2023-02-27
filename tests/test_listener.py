@@ -113,7 +113,7 @@ async def test_on_event(app: Listener):
         async def step_2():  # noqa
             pass
 
-    ctx = Context(app, "my_ctx")
+    ctx = app.new_ctx()
     await ctx.trigger_event("/step_1", timeout=1)
     await ctx.trigger_event("/step_2", timeout=1)  # todo
     assert result == ["step_1_done", "step_2_done"]

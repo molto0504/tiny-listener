@@ -3,7 +3,7 @@ import re
 import weakref
 from typing import TYPE_CHECKING, Any, Dict, Final, List, Union
 
-from .errors import EventAlreadyExists
+from .errors import EventAlreadyExists, EventNotFound
 from .event import Event
 
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ class Context:
         self.cid: Final = cid
         self.cache: Final[Dict[Depends, Any]] = {}
         self.scope: Final[Scope] = scope or {}
-        self.events: Final[Dict[str, Event]] = {}
+        self.events: Final[Dict[Route, Event]] = {}
         self.__listener: weakref.ReferenceType["Listener"] = weakref.ref(listener)
 
     @property
@@ -46,46 +46,66 @@ class Context:
             return True
         return False
 
-    def add_event(self, event: Event) -> None:
-        """
-        :param event: Event instance
-        """
-        self.events[event.name] = event
-
-    def new_event(
-        self,
-        name: str,
-        route: "Route",
-        timeout: Union[float, None] = None,
-        data: Union[Dict, None] = None,
-        params: Union[Dict[str, Any], None] = None,
-    ) -> "Event":
-        """
-        :param name: Event name
+    def new_event(self, route: "Route", data: Dict[str, Any], params: Dict[str, Any]) -> Event:
+        """todo private
         :param route: Route instance
-        :param timeout: Timeout
         :param data: Event data
         :param params: Event params
         :raises: EventAlreadyExists
         """
-        if name in self.events:
-            raise EventAlreadyExists(f"Event `{name}` already exist in context `{self}`")
-        event = Event(
-            name=name,
-            ctx=self,
-            route=route,
-            timeout=timeout,
-            data=data or {},
-            params=params or {},
-        )
-        self.add_event(event)
+        if route in self.events:
+            raise EventAlreadyExists(f"Event `{route.name}` already exist in context `{self}`")
+
+        event = Event(self, route)
+        event.data = data
+        event.params = params
+        self.events[route] = event
         return event
+
+    # def new_event(
+    #     self,
+    #     name: str,
+    #     route: "Route",
+    #     timeout: Union[float, None] = None,
+    #     data: Union[Dict, None] = None,
+    #     params: Union[Dict[str, Any], None] = None,
+    # ) -> "Event":
+    #     """
+    #     :param name: Event name
+    #     :param route: Route instance
+    #     :param timeout: Timeout
+    #     :param data: Event data
+    #     :param params: Event params
+    #     :raises: EventAlreadyExists
+    #     """
+    #     if name in self.events:
+    #         raise EventAlreadyExists(f"Event `{name}` already exist in context `{self}`")
+    #     event = Event(
+    #         name=name,
+    #         ctx=self,
+    #         route=route,
+    #         timeout=timeout,
+    #         data=data or {},
+    #         params=params or {},
+    #     )
+    #     self.add_event(event)
+    #     return event
+
+    def get_event(self, route: "Route") -> Event:
+        """
+        :param route: Route instance
+        :raises EventNotFound:
+        """
+        try:
+            return self.events[route]
+        except KeyError as e:
+            raise EventNotFound(f"Event `{route.name}` not found in context `{self}`") from e
 
     def get_events(self, pat: str = ".*") -> List[Event]:
         """
         :param pat: Pattern
         """
-        return [event for name, event in self.events.items() if re.match(pat, name)]
+        return [event for route, event in self.events.items() if re.match(pat, route.name)]
 
     def trigger_event(
         self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None

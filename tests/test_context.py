@@ -2,33 +2,49 @@ from typing import Any
 
 import pytest
 
-from tiny_listener import Context, EventAlreadyExists, Listener
+from tiny_listener import Context, EventAlreadyExists, EventNotFound, Listener, Route
 
 
-@pytest.fixture()
-def app() -> Listener:
+@pytest.fixture
+def thing_route() -> Route:
+    async def thing():
+        return
+
+    return Route(name="/thing/{uid}", fn=thing)
+
+
+@pytest.fixture
+def alice_route() -> Route:
+    async def alice():
+        return
+
+    return Route(name="/user/alice", fn=alice)
+
+
+@pytest.fixture
+def bob_route() -> Route:
+    async def bob():
+        return
+
+    return Route(name="/user/bob", fn=bob)
+
+
+@pytest.fixture
+def app(thing_route: Route, alice_route: Route, bob_route: Route) -> Listener:
     class App(Listener):
         async def listen(self, *_: Any) -> None:
             ...
 
     app = App()
-
-    @app.on_event(name="/thing/{uid}")
-    async def _thing() -> None:
-        ...
-
-    @app.on_event(name="/user/foo")
-    async def _user_foo() -> None:
-        ...
-
-    @app.on_event(name="/user/bar")
-    async def _user_bar() -> None:
-        ...
-
+    app.routes = {
+        thing_route.name: thing_route,
+        alice_route.name: alice_route,
+        bob_route.name: bob_route,
+    }
     return app
 
 
-def test_ok(app: Listener) -> None:
+def test_ok(app: Listener):
     ctx = Context(app, cid="test_ok", scope={"scope_key": "scope_val"})
     assert ctx.listener is app
     assert ctx.cid == "test_ok"
@@ -37,7 +53,7 @@ def test_ok(app: Listener) -> None:
     assert ctx.cache == {}
 
 
-def test_alive_drop(app: Listener) -> None:
+def test_alive_drop(app: Listener):
     ctx = app.new_ctx(cid="foo")
 
     assert ctx.is_alive is True
@@ -47,33 +63,36 @@ def test_alive_drop(app: Listener) -> None:
     assert ctx.drop() is False
 
 
-def test_new_event(app: Listener) -> None:
+def test_new_event(app: Listener, thing_route: Route, alice_route: Route, bob_route: Route):
     ctx = Context(app, cid="_cid_")
-    route = app.routes["_thing"]
-    event = ctx.new_event(name="/thing/1", route=route)
-    assert event.route is route
+    event = ctx.new_event(thing_route, {}, {})
+    assert event.route is thing_route
     assert event.ctx is ctx
     # event already exist
     with pytest.raises(EventAlreadyExists):
-        ctx.new_event(name="/thing/1", route=route)
+        ctx.new_event(thing_route, {}, {})
 
 
-def test_get_events(app: Listener) -> None:
-    ctx = Context(app, cid="_cid_")
-    event_1 = ctx.new_event(name="/user/foo", route=app.routes["_user_foo"])
-    event_2 = ctx.new_event(name="/user/bar", route=app.routes["_user_bar"])
-    # match all
-    assert [event_1, event_2] == ctx.get_events()
-    assert [event_1, event_2] == ctx.get_events("/")
+def test_get_events(app: Listener, thing_route: Route, alice_route: Route, bob_route: Route):
+    ctx = app.new_ctx()
+    event_0 = ctx.new_event(thing_route, {}, {})
+    event_1 = ctx.new_event(alice_route, {}, {})
+    event_2 = ctx.new_event(bob_route, {}, {})
+    assert [event_0, event_1, event_2] == ctx.get_events()
+    assert [event_0, event_1, event_2] == ctx.get_events("/*")
     assert [event_1, event_2] == ctx.get_events("/user/*")
     # match one
-    assert [event_1] == ctx.get_events("/user/foo")
-    assert [event_2] == ctx.get_events("/user/bar")
+    assert [event_1] == ctx.get_events("/user/alice")
+    assert [event_2] == ctx.get_events("/user/bob")
     # match none
-    assert [] == ctx.get_events("/user/baz")
+    assert [] == ctx.get_events("/user/null")
 
 
 @pytest.mark.asyncio
-async def test_trigger_event(app: Listener) -> None:
-    ctx = Context(listener=app, cid="_cid_", scope={"scope_key": "scope_val"})
-    await ctx.trigger_event("/thing/1")
+async def test_trigger_event(app: Listener):
+    ctx = app.new_ctx()
+    await ctx.trigger_event("/user/bob")
+    await ctx.trigger_event("/user/alice")
+
+    with pytest.raises(EventNotFound):
+        await ctx.trigger_event("/user/null")
