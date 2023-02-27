@@ -1,6 +1,5 @@
 import asyncio
 import weakref
-from itertools import chain
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Set, TypeVar, Union
 
 if TYPE_CHECKING:
@@ -29,6 +28,7 @@ class Event(Generic[CTXType]):
         self.__done = asyncio.Event()
         self.__result: Any = None
         self.__auto_done: bool = True
+        self.running: bool = False
 
     @property
     def auto_done(self) -> bool:
@@ -48,7 +48,15 @@ class Event(Generic[CTXType]):
 
     @property
     def after(self) -> Set["Event"]:
-        return set(chain(*(self.ctx.get_events(pat) for pat in self.route.after)))
+        target = set()
+        for pat in self.route.after:
+            for event in self.ctx.get_events(pat):
+                if event is not self:
+                    target.add(event)
+        return target
+
+    # return set(chain(*(self.ctx.get_events(pat) for pat in self.route.after)))
+    # return set(chain(*(self.ctx.get_events(pat) for pat in self.route.after)))
 
     @property
     def result(self) -> Any:

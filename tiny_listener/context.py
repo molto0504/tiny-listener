@@ -105,7 +105,12 @@ class Context:
         """
         :param pat: Pattern
         """
-        return [event for route, event in self.events.items() if re.match(pat, route.name)]
+        events = []
+        for route, event in self.events.items():
+            if re.match(pat, route.path):
+                events.append(event)
+        return events
+        # return [event for route, event in self.events.items() if re.match(pat, route.name)]
 
     def trigger_event(
         self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None

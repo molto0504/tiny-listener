@@ -86,6 +86,8 @@ class Listener(Generic[CTXType]):
 
         ctx = self.__context_cls(self, cid=cid, scope=scope)
         self.ctxs[ctx.cid] = ctx
+        for route in self.routes.values():
+            ctx.new_event(route, {}, {})
         return ctx
 
     def get_ctx(self, cid: str) -> CTXType:
@@ -198,7 +200,16 @@ class Listener(Generic[CTXType]):
         """
         route, params = self.match_route(name)
         ctx = self.new_ctx() if cid not in self.ctxs else self.ctxs[cid]
-        event = ctx.new_event(route, data or {}, params)
+        if route not in ctx.events:
+            raise EventNotFound(f"Event `{name}` not found")
+
+        event = ctx.events[route]
+        if event.running:
+            raise EventAlreadyExists(f"Event `{name}` already exists")
+
+        event.params = params
+        event.data = data or {}
+        event.running = True
 
         async def _trigger() -> None:
             try:
@@ -243,6 +254,10 @@ class Listener(Generic[CTXType]):
             loop.run_until_complete(fn())
         sys.exit()
 
+    async def main(self) -> None:
+        await self.listen()
+        await asyncio.Queue().get()  # todo signal exit
+
     def run(self) -> None:
         ident = threading.get_ident()
         if ident in Listener._instances:
@@ -253,7 +268,7 @@ class Listener(Generic[CTXType]):
             loop = self.setup_event_loop()
             for fn in self.__startup:
                 loop.run_until_complete(fn())
-            loop.run_until_complete(self.listen())
+            asyncio.run(self.main())
         finally:
             del Listener._instances[ident]
 

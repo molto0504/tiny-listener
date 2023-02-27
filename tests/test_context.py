@@ -75,9 +75,9 @@ def test_new_event(app: Listener, thing_route: Route, alice_route: Route, bob_ro
 
 def test_get_events(app: Listener, thing_route: Route, alice_route: Route, bob_route: Route):
     ctx = app.new_ctx()
-    event_0 = ctx.new_event(thing_route, {}, {})
-    event_1 = ctx.new_event(alice_route, {}, {})
-    event_2 = ctx.new_event(bob_route, {}, {})
+    event_0 = ctx.events[thing_route]
+    event_1 = ctx.events[alice_route]
+    event_2 = ctx.events[bob_route]
     assert [event_0, event_1, event_2] == ctx.get_events()
     assert [event_0, event_1, event_2] == ctx.get_events("/*")
     assert [event_1, event_2] == ctx.get_events("/user/*")
