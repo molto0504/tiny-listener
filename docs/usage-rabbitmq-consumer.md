@@ -23,19 +23,24 @@ $ pip install tiny-listener aio-pika
 **STEP 2,** Create python file ``rabbitmq_consumer.py``:
 
 ```python
+import asyncio
+
 import aio_pika
 
 from tiny_listener import Event, Listener
 
 
 class App(Listener):
-    async def listen(self):
-        connection = await aio_pika.connect_robust("amqp://127.0.0.1/")
-        async with connection:
-            channel = await connection.channel()
-            queue = await channel.declare_queue("test_queue", auto_delete=True)
-            app.trigger_event("/produce", data={"channel": channel})
+    def __init__(self):
+        super().__init__()
+        self.conn = None
 
+    async def listen(self):
+        self.conn = await aio_pika.connect_robust("amqp://127.0.0.1/")
+        async with self.conn:
+            channel = await self.conn.channel()
+            queue = await channel.declare_queue("test_queue", auto_delete=True)
+            app.trigger_event("/mock_producer", data={"channel": channel})
             async with queue.iterator() as msg_queue:
                 async for msg in msg_queue:
                     async with msg.process():
@@ -45,22 +50,24 @@ class App(Listener):
 app = App()
 
 
-@app.on_event("/produce")
-async def _(event: Event):
+@app.shutdown
+async def shutdown():
+    await app.conn.close()
+
+
+@app.on_event("/mock_producer")
+async def produce(event: Event):
     channel = event.data["channel"]
-    await channel.default_exchange.publish(
-        aio_pika.Message(body=b"Hello, Alice!", app_id="001"), routing_key="test_queue"
-    )
-    await channel.default_exchange.publish(
-        aio_pika.Message(body=b"Hello, Bob!", app_id="002"), routing_key="test_queue"
-    )
+    for i in range(10):
+        await channel.default_exchange.publish(aio_pika.Message(body=bytes(i), app_id=str(i)), routing_key="test_queue")
+        await asyncio.sleep(1)
 
 
 @app.on_event("/app/{app_id}/consume")
-async def _(event: Event):
+async def consume(event: Event):
     app_id = event.params["app_id"]
     data = event.data["data"]
-    print("INFO: App[{}] consume: {}".format(app_id, data))
+    print(f"INFO: App[{app_id}] consume: {data}")
 ```
 
 **STEP 3,** Run your app:
@@ -69,9 +76,11 @@ async def _(event: Event):
 $ tiny-listener rabbitmq_consumer:app
 ```
 
-Check the logs:
+Output:
 
 ```log
-INFO: App[001] consume: b'Hello, Alice!'
-INFO: App[002] consume: b'Hello, Bob!'
+INFO: App[0] consume: b''
+INFO: App[1] consume: b'\x00'
+INFO: App[2] consume: b'\x00\x00'
+INFO: App[3] consume: b'\x00\x00\x00'
 ```

@@ -40,6 +40,20 @@ $ pip install tiny-listener
 
 ## Example
 
+Consider we want to write a program keep listening message received from somewhere (e.g. http request or message queue), when message arrived, we want to execute a series of operations in a certain order, e.g.
+
+- step 1: save user data to database
+- step 2: send email to user
+
+In the development process, we often encounter such problems:
+
+- the source of step 1 and step 2 may be different
+- step 2 may depend on the result of step 1, that is to say, step 2 may need to wait for step 1 to complete
+- there are many messages, many events, and it is not easy to maintain
+
+Tiny-listener may help you solve these problems:
+
+
 Create a file `example.py` with:
 
 ```python
@@ -48,17 +62,23 @@ from tiny_listener import Listener, Event
 class App(Listener):
     async def listen(self):
         ctx = self.new_ctx()
-        ctx.trigger_event("Say hi to Alice")
-        ctx.trigger_event("Say hi to Bob")
-        ctx.trigger_event("Say hi to Carol")
+        ctx.trigger_event("step 2: send email to alice@tl.com")
+        ctx.trigger_event("step 1: save Alice's data to database", data={"age": 35})
 
         
 app = App()
 
 
-@app.on_event("Say hi to {name}")
-async def say_hi(event: Event):
-    print("Hi,", event.params["name"])
+@app.on_event("step 1: save {username}'s data to database")
+async def step_1(event: Event):
+    username = event.params["username"]
+    age = event.data["age"]
+    print(f"Save data done!, {username=}, {age=}")
+    
+@app.on_event("step 2: send email to {email}", after="step 1*")
+async def step_2(event: Event):
+    email = event.params["email"]
+    print(f"Send email done!, {email=}")
 
 ```
 
@@ -66,9 +86,8 @@ Run it:
 
 ```shell
 $ tiny-listener example:app
->>> Hi, Alice
->>> Hi, Bob
->>> Hi, Carol
+>>> Save data done!, username='Alice', age=35
+>>> Send email done!, email='alice@tl.com'
 ```
 
 ## How it works
@@ -78,12 +97,12 @@ $ tiny-listener example:app
 ```python
 from tiny_listener import Listener, Event
 
+
 class App(Listener):
-   async def listen(self):
-       ctx = self.new_ctx()
-       ctx.trigger_event("Say hi to Alice")
-       ctx.trigger_event("Say hi to Bob")
-       ctx.trigger_event("Say hi to Carol")
+    async def listen(self):
+        ctx = self.new_ctx()
+        ctx.trigger_event("step 2: send email to alice@tl.com")
+        ctx.trigger_event("step 1: save Alice's data to database", data={"age": 35})
 ```
 
 
@@ -92,9 +111,18 @@ class App(Listener):
 ```python
 app = App()
 
-@app.on_event("Say hi to {name}")
-async def say_hi(event: Event):
-   print("Hi,", event.params["name"])
+
+@app.on_event("step 1: save {username}'s data to database")
+async def step_1(event: Event):
+    username = event.params["username"]
+    age = event.data["age"]
+    print(f"Save data done!, {username=}, {age=}")
+
+
+@app.on_event("step 2: send email to {email}", after="step 1*")
+async def step_2(event: Event):
+    email = event.params["email"]
+    print(f"Send email done!, {email=}")
 ```
 
 * Run listener with command:
@@ -106,7 +134,6 @@ $ tiny-listener example:app
 * Tiny-listener will dispatch every event automatically:
 
 ```shell
->>> Hi, Alice
->>> Hi, Bob
->>> Hi, Carol
+>>> Save data done!, username='Alice', age=35
+>>> Send email done!, email='alice@tl.com'
 ```

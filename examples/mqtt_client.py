@@ -5,7 +5,6 @@ Before run this example, you need to install amqtt first:
 
 See: https://molto0504.github.io/tiny-listener/usage-mqtt-client/
 """
-
 import asyncio
 import random
 
