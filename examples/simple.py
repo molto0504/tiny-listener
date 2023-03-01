@@ -28,5 +28,6 @@ async def step_1(event: Event):
 
 @app.on_event("step 2: send email to {email}", after="step 1*")
 async def step_2(event: Event):
+    await event.wait_event_done("step_1")
     email = event.params["email"]
     print(f"Send email done!, {email=}")

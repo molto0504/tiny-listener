@@ -74,6 +74,16 @@ def test_get_ctxs(app: Listener):
         app.get_ctx("_not_exit_")
 
 
+def test_get_route(app: Listener):
+    @app.on_event()
+    async def foo():
+        pass
+
+    assert app.get_route("foo") == app.routes["foo"]
+    with pytest.raises(EventNotFound):
+        app.get_route("_not_exist_")
+
+
 def test_match(app: Listener):
     route_user_list = Route("/users", fn=lambda: ...)
     route_user_detail = Route("/user/{name}", fn=lambda: ...)

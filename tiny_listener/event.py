@@ -1,6 +1,6 @@
 import asyncio
 import weakref
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, List, TypeVar, Union
 
 if TYPE_CHECKING:
     from .context import Context  # noqa # pylint: disable=unused-import
@@ -65,6 +65,19 @@ class Event(Generic[CTXType]):
         :raises: asyncio.TimeoutError
         """
         await self.__done.wait()
+
+    async def wait_event_done(self, event_name: str, n: int = 1, timeout: Union[float, None] = None) -> List[Any]:
+        route = self.listener.get_route(event_name)
+
+        async def _wait() -> List[Any]:
+            events = self.ctx.events[route]
+            while len(events) != n:
+                await asyncio.sleep(0.5)
+            for event in events:
+                await event.wait_until_done()
+            return [event.result for event in events]
+
+        return await asyncio.wait_for(_wait(), timeout=timeout)
 
     async def __call__(self) -> Any:
         """

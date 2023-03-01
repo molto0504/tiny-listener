@@ -124,6 +124,14 @@ class Listener(Generic[CTXType]):
             raise ContextNotFound(f"Context `{cid}` not found")
         return self.ctxs[cid]
 
+    def get_route(self, name: str) -> Route:
+        """
+        :raises: EventNotFound
+        """
+        if name not in self.routes:
+            raise EventNotFound(f"Event `{name}` not found")
+        return self.routes[name]
+
     def add_startup_callback(self, fn: Callback) -> None:
         self.__startup.append(fn)
 

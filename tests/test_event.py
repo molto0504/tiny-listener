@@ -1,4 +1,5 @@
 import asyncio
+import signal
 from asyncio import BaseEventLoop
 
 import pytest
@@ -97,3 +98,30 @@ async def test_call_event_with_timeout_Depends():
     event = Event(ctx=app.new_ctx(), route=app.routes["foo"])
     with pytest.raises(asyncio.TimeoutError):
         assert await event() == "data"
+
+
+def test_wait_event_done():
+    class App(Listener):
+        async def listen(self):
+            ctx = self.new_ctx()
+            ctx.trigger_event("/step_2")
+            ctx.trigger_event("/step_1")
+
+    app = App()
+
+    result = []
+
+    @app.on_event("/step_1")
+    async def step_1():
+        result.append("step_1_data")
+        return "data"
+
+    @app.on_event("/step_2")
+    async def step_2(event: Event):
+        assert await event.wait_event_done("step_1", timeout=1) == ["data"]
+        result.append("step_2_data")
+        await app.graceful_shutdown(signal.SIGINT)
+
+    app.run()
+
+    assert result == ["step_1_data", "step_2_data"]
