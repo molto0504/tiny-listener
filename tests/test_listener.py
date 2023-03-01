@@ -99,7 +99,7 @@ async def test_on_event_trigger_event(app: Listener):
     async def step_1():
         result.append("step_1_done")
 
-    @app.on_event("/step_2", after="/step_1", cfg={})
+    @app.on_event("/step_2", cfg={})
     async def step_2():
         result.append("step_2_done")
 
@@ -107,7 +107,6 @@ async def test_on_event_trigger_event(app: Listener):
     route = app.routes["step_2"]
     assert route.path == "/step_2"
     assert route.opts == {"cfg": {}}
-    assert route.after == ["/step_1"]
     with pytest.raises(EventAlreadyExists):
 
         @app.on_event("/step_2")

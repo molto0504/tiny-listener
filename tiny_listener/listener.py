@@ -145,13 +145,12 @@ class Listener(Generic[CTXType]):
         self,
         fn: Callable,
         path: str = "{_:path}",
-        after: Union[None, str, Callable, List[Union[str, Callable]]] = None,
         **opts: Any,
     ) -> None:
         name = fn.__name__
         if name in self.routes:
             raise EventAlreadyExists(f"Event `{name}` already exists")
-        self.routes[name] = Route(name=name, path=path, fn=fn, after=after, opts=opts)
+        self.routes[name] = Route(name=name, path=path, fn=fn, opts=opts)
 
     def remove_on_event_hook(self, name: Union[str, Callable]) -> bool:
         """
@@ -167,12 +166,11 @@ class Listener(Generic[CTXType]):
     def on_event(
         self,
         name: str = "{_:path}",
-        after: Union[None, str, Callable, List[Union[str, Callable]]] = None,
         **opts: Any,
     ) -> Callable[[Hook], Callable]:
         def _decorator(fn: Callable) -> Callable:
             check_callback(fn)
-            self.add_on_event_hook(fn, name, after, **opts)
+            self.add_on_event_hook(fn, name, **opts)
             return fn
 
         return _decorator
@@ -238,8 +236,6 @@ class Listener(Generic[CTXType]):
 
         async def _trigger() -> None:
             try:
-                for evt in event.after:
-                    await evt.wait_until_done()
                 for f in self.__middleware_before_event:
                     await f(event)
                 await asyncio.wait_for(event(), timeout=timeout)

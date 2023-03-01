@@ -1,6 +1,6 @@
 import asyncio
 import weakref
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Set, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, TypeVar, Union
 
 if TYPE_CHECKING:
     from .context import Context  # noqa # pylint: disable=unused-import
@@ -49,15 +49,6 @@ class Event(Generic[CTXType]):
     @property
     def listener(self) -> "Listener":
         return self.ctx.listener
-
-    @property
-    def after(self) -> Set["Event"]:
-        target = set()
-        for pat in self.route.after:
-            for event in self.ctx.get_events(pat):
-                if event is not self:
-                    target.add(event)
-        return target
 
     @property
     def is_done(self) -> bool:

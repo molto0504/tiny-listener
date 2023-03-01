@@ -18,7 +18,6 @@ def test_route(handler):
     route = Route(
         name="/user/bob",
         fn=handler,
-        after=["/user/{name}", handler],
         opts={"foo": "bar"},
     )
     assert route.path == "/user/bob"
@@ -26,7 +25,6 @@ def test_route(handler):
     assert route.opts == {"foo": "bar"}
     assert route.match("/user/bob") == {}
     assert route.match("/user") is None
-    assert route.after == ["/user/{name}", "mock_handler"]
 
 
 @pytest.mark.parametrize("name", ["/user/{name}", "/user/{name:str}"])

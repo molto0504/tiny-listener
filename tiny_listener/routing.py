@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Any, Callable, Dict, List, NamedTuple, Pattern, Tuple, Union
+from typing import Any, Callable, Dict, NamedTuple, Pattern, Tuple, Union
 
 from .errors import RouteError
 from .hook import Hook
@@ -38,21 +38,12 @@ class Route:
         fn: Callable,
         path: Union[str, None] = None,
         opts: Union[Dict[str, Any], None] = None,
-        after: Union[None, str, Callable, List[Union[str, Callable]]] = None,
     ):
         self.name = name
         self.path = path if path is not None else name
         self.path_regex, self.convertors = compile_path(self.path)
         self.opts: Dict[str, Any] = opts or {}
         self.hook = Hook(fn)
-        self.after: List[str] = []
-
-        if after:
-            for i in after if isinstance(after, list) else [after]:
-                if isinstance(i, str):
-                    self.after.append(i)
-                elif callable(i):
-                    self.after.append(i.__name__)
 
     def match(self, name: str) -> Union[Params, None]:
         match = self.path_regex.match(name)

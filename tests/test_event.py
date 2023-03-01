@@ -26,7 +26,7 @@ def work_final_route() -> Route:
     async def final_route():
         return
 
-    return Route(name="/final", fn=final_route, after=["/work_.*"])
+    return Route(name="/final", fn=final_route)
 
 
 @pytest.fixture
@@ -51,18 +51,6 @@ def test_event(work_1_route: Route, app: Listener):
     assert event.error is None
     assert event.route is work_1_route
     assert event.ctx is ctx
-    assert len(event.after) == 0
-    assert event.is_done is False
-
-
-def test_after(app: Listener, work_1_route: Route, work_2_route: Route, work_final_route: Route):
-    ctx = app.new_ctx()
-    event = Event(ctx=ctx, route=work_final_route)
-    assert event.listener is app
-    assert event.error is None
-    assert event.route is work_final_route
-    assert event.ctx is ctx
-    assert len(event.after) == 2
     assert event.is_done is False
 
 
