@@ -57,7 +57,8 @@ Tiny-listener may help you solve these problems:
 Create a file `example.py` with:
 
 ```python
-from tiny_listener import Listener, Event
+from tiny_listener import Event, Listener
+
 
 class App(Listener):
     async def listen(self):
@@ -65,7 +66,7 @@ class App(Listener):
         ctx.trigger_event("step 2: send email to alice@tl.com")
         ctx.trigger_event("step 1: save Alice's data to database", data={"age": 35})
 
-        
+
 app = App()
 
 
@@ -74,9 +75,11 @@ async def step_1(event: Event):
     username = event.params["username"]
     age = event.data["age"]
     print(f"Save data done!, {username=}, {age=}")
-    
-@app.on_event("step 2: send email to {email}", after="step 1*")
+
+
+@app.on_event("step 2: send email to {email}")
 async def step_2(event: Event):
+    await event.wait_event_done("step_1")
     email = event.params["email"]
     print(f"Send email done!, {email=}")
 
@@ -95,7 +98,7 @@ $ tiny-listener example:app
 * Create your own Listener and listen something(e.g. port, queue ...):
 
 ```python
-from tiny_listener import Listener, Event
+from tiny_listener import Event, Listener
 
 
 class App(Listener):
@@ -119,8 +122,9 @@ async def step_1(event: Event):
     print(f"Save data done!, {username=}, {age=}")
 
 
-@app.on_event("step 2: send email to {email}", after="step 1*")
+@app.on_event("step 2: send email to {email}")
 async def step_2(event: Event):
+    await event.wait_event_done("step_1")
     email = event.params["email"]
     print(f"Send email done!, {email=}")
 ```
