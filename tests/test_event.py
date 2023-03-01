@@ -105,6 +105,7 @@ def test_wait_event_done():
         async def listen(self):
             ctx = self.new_ctx()
             ctx.trigger_event("/step_2")
+            await asyncio.sleep(0.1)
             ctx.trigger_event("/step_1")
 
     app = App()
