@@ -1,8 +1,9 @@
+import asyncio
 from asyncio import BaseEventLoop
 
 import pytest
 
-from tiny_listener import Event, Listener, Route
+from tiny_listener import Event, Listener, Route, depend
 
 
 @pytest.fixture
@@ -76,3 +77,23 @@ async def test_call(app: Listener, work_1_route: Route):
     event = Event(ctx=app.new_ctx(), route=work_1_route)
     await event()
     assert event.result == "work_1_result"
+
+
+@pytest.mark.asyncio
+async def test_call_event_with_timeout_Depends():
+    class App(Listener):
+        async def listen(self):
+            pass
+
+    app = App()
+
+    async def get_data():
+        return "data"
+
+    @app.on_event()
+    async def foo(*, data: str = depend(get_data, timeout=0)):
+        return data
+
+    event = Event(ctx=app.new_ctx(), route=app.routes["foo"])
+    with pytest.raises(asyncio.TimeoutError):
+        assert await event() == "data"

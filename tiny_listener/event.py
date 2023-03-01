@@ -67,6 +67,9 @@ class Event(Generic[CTXType]):
         await self.__done.wait()
 
     async def __call__(self) -> Any:
+        """
+        :raises: asyncio.TimeoutError
+        """
         self.__result = await self.route.hook(self)
         return self.__result
 

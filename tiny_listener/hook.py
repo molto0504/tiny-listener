@@ -2,16 +2,17 @@ import asyncio
 from abc import ABCMeta
 from functools import wraps
 from inspect import Parameter, isclass, signature
-from typing import Any, Callable
+from typing import Any, Callable, Final, Union
 
 from ._typing import CoroutineFunc, HookFunc
-from .context import Event
+from .event import Event
 
 
 class _Hook(metaclass=ABCMeta):
-    def __init__(self, fn: CoroutineFunc) -> None:
+    def __init__(self, fn: CoroutineFunc, timeout: Union[float, None] = None) -> None:
         self.__fn: CoroutineFunc = fn
         self.__hook: HookFunc = self.as_hook()
+        self.timeout: Final = timeout
 
     def as_hook(self) -> HookFunc:
         @wraps(self.__fn)
@@ -20,14 +21,14 @@ class _Hook(metaclass=ABCMeta):
             kwargs = {}
             ctx = event.ctx
             for name, param in signature(self.__fn).parameters.items():
-                depends = param.default
+                inject = param.default
                 actual = None
-                if isinstance(depends, Depends):
-                    if depends.use_cache and depends in ctx.cache:
-                        actual = ctx.cache.get(depends)
+                if isinstance(inject, Depends):
+                    if inject.use_cache and inject in ctx.cache:
+                        actual = ctx.cache.get(inject)
                     else:
-                        actual = await depends(event)
-                        ctx.cache[depends] = actual
+                        actual = await asyncio.wait_for(inject(event), timeout=inject.timeout)
+                        ctx.cache[inject] = actual
                 elif isclass(param.annotation) and issubclass(param.annotation, Event):
                     actual = event
 
@@ -57,13 +58,13 @@ class Hook(_Hook):
 
 
 class Depends(_Hook):
-    def __init__(self, fn: Callable, use_cache: bool = True) -> None:
-        super().__init__(fn)
+    def __init__(self, fn: CoroutineFunc, use_cache: bool = True, timeout: Union[float, None] = None) -> None:
+        super().__init__(fn, timeout)
         self.use_cache = use_cache
 
 
-def depend(fn: Callable[..., Any], use_cache: bool = True) -> Any:
-    return Depends(fn, use_cache)
+def depend(fn: CoroutineFunc, use_cache: bool = True, timeout: Union[float, None] = None) -> Any:
+    return Depends(fn, use_cache, timeout)
 
 
 def check_callback(fn: Callable) -> None:
