@@ -114,8 +114,6 @@ class Listener(Generic[CTXType]):
 
         ctx = self.__context_cls(self, cid=cid, scope=scope)
         self.ctxs[ctx.cid] = ctx
-        for route in self.routes.values():
-            ctx.new_event(route, {}, {})
         return ctx
 
     def get_ctx(self, cid: str) -> CTXType:
@@ -226,13 +224,7 @@ class Listener(Generic[CTXType]):
         """
         route, params = self.match_route(name)
         ctx = self.new_ctx() if cid not in self.ctxs else self.ctxs[cid]
-        event = ctx.events[route]
-        if event.running:
-            raise EventAlreadyExists(f"Event `{name}` already exists")
-
-        event.params = params
-        event.data = data or {}
-        event.running = True
+        event = ctx.new_event(route, data or {}, params)
 
         async def _trigger() -> None:
             try:

@@ -123,14 +123,18 @@ def test_trigger_event_not_found(app: Listener):
     with pytest.raises(EventNotFound):
         app.trigger_event("not_exist")
 
+
+def test_trigger_event_twice(app: Listener):
     @app.on_event("/go")
     async def go():
         pass
 
     ctx = app.new_ctx()
+    route = app.routes["go"]
     ctx.trigger_event("/go")
-    with pytest.raises(EventAlreadyExists):
-        ctx.trigger_event("/go")
+    assert len(ctx.events[route]) == 1
+    ctx.trigger_event("/go")
+    assert len(ctx.events[route]) == 2
 
 
 def test_remove_on_event_hook(app: Listener):

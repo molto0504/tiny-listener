@@ -1,9 +1,8 @@
 import asyncio
-import re
 import weakref
-from typing import TYPE_CHECKING, Any, Dict, Final, List, Union
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, Final, List, Union
 
-from .errors import EventAlreadyExists
 from .event import Event
 
 if TYPE_CHECKING:
@@ -29,7 +28,7 @@ class Context:
         self.cid: Final = cid
         self.cache: Final[Dict[Depends, Any]] = {}
         self.scope: Final[Scope] = scope or {}
-        self.events: Final[Dict[Route, Event]] = {}
+        self.events: Final[DefaultDict[Route, List[Event]]] = defaultdict(list)
         self.__listener: weakref.ReferenceType["Listener"] = weakref.ref(listener)
 
     @property
@@ -53,20 +52,11 @@ class Context:
         :param params: Event params
         :raises: EventAlreadyExists
         """
-        if route in self.events:
-            raise EventAlreadyExists(f"Event `{route.name}` already exist in context `{self}`")
-
         event = Event(self, route)
         event.data = data
         event.params = params
-        self.events[route] = event
+        self.events[route].append(event)
         return event
-
-    def get_events(self, pat: str = ".*") -> List[Event]:
-        """
-        :param pat: Pattern
-        """
-        return [event for route, event in self.events.items() if re.match(pat, route.path)]
 
     def trigger_event(
         self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None

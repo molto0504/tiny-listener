@@ -1,6 +1,6 @@
 import pytest
 
-from tiny_listener import Context, EventAlreadyExists, EventNotFound, Listener, Route
+from tiny_listener import Context, EventNotFound, Listener, Route
 
 
 @pytest.fixture
@@ -66,24 +66,11 @@ def test_new_event(app: Listener, thing_route: Route, alice_route: Route, bob_ro
     event = ctx.new_event(thing_route, {}, {})
     assert event.route is thing_route
     assert event.ctx is ctx
-    # event already exist
-    with pytest.raises(EventAlreadyExists):
-        ctx.new_event(thing_route, {}, {})
 
-
-def test_get_events(app: Listener, thing_route: Route, alice_route: Route, bob_route: Route):
-    ctx = app.new_ctx()
-    event_0 = ctx.events[thing_route]
-    event_1 = ctx.events[alice_route]
-    event_2 = ctx.events[bob_route]
-    assert [event_0, event_1, event_2] == ctx.get_events()
-    assert [event_0, event_1, event_2] == ctx.get_events("/*")
-    assert [event_1, event_2] == ctx.get_events("/user/*")
-    # match one
-    assert [event_1] == ctx.get_events("/user/alice")
-    assert [event_2] == ctx.get_events("/user/bob")
-    # match none
-    assert [] == ctx.get_events("/user/null")
+    # call new_event twice
+    assert len(ctx.events[thing_route]) == 1
+    ctx.new_event(thing_route, {}, {})
+    assert len(ctx.events[thing_route]) == 2
 
 
 @pytest.mark.asyncio
