@@ -56,14 +56,14 @@ class Context:
         return event
 
     def trigger_event(
-        self, name: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None
+        self, path: str, timeout: Union[float, None] = None, data: Union[Dict, None] = None
     ) -> asyncio.Task:
         """
-        :param name: Event name
+        :param path: Event path
         :param timeout: Timeout
         :param data: Event data
         """
-        return self.listener.trigger_event(name=name, cid=self.cid, timeout=timeout, data=data)
+        return self.listener.trigger_event(path=path, cid=self.cid, timeout=timeout, data=data)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(cid={self.cid}, scope={self.scope})"

@@ -199,7 +199,7 @@ class Listener(Generic[CTXType]):
 
     def trigger_event(
         self,
-        name: str,
+        path: str,
         cid: Union[str, None] = None,
         timeout: Union[float, None] = None,
         data: Union[Dict, None] = None,
@@ -208,7 +208,7 @@ class Listener(Generic[CTXType]):
         :raises EventNotFound:
         :raises EventAlreadyExists:
         """
-        route, params = self.match_route(name)
+        route, params = self.match_route(path)
         ctx = self.new_ctx() if cid not in self.ctxs else self.ctxs[cid]
         event = ctx.new_event(route, data or {})
 
