@@ -8,7 +8,7 @@ def thing_route() -> Route:
     async def thing():
         return
 
-    return Route(name="/thing/{uid}", fn=thing)
+    return Route(path="/thing/{uid}", fn=thing)
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def alice_route() -> Route:
     async def alice():
         return
 
-    return Route(name="/user/alice", fn=alice)
+    return Route(path="/user/alice", fn=alice)
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def bob_route() -> Route:
     async def bob():
         return
 
-    return Route(name="/user/bob", fn=bob)
+    return Route(path="/user/bob", fn=bob)
 
 
 @pytest.fixture

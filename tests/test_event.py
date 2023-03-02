@@ -12,7 +12,7 @@ def work_1_route() -> Route:
     async def work_1():
         return "work_1_result"
 
-    return Route(name="/work_1", fn=work_1)
+    return Route(path="/work_1", fn=work_1)
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def work_2_route() -> Route:
     async def work_2():
         return "work_2_result"
 
-    return Route(name="/work_2", fn=work_2)
+    return Route(path="/work_2", fn=work_2)
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def work_final_route() -> Route:
     async def final_route():
         return
 
-    return Route(name="/final", fn=final_route)
+    return Route(path="/final", fn=final_route)
 
 
 @pytest.fixture

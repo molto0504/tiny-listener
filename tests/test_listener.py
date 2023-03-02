@@ -15,7 +15,6 @@ from tiny_listener import (
     EventNotFound,
     Listener,
     ListenerNotFound,
-    Route,
     get_current_running_listener,
 )
 
@@ -86,16 +85,20 @@ def test_get_route(app: Listener):
 
 
 def test_match(app: Listener):
-    route_user_list = Route("/users", fn=lambda: ...)
-    route_user_detail = Route("/user/{name}", fn=lambda: ...)
-    app.routes = {route_user_detail.name: route_user_detail, route_user_list.name: route_user_list}
+    @app.on_event("/users")
+    async def get_users():
+        pass
+
+    @app.on_event("/user/{name}")
+    async def get_username():
+        pass
 
     route, params = app.match_route("/users")
-    assert route is route_user_list
+    assert route is app.routes["get_users"]
     assert params == {}
 
     route, params = app.match_route("/user/bob")
-    assert route is route_user_detail
+    assert route is app.routes["get_username"]
     assert "name" in params
 
     with pytest.raises(EventNotFound):

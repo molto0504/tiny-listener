@@ -16,11 +16,10 @@ def handler() -> Callable[..., Awaitable[None]]:
 
 def test_route(handler):
     route = Route(
-        name="/user/bob",
+        path="/user/bob",
         fn=handler,
         opts={"foo": "bar"},
     )
-    assert route.path == "/user/bob"
     assert route.convertors == {}
     assert route.opts == {"foo": "bar"}
     assert route.match("/user/bob") == {}
@@ -29,32 +28,32 @@ def test_route(handler):
 
 @pytest.mark.parametrize("name", ["/user/{name}", "/user/{name:str}"])
 def test_convertor_str(handler, name):
-    route = Route(name=name, fn=handler)
+    route = Route(path=name, fn=handler)
     assert route.match("/user/bob") == {"name": "bob"}
     assert route.match("/user") is None
 
 
 def test_convertor_int(handler):
-    route = Route(name="/user/{age:int}", fn=handler)
+    route = Route(path="/user/{age:int}", fn=handler)
     assert route.match("/user/18") == {"age": 18}
     assert route.match("/user") is None
 
 
 def test_convertor_float(handler):
-    route = Route(name="/user/{score:float}", fn=handler)
+    route = Route(path="/user/{score:float}", fn=handler)
     assert route.match("/user/1.1") == {"score": 1.1}
     assert route.match("/user") is None
 
 
 def test_convertor_path(handler):
-    route = Route(name="/user/{file:path}", fn=handler)
+    route = Route(path="/user/{file:path}", fn=handler)
     assert route.match("/user/document/repo/foo.py") == {"file": "document/repo/foo.py"}
     assert route.match("/user/http://localhost/home") == {"file": "http://localhost/home"}
     assert route.match("/user") is None
 
 
 def test_convertor_uuid(handler):
-    route = Route(name="/user/{id:uuid}", fn=handler)
+    route = Route(path="/user/{id:uuid}", fn=handler)
     assert route.match("/user/18baadd0-9225-4cc0-a13b-69098168689f") == {
         "id": uuid.UUID("18baadd0-9225-4cc0-a13b-69098168689f")
     }
@@ -63,7 +62,7 @@ def test_convertor_uuid(handler):
 
 def test_convertor_complex(handler):
     route = Route(
-        name="/user/{id:uuid}/{name}/{file:path}/{age:int}/{score:float}",
+        path="/user/{id:uuid}/{name}/{file:path}/{age:int}/{score:float}",
         fn=handler,
     )
     assert route.match("/user/18baadd0-9225-4cc0-a13b-69098168689f/bob/document/repo/foo.py/18/1.1") == {
@@ -77,7 +76,7 @@ def test_convertor_complex(handler):
 
 def test_convertor_not_exist(handler):
     with pytest.raises(RouteError):
-        Route(name="/user/{name:int128}", fn=handler)
+        Route(fn=handler, path="/user/{name:int128}")
 
 
 def test_compile_path():

@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Any, Callable, Dict, NamedTuple, Pattern, Tuple, Union
+from typing import Any, Callable, Dict, Final, NamedTuple, Pattern, Tuple, Union
 
 from ._typing import PathParams
 from .errors import RouteError
@@ -33,19 +33,18 @@ class Route:
 
     def __init__(
         self,
-        name: str,
+        path: str,
         fn: Callable,
-        path: Union[str, None] = None,
         opts: Union[Dict[str, Any], None] = None,
     ):
-        self.name = name
-        self.path = path if path is not None else name
-        self.path_regex, self.convertors = compile_path(self.path)
-        self.opts: Dict[str, Any] = opts or {}
-        self.hook = Hook(fn)
+        self.name: Final = fn.__name__
+        self.path: Final = path
+        self.path_regex, self.convertors = compile_path(path)
+        self.opts: Final[Dict[str, Any]] = opts or {}
+        self.hook: Final = Hook(fn)
 
-    def match(self, name: str) -> Union[PathParams, None]:
-        match = self.path_regex.match(name)
+    def match(self, path: str) -> Union[PathParams, None]:
+        match = self.path_regex.match(path)
         if match is None:
             return None
 

@@ -137,10 +137,10 @@ class Listener(Generic[CTXType]):
         path: str = "{_:path}",
         **opts: Any,
     ) -> None:
-        name = fn.__name__
-        if name in self.routes:
-            raise EventAlreadyExists(f"Event `{name}` already exists")
-        self.routes[name] = Route(name=name, path=path, fn=fn, opts=opts)
+        route = Route(path=path, fn=fn, opts=opts)
+        if route.name in self.routes:
+            raise EventAlreadyExists(f"Event `{route.name}` already exists")
+        self.routes[route.name] = route
 
     def remove_on_event_hook(self, name: Union[str, CoroFunc]) -> bool:
         """
@@ -155,12 +155,12 @@ class Listener(Generic[CTXType]):
 
     def on_event(
         self,
-        name: str = "{_:path}",
+        path: str = "{_:path}",
         **opts: Any,
     ) -> Callable[[CoroFunc], CoroFunc]:
         def _decorator(fn: CoroFunc) -> CoroFunc:
             check_coro_func(fn)
-            self.add_on_event_hook(fn, name, **opts)
+            self.add_on_event_hook(fn, path, **opts)
             return fn
 
         return _decorator
