@@ -63,13 +63,13 @@ def test_alive_drop(app: Listener):
 
 def test_new_event(app: Listener, thing_route: Route, alice_route: Route, bob_route: Route):
     ctx = Context(app, cid="_cid_")
-    event = ctx.new_event(thing_route, {}, {})
+    event = ctx.new_event(thing_route, {})
     assert event.route is thing_route
     assert event.ctx is ctx
 
     # call new_event twice
     assert len(ctx.events[thing_route]) == 1
-    ctx.new_event(thing_route, {}, {})
+    ctx.new_event(thing_route, {})
     assert len(ctx.events[thing_route]) == 2
 
 

@@ -45,16 +45,14 @@ class Context:
             return True
         return False
 
-    def new_event(self, route: "Route", data: Dict[str, Any], params: Dict[str, Any]) -> Event:
+    def new_event(self, route: "Route", data: Dict[str, Any]) -> Event:
         """
         :param route: Route instance
         :param data: Event data
-        :param params: Event params
         :raises: EventAlreadyExists
         """
         event = Event(self, route)
         event.data = data
-        event.params = params
         self.events[route].append(event)
         return event
 

@@ -23,7 +23,6 @@ class Event(Generic[CTXType]):
     ) -> None:
         self.timeout: Union[float, None] = timeout
         self.data = data or {}
-        self.params: Dict[str, Any] = {}
         self.error: Union[Exception, None] = None
         self.__route = route
         self.__ctx: Callable[..., CTXType] = weakref.ref(ctx)  # type: ignore
@@ -89,4 +88,4 @@ class Event(Generic[CTXType]):
         return self.__result
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.route.path}, route={self.route}, params={self.params}, data={self.data})"
+        return f"{self.__class__.__name__}(name={self.route.path}, route={self.route}, data={self.data})"

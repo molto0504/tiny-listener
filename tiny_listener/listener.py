@@ -216,7 +216,7 @@ class Listener(Generic[CTXType]):
         """
         route, params = self.match_route(name)
         ctx = self.new_ctx() if cid not in self.ctxs else self.ctxs[cid]
-        event = ctx.new_event(route, data or {}, params)
+        event = ctx.new_event(route, data or {})
 
         async def _trigger() -> None:
             try:
