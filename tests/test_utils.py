@@ -2,7 +2,7 @@ from multiprocessing.pool import ThreadPool
 
 import pytest
 
-from tiny_listener import Listener, import_from_string, is_main_thread
+from tiny_listener import Listener, check_coro_func, import_from_string, is_main_thread
 
 
 def test_import_from_string():
@@ -33,3 +33,16 @@ def test_is_main_thread():
     with ThreadPool(1) as pool:
         result = pool.apply_async(lambda: is_main_thread())
         assert result.get(1) is False
+
+
+def test_check_coro_func():
+    def f():
+        pass
+
+    with pytest.raises(TypeError):
+        check_coro_func(f)
+
+    async def async_f():
+        pass
+
+    assert check_coro_func(async_f) is None

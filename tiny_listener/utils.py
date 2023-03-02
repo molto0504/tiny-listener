@@ -1,6 +1,7 @@
+import asyncio
 import threading
 from importlib import import_module
-from typing import Any
+from typing import Any, Callable
 
 
 def import_from_string(import_str: Any) -> Any:
@@ -21,3 +22,15 @@ def import_from_string(import_str: Any) -> Any:
 
 def is_main_thread() -> bool:
     return threading.current_thread() is threading.main_thread()
+
+
+def check_coro_func(fn: Callable) -> None:
+    if not asyncio.iscoroutinefunction(fn):
+        raise TypeError(
+            """Hook must be a coroutine function, Such as:
+
+    @app.on_event()
+    async def foo():
+        ...
+"""
+        )

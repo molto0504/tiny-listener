@@ -14,9 +14,9 @@ from .errors import (
     EventNotFound,
     ListenerNotFound,
 )
-from .hook import Hook, check_callback
+from .hook import Hook
 from .routing import Params, Route
-from .utils import is_main_thread
+from .utils import check_coro_func, is_main_thread
 
 CTXType = TypeVar("CTXType", bound=Context)
 
@@ -159,35 +159,35 @@ class Listener(Generic[CTXType]):
         **opts: Any,
     ) -> Callable[[CoroFunc], CoroFunc]:
         def _decorator(fn: CoroFunc) -> CoroFunc:
-            check_callback(fn)
+            check_coro_func(fn)
             self.add_on_event_hook(fn, name, **opts)
             return fn
 
         return _decorator
 
     def startup(self, fn: CoroFunc) -> CoroFunc:
-        check_callback(fn)
+        check_coro_func(fn)
         self.add_startup_callback(fn)
         return fn
 
     def shutdown(self, fn: CoroFunc) -> CoroFunc:
-        check_callback(fn)
+        check_coro_func(fn)
         self.add_shutdown_callback(fn)
         return fn
 
     def before_event(self, fn: CoroFunc) -> CoroFunc:
-        check_callback(fn)
+        check_coro_func(fn)
         self.add_before_event_hook(fn)
         return fn
 
     def after_event(self, fn: CoroFunc) -> CoroFunc:
-        check_callback(fn)
+        check_coro_func(fn)
         self.add_after_event_hook(fn)
         return fn
 
     def on_error(self, exc: Type[Exception]) -> Callable[[CoroFunc], CoroFunc]:
         def f(fn: CoroFunc) -> CoroFunc:
-            check_callback(fn)
+            check_coro_func(fn)
             self.add_on_error_hook(fn, exc)
             return fn
 

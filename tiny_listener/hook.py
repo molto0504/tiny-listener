@@ -2,7 +2,7 @@ import asyncio
 from abc import ABCMeta
 from functools import wraps
 from inspect import Parameter, isclass, signature
-from typing import Any, Callable, Final, Union
+from typing import Any, Final, Union
 
 from ._typing import CoroFunc, HookFunc
 from .event import Event
@@ -65,15 +65,3 @@ class Depends(_Hook):
 
 def depend(fn: CoroFunc, use_cache: bool = True, timeout: Union[float, None] = None) -> Any:
     return Depends(fn, use_cache, timeout)
-
-
-def check_callback(fn: Callable) -> None:
-    if not asyncio.iscoroutinefunction(fn):
-        raise TypeError(
-            """Hook must be a coroutine function, Such as:
-
-    @app.on_event()
-    async def foo():
-        ...
-"""
-        )

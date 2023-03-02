@@ -125,7 +125,7 @@ async def test_dep_without_cache(caller, fake_event):
     assert await dep(fake_event) == "bob"
 
 
-def test_check_callback():
+def test_bad_callback():
     class App(Listener):
         async def listen(self):
             ...
