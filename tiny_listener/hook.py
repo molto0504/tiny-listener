@@ -7,10 +7,12 @@ from typing import Any, Final, Union
 from ._typing import CoroFunc, HookFunc, PathParams
 from .errors import PathParamsError
 from .event import Event
+from .utils import check_coro_func
 
 
 class _Hook(metaclass=ABCMeta):
     def __init__(self, fn: CoroFunc, timeout: Union[float, None] = None) -> None:
+        check_coro_func(fn)
         self.__fn: CoroFunc = fn
         self.__hook: HookFunc = self.as_hook()
         self.timeout: Final = timeout

@@ -34,11 +34,11 @@ class Listener(Generic[CTXType]):
         self.ctxs: Dict[str, CTXType] = {}
         self.routes: Dict[str, Route] = {}
 
-        self.__startup: List[CoroFunc] = []
-        self.__shutdown: List[CoroFunc] = []
-        self.__middleware_before_event: List[Hook] = []
-        self.__middleware_after_event: List[Hook] = []
-        self.__error_handlers: List[Tuple[Type[Exception], Hook]] = []
+        self._startup: List[CoroFunc] = []
+        self._shutdown: List[CoroFunc] = []
+        self._middleware_before_event: List[Hook] = []
+        self._middleware_after_event: List[Hook] = []
+        self._error_handlers: List[Tuple[Type[Exception], Hook]] = []
         self.__context_cls: Type = Context
         self.__exiting = asyncio.Event()
 
@@ -60,7 +60,7 @@ class Listener(Generic[CTXType]):
             return
 
         self.__exiting.set()
-        for cb in self.__shutdown:
+        for cb in self._shutdown:
             await cb()
         tasks = []
         for task in asyncio.all_tasks(loop):
@@ -117,19 +117,19 @@ class Listener(Generic[CTXType]):
         return self.routes[name]
 
     def add_startup_callback(self, fn: CoroFunc) -> None:
-        self.__startup.append(fn)
+        self._startup.append(fn)
 
     def add_shutdown_callback(self, fn: CoroFunc) -> None:
-        self.__shutdown.append(fn)
+        self._shutdown.append(fn)
 
     def add_before_event_hook(self, fn: CoroFunc) -> None:
-        self.__middleware_before_event.append(Hook(fn))
+        self._middleware_before_event.append(Hook(fn))
 
     def add_after_event_hook(self, fn: CoroFunc) -> None:
-        self.__middleware_after_event.append(Hook(fn))
+        self._middleware_after_event.append(Hook(fn))
 
     def add_on_error_hook(self, fn: CoroFunc, exc: Type[Exception]) -> None:
-        self.__error_handlers.append((exc, Hook(fn)))
+        self._error_handlers.append((exc, Hook(fn)))
 
     def add_on_event_hook(
         self,
@@ -159,35 +159,29 @@ class Listener(Generic[CTXType]):
         **opts: Any,
     ) -> Callable[[CoroFunc], CoroFunc]:
         def _decorator(fn: CoroFunc) -> CoroFunc:
-            check_coro_func(fn)
             self.add_on_event_hook(fn, path, **opts)
             return fn
 
         return _decorator
 
     def startup(self, fn: CoroFunc) -> CoroFunc:
-        check_coro_func(fn)
-        self.add_startup_callback(fn)
+        self.add_startup_callback(check_coro_func(fn))
         return fn
 
     def shutdown(self, fn: CoroFunc) -> CoroFunc:
-        check_coro_func(fn)
-        self.add_shutdown_callback(fn)
+        self.add_shutdown_callback(check_coro_func(fn))
         return fn
 
     def before_event(self, fn: CoroFunc) -> CoroFunc:
-        check_coro_func(fn)
         self.add_before_event_hook(fn)
         return fn
 
     def after_event(self, fn: CoroFunc) -> CoroFunc:
-        check_coro_func(fn)
         self.add_after_event_hook(fn)
         return fn
 
     def on_error(self, exc: Type[Exception]) -> Callable[[CoroFunc], CoroFunc]:
         def f(fn: CoroFunc) -> CoroFunc:
-            check_coro_func(fn)
             self.add_on_error_hook(fn, exc)
             return fn
 
@@ -220,14 +214,14 @@ class Listener(Generic[CTXType]):
 
         async def _trigger() -> None:
             try:
-                for f in self.__middleware_before_event:
+                for f in self._middleware_before_event:
                     await f(event, {})
                 await asyncio.wait_for(event(params), timeout=timeout)
-                for f in self.__middleware_after_event:
+                for f in self._middleware_after_event:
                     await f(event, {})
             except Exception as e:
                 event.error = e
-                handlers = [fn for kls, fn in self.__error_handlers if isinstance(e, kls)]
+                handlers = [fn for kls, fn in self._error_handlers if isinstance(e, kls)]
                 if not handlers:
                     raise e
                 else:
@@ -248,7 +242,7 @@ class Listener(Generic[CTXType]):
         return asyncio.get_event_loop()
 
     async def main(self) -> None:
-        for fn in self.__startup:
+        for fn in self._startup:
             await fn()
         await self.listen()
         await self.__exiting.wait()

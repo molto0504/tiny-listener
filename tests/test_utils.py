@@ -45,4 +45,4 @@ def test_check_coro_func():
     async def async_f():
         pass
 
-    assert check_coro_func(async_f) is None
+    assert check_coro_func(async_f) is async_f

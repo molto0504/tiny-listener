@@ -3,6 +3,8 @@ import threading
 from importlib import import_module
 from typing import Any, Callable
 
+from ._typing import CoroFunc
+
 
 def import_from_string(import_str: Any) -> Any:
     import_str = str(import_str)
@@ -24,7 +26,7 @@ def is_main_thread() -> bool:
     return threading.current_thread() is threading.main_thread()
 
 
-def check_coro_func(fn: Callable) -> None:
+def check_coro_func(fn: Callable) -> CoroFunc:
     if not asyncio.iscoroutinefunction(fn):
         raise TypeError(
             """Hook must be a coroutine function, Such as:
@@ -34,3 +36,4 @@ def check_coro_func(fn: Callable) -> None:
         ...
 """
         )
+    return fn
