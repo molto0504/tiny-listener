@@ -2,6 +2,7 @@ import asyncio
 import os
 import signal
 import threading
+from multiprocessing.pool import ThreadPool
 from unittest.mock import PropertyMock, patch
 
 import pytest
@@ -267,9 +268,12 @@ def test_setup_event_loop(app: Listener):
     loop = asyncio.get_event_loop()
     assert loop is app.setup_event_loop()
 
-    with patch("threading.current_thread", return_value=threading.main_thread()):
-        loop = app.setup_event_loop()
-        assert loop is asyncio.get_event_loop()
+    def _set():
+        return app.setup_event_loop()
+
+    with ThreadPool(1) as pool:
+        result = pool.apply_async(_set)
+        assert result.get(1) is not loop
 
 
 def test_get_current_running_listener(app: Listener):
