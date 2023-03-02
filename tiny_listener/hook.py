@@ -4,13 +4,13 @@ from functools import wraps
 from inspect import Parameter, isclass, signature
 from typing import Any, Callable, Final, Union
 
-from ._typing import CoroutineFunc, HookFunc
+from ._typing import CoroFunc, HookFunc
 from .event import Event
 
 
 class _Hook(metaclass=ABCMeta):
-    def __init__(self, fn: CoroutineFunc, timeout: Union[float, None] = None) -> None:
-        self.__fn: CoroutineFunc = fn
+    def __init__(self, fn: CoroFunc, timeout: Union[float, None] = None) -> None:
+        self.__fn: CoroFunc = fn
         self.__hook: HookFunc = self.as_hook()
         self.timeout: Final = timeout
 
@@ -58,12 +58,12 @@ class Hook(_Hook):
 
 
 class Depends(_Hook):
-    def __init__(self, fn: CoroutineFunc, use_cache: bool = True, timeout: Union[float, None] = None) -> None:
+    def __init__(self, fn: CoroFunc, use_cache: bool = True, timeout: Union[float, None] = None) -> None:
         super().__init__(fn, timeout)
         self.use_cache = use_cache
 
 
-def depend(fn: CoroutineFunc, use_cache: bool = True, timeout: Union[float, None] = None) -> Any:
+def depend(fn: CoroFunc, use_cache: bool = True, timeout: Union[float, None] = None) -> Any:
     return Depends(fn, use_cache, timeout)
 
 

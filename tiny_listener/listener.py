@@ -1,20 +1,10 @@
 import asyncio
 import signal
 import threading
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Generic,
-    List,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, Generic, List, Tuple, Type, TypeVar, Union
 from uuid import uuid4
 
+from ._typing import CoroFunc
 from .context import Context
 from .errors import (
     ContextAlreadyExists,
@@ -31,9 +21,6 @@ from .utils import is_main_thread
 CTXType = TypeVar("CTXType", bound=Context)
 
 
-Callback = Callable[..., Awaitable[Any]]
-
-
 HANDLED_SIGNALS = (
     signal.SIGINT,  # Unix signal 2
     signal.SIGTERM,  # Unix signal 15
@@ -47,8 +34,8 @@ class Listener(Generic[CTXType]):
         self.ctxs: Dict[str, CTXType] = {}
         self.routes: Dict[str, Route] = {}
 
-        self.__startup: List[Callback] = []
-        self.__shutdown: List[Callback] = []
+        self.__startup: List[CoroFunc] = []
+        self.__shutdown: List[CoroFunc] = []
         self.__middleware_before_event: List[Hook] = []
         self.__middleware_after_event: List[Hook] = []
         self.__error_handlers: List[Tuple[Type[Exception], Hook]] = []
@@ -129,24 +116,24 @@ class Listener(Generic[CTXType]):
             raise EventNotFound(f"Event `{name}` not found")
         return self.routes[name]
 
-    def add_startup_callback(self, fn: Callback) -> None:
+    def add_startup_callback(self, fn: CoroFunc) -> None:
         self.__startup.append(fn)
 
-    def add_shutdown_callback(self, fn: Callback) -> None:
+    def add_shutdown_callback(self, fn: CoroFunc) -> None:
         self.__shutdown.append(fn)
 
-    def add_before_event_hook(self, fn: Callable) -> None:
+    def add_before_event_hook(self, fn: CoroFunc) -> None:
         self.__middleware_before_event.append(Hook(fn))
 
-    def add_after_event_hook(self, fn: Callback) -> None:
+    def add_after_event_hook(self, fn: CoroFunc) -> None:
         self.__middleware_after_event.append(Hook(fn))
 
-    def add_on_error_hook(self, fn: Callable, exc: Type[Exception]) -> None:
+    def add_on_error_hook(self, fn: CoroFunc, exc: Type[Exception]) -> None:
         self.__error_handlers.append((exc, Hook(fn)))
 
     def add_on_event_hook(
         self,
-        fn: Callable,
+        fn: CoroFunc,
         path: str = "{_:path}",
         **opts: Any,
     ) -> None:
@@ -155,7 +142,7 @@ class Listener(Generic[CTXType]):
             raise EventAlreadyExists(f"Event `{name}` already exists")
         self.routes[name] = Route(name=name, path=path, fn=fn, opts=opts)
 
-    def remove_on_event_hook(self, name: Union[str, Callable]) -> bool:
+    def remove_on_event_hook(self, name: Union[str, CoroFunc]) -> bool:
         """
         :param name: Event name or callback function
         """
@@ -170,36 +157,36 @@ class Listener(Generic[CTXType]):
         self,
         name: str = "{_:path}",
         **opts: Any,
-    ) -> Callable[[Hook], Callable]:
-        def _decorator(fn: Callable) -> Callable:
+    ) -> Callable[[CoroFunc], CoroFunc]:
+        def _decorator(fn: CoroFunc) -> CoroFunc:
             check_callback(fn)
             self.add_on_event_hook(fn, name, **opts)
             return fn
 
         return _decorator
 
-    def startup(self, fn: Callable) -> Callable:
+    def startup(self, fn: CoroFunc) -> CoroFunc:
         check_callback(fn)
         self.add_startup_callback(fn)
         return fn
 
-    def shutdown(self, fn: Callable) -> Callable:
+    def shutdown(self, fn: CoroFunc) -> CoroFunc:
         check_callback(fn)
         self.add_shutdown_callback(fn)
         return fn
 
-    def before_event(self, fn: Callable) -> Callable:
+    def before_event(self, fn: CoroFunc) -> CoroFunc:
         check_callback(fn)
         self.add_before_event_hook(fn)
         return fn
 
-    def after_event(self, fn: Callable) -> Callable:
+    def after_event(self, fn: CoroFunc) -> CoroFunc:
         check_callback(fn)
         self.add_after_event_hook(fn)
         return fn
 
-    def on_error(self, exc: Type[Exception]) -> Callable[[Callable], Callable]:
-        def f(fn: Callable) -> Callable:
+    def on_error(self, exc: Type[Exception]) -> Callable[[CoroFunc], CoroFunc]:
+        def f(fn: CoroFunc) -> CoroFunc:
             check_callback(fn)
             self.add_on_error_hook(fn, exc)
             return fn
