@@ -26,7 +26,7 @@ from asyncio import StreamReader, StreamWriter, start_server
 
 from httptools import HttpRequestParser
 
-from tiny_listener import Event, Listener, EventNotFound
+from tiny_listener import Event, EventNotFound, Listener, Param
 
 PORT = 8000
 
@@ -59,9 +59,7 @@ class App(Listener):
         if data:
             req = Request(data)
             try:
-                self.trigger_event(
-                    f"{req.method}:{req.url}", data={"writer": writer, "request": req}
-                )
+                self.trigger_event(f"{req.method}:{req.url}", data={"writer": writer, "request": req})
             except EventNotFound:
                 writer.write(b"HTTP/1.1 404\n\nPage Not Found")
                 writer.close()
@@ -93,8 +91,7 @@ async def home():
 
 
 @app.on_event("GET:/user/{username}")
-async def hello(event: Event):
-    username = event.params["username"]
+async def hello(username: Param):
     return f"Hello, {username}!"
 ```
 

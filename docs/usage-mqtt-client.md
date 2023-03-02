@@ -31,7 +31,7 @@ import random
 
 from asyncio_mqtt import Client
 
-from tiny_listener import Event, Listener
+from tiny_listener import Event, Listener, Param
 
 SERVER_HOST = "test.mosquitto.org"
 
@@ -63,8 +63,7 @@ async def mock_iot_device(event: Event):
 
 
 @app.on_event("/iot/home/{room}/temperature")
-async def handle_mqtt_msg(event: Event):
-    room = event.params["room"]
+async def handle_mqtt_msg(event: Event, room: Param):
     temperature = event.data["payload"].decode()
     print("INFO: {:<13} {} ℃".format(room, temperature))
 ```

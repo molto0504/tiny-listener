@@ -27,7 +27,7 @@ import asyncio
 
 import aio_pika
 
-from tiny_listener import Event, Listener
+from tiny_listener import Event, Listener, Param
 
 
 class App(Listener):
@@ -64,8 +64,7 @@ async def produce(event: Event):
 
 
 @app.on_event("/app/{app_id}/consume")
-async def consume(event: Event):
-    app_id = event.params["app_id"]
+async def consume(event: Event, app_id: Param):
     data = event.data["data"]
     print(f"INFO: App[{app_id}] consume: {data}")
 ```
