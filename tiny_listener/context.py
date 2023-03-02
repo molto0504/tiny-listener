@@ -51,8 +51,7 @@ class Context:
         :param data: Event data
         :raises: EventAlreadyExists
         """
-        event = Event(self, route)
-        event.data = data
+        event = Event(self, route, data=data)
         self.events[route].append(event)
         return event
 

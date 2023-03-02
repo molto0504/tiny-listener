@@ -18,10 +18,8 @@ class Event(Generic[CTXType]):
         self,
         ctx: CTXType,
         route: "Route",
-        timeout: Union[float, None] = None,
         data: Union[Dict, None] = None,
     ) -> None:
-        self.timeout: Union[float, None] = timeout
         self.data = data or {}
         self.error: Union[Exception, None] = None
         self.__route = route
