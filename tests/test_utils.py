@@ -1,27 +1,35 @@
-from unittest import TestCase
+from multiprocessing.pool import ThreadPool
 
-from tiny_listener import Listener, import_from_string
+import pytest
+
+from tiny_listener import Listener, import_from_string, is_main_thread
 
 
-class TestImportFromString(TestCase):
-    def test_ok(self):
-        instance = import_from_string("tiny_listener:Listener")
-        self.assertTrue(instance is Listener)
+def test_import_from_string():
+    assert import_from_string("tiny_listener:Listener") is Listener
+    assert import_from_string("tiny_listener:Listener.run") is Listener.run
 
-        instance = import_from_string("tiny_listener:Listener.run")
-        self.assertTrue(instance is Listener.run)
 
-    def test_bad_format(self):
-        self.assertRaises(AssertionError, import_from_string, "")
-        self.assertRaises(AssertionError, import_from_string, ":")
-        self.assertRaises(AssertionError, import_from_string, "tiny_listener")
-        self.assertRaises(AssertionError, import_from_string, "tiny_listener:")
-        self.assertRaises(AssertionError, import_from_string, "Listener")
-        self.assertRaises(AssertionError, import_from_string, ":Listener")
+@pytest.mark.parametrize("path", ["", ":", "tiny_listener", "tiny_listener:", "Listener"])
+def test_import_from_string_format_error(path: str):
+    with pytest.raises(ImportError):
+        import_from_string(path)
 
-    def test_bad_module(self):
-        self.assertRaises(ModuleNotFoundError, import_from_string, "bad_module:Listener")
 
-    def test_bad_attr(self):
-        self.assertRaises(AttributeError, import_from_string, "tiny_listener:bad_attr")
-        self.assertRaises(AttributeError, import_from_string, "tiny_listener:Listener.bad_attr")
+def test_import_from_string_module_not_found():
+    with pytest.raises(ModuleNotFoundError):
+        import_from_string("bad_module:Listener")
+
+
+@pytest.mark.parametrize("path", ["tiny_listener:bad_attr", "tiny_listener:Listener.bad_attr"])
+def test_import_from_string_attr_error(path: str):
+    with pytest.raises(ImportError):
+        import_from_string(path)
+
+
+def test_is_main_thread():
+    assert is_main_thread() is True
+
+    with ThreadPool(1) as pool:
+        result = pool.apply_async(lambda: is_main_thread())
+        assert result.get(1) is False

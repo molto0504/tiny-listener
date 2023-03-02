@@ -267,7 +267,7 @@ def test_setup_event_loop(app: Listener):
     loop = asyncio.get_event_loop()
     assert loop is app.setup_event_loop()
 
-    with patch("tiny_listener.listener.Listener.is_main_thread", return_value=False):
+    with patch("threading.current_thread", return_value=threading.main_thread()):
         loop = app.setup_event_loop()
         assert loop is asyncio.get_event_loop()
 

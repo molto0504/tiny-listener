@@ -26,6 +26,7 @@ from .errors import (
 )
 from .hook import Hook, check_callback
 from .routing import Params, Route
+from .utils import is_main_thread
 
 CTXType = TypeVar("CTXType", bound=Context)
 
@@ -57,12 +58,8 @@ class Listener(Generic[CTXType]):
     async def listen(self) -> None:
         raise NotImplementedError()
 
-    @staticmethod
-    def is_main_thread() -> bool:
-        return threading.current_thread() is threading.main_thread()
-
     def install_signal_handlers(self) -> None:
-        if not self.is_main_thread():  # pragma: no cover
+        if not is_main_thread():  # pragma: no cover
             return
 
         loop = asyncio.get_event_loop()
@@ -254,9 +251,10 @@ class Listener(Generic[CTXType]):
 
         return asyncio.get_event_loop().create_task(_trigger())
 
-    def setup_event_loop(self) -> asyncio.AbstractEventLoop:
+    @staticmethod
+    def setup_event_loop() -> asyncio.AbstractEventLoop:
         """Override this method to change default event loop"""
-        if not self.is_main_thread():
+        if not is_main_thread():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 

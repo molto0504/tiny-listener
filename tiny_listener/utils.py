@@ -1,3 +1,4 @@
+import threading
 from importlib import import_module
 from typing import Any
 
@@ -5,12 +6,18 @@ from typing import Any
 def import_from_string(import_str: Any) -> Any:
     import_str = str(import_str)
     module_str, _, attrs_str = import_str.partition(":")
+    if not module_str or not attrs_str:
+        raise ImportError(f"Import string '{import_str}' must be in format '<module>:<attribute>'")
 
-    assert module_str and attrs_str, f"Import string '{import_str}' must be in format '<module>:<attribute>'"
-    module = import_module(module_str)
-
-    instance = module
+    instance = import_module(module_str)
     for attr in attrs_str.split("."):
-        instance = getattr(instance, attr)
+        try:
+            instance = getattr(instance, attr)
+        except AttributeError as e:
+            raise ImportError(f"Module '{module_str}' has no attribute '{attr}'") from e
 
     return instance
+
+
+def is_main_thread() -> bool:
+    return threading.current_thread() is threading.main_thread()

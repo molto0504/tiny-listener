@@ -18,7 +18,7 @@ from .event import Event
 from .hook import Depends, Hook, HookFunc, depend
 from .listener import Listener, get_current_running_listener
 from .routing import Params, Route, compile_path
-from .utils import import_from_string
+from .utils import import_from_string, is_main_thread
 
 __all__ = [
     "__version__",
@@ -33,6 +33,7 @@ __all__ = [
     "Event",
     "EventAlreadyDone",
     "Depends",
+    "is_main_thread",
     "Hook",
     "HookFunc",
     "ContextNotFound",
