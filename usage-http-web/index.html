@@ -408,7 +408,7 @@ using <a href="https://fastapi.tiangolo.com/">FastAPI</a> / <a href="https://www
 
 <span class="kn">from</span> <span class="nn">httptools</span> <span class="kn">import</span> <span class="n">HttpRequestParser</span>
 
-<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">EventNotFound</span>
+<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">EventNotFound</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">Param</span>
 
 <span class="n">PORT</span> <span class="o">=</span> <span class="mi">8000</span>
 
@@ -441,9 +441,7 @@ using <a href="https://fastapi.tiangolo.com/">FastAPI</a> / <a href="https://www
         <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
             <span class="n">req</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">trigger_event</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;writer&quot;</span><span class="p">:</span> <span class="n">writer</span><span class="p">,</span> <span class="s2">&quot;request&quot;</span><span class="p">:</span> <span class="n">req</span><span class="p">}</span>
-                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">trigger_event</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;writer&quot;</span><span class="p">:</span> <span class="n">writer</span><span class="p">,</span> <span class="s2">&quot;request&quot;</span><span class="p">:</span> <span class="n">req</span><span class="p">})</span>
             <span class="k">except</span> <span class="n">EventNotFound</span><span class="p">:</span>
                 <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;HTTP/1.1 404</span><span class="se">\n\n</span><span class="s2">Page Not Found&quot;</span><span class="p">)</span>
                 <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -475,8 +473,7 @@ using <a href="https://fastapi.tiangolo.com/">FastAPI</a> / <a href="https://www
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;GET:/user/</span><span class="si">{username}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="n">username</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">]</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">username</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">!&quot;</span>
 </code></pre></div>
 <p><strong>STEP 3,</strong> Run your app:</p>

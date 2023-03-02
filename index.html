@@ -535,7 +535,7 @@
 </ul>
 <p>Tiny-listener may help you solve these problems:</p>
 <p>Create a file <code>example.py</code> with:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">Param</span>
 
 
 <span class="k">class</span> <span class="nc">App</span><span class="p">(</span><span class="n">Listener</span><span class="p">):</span>
@@ -549,17 +549,15 @@
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;step 1: save </span><span class="si">{username}</span><span class="s2">&#39;s data to database&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">step_1</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="n">username</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">]</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">step_1</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
     <span class="n">age</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;age&quot;</span><span class="p">]</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Save data done!, </span><span class="si">{</span><span class="n">username</span><span class="si">=}</span><span class="s2">, </span><span class="si">{</span><span class="n">age</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step-1: Save data done!, </span><span class="si">{</span><span class="n">username</span><span class="si">=}</span><span class="s2">, </span><span class="si">{</span><span class="n">age</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;step 2: send email to </span><span class="si">{email}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">step_2</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">step_2</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
     <span class="k">await</span> <span class="n">event</span><span class="o">.</span><span class="n">wait_event_done</span><span class="p">(</span><span class="s2">&quot;step_1&quot;</span><span class="p">)</span>
-    <span class="n">email</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">]</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Send email done!, </span><span class="si">{</span><span class="n">email</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step-2: Send email done!, </span><span class="si">{</span><span class="n">email</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p>Run it:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>tiny-listener<span class="w"> </span>example:app
@@ -570,7 +568,7 @@
 <ul>
 <li>Create your own Listener and listen something(e.g. port, queue ...):</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">Param</span>
 
 
 <span class="k">class</span> <span class="nc">App</span><span class="p">(</span><span class="n">Listener</span><span class="p">):</span>
@@ -586,17 +584,15 @@
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;step 1: save </span><span class="si">{username}</span><span class="s2">&#39;s data to database&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">step_1</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="n">username</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">]</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">step_1</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
     <span class="n">age</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;age&quot;</span><span class="p">]</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Save data done!, </span><span class="si">{</span><span class="n">username</span><span class="si">=}</span><span class="s2">, </span><span class="si">{</span><span class="n">age</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step-1: Save data done!, </span><span class="si">{</span><span class="n">username</span><span class="si">=}</span><span class="s2">, </span><span class="si">{</span><span class="n">age</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;step 2: send email to </span><span class="si">{email}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">step_2</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">step_2</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
     <span class="k">await</span> <span class="n">event</span><span class="o">.</span><span class="n">wait_event_done</span><span class="p">(</span><span class="s2">&quot;step_1&quot;</span><span class="p">)</span>
-    <span class="n">email</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">]</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Send email done!, </span><span class="si">{</span><span class="n">email</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step-2: Send email done!, </span><span class="si">{</span><span class="n">email</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 <ul>
 <li>Run listener with command:</li>
@@ -606,8 +602,8 @@
 <ul>
 <li>Tiny-listener will dispatch every event automatically:</li>
 </ul>
-<div class="highlight"><pre><span></span><code>&gt;&gt;&gt;<span class="w"> </span>Save<span class="w"> </span>data<span class="w"> </span><span class="k">done</span>!,<span class="w"> </span><span class="nv">username</span><span class="o">=</span><span class="s1">&#39;Alice&#39;</span>,<span class="w"> </span><span class="nv">age</span><span class="o">=</span><span class="m">35</span>
-&gt;&gt;&gt;<span class="w"> </span>Send<span class="w"> </span>email<span class="w"> </span><span class="k">done</span>!,<span class="w"> </span><span class="nv">email</span><span class="o">=</span><span class="s1">&#39;alice@tl.com&#39;</span>
+<div class="highlight"><pre><span></span><code>&gt;&gt;&gt;<span class="w"> </span>Step-1:<span class="w"> </span>Save<span class="w"> </span>data<span class="w"> </span><span class="k">done</span>!,<span class="w"> </span><span class="nv">username</span><span class="o">=</span><span class="s1">&#39;Alice&#39;</span>,<span class="w"> </span><span class="nv">age</span><span class="o">=</span><span class="m">35</span>
+&gt;&gt;&gt;<span class="w"> </span>Step-2:<span class="w"> </span>Send<span class="w"> </span>email<span class="w"> </span><span class="k">done</span>!,<span class="w"> </span><span class="nv">email</span><span class="o">=</span><span class="s1">&#39;alice@tl.com&#39;</span>
 </code></pre></div>
 
 
