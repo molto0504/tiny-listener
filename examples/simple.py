@@ -2,8 +2,8 @@
 :Example:
 
     >>> tiny-listener simple:app
-    Save data done!, username='Alice', age=35
-    Send email done!, email='alice@tl.com'
+    Step-1: Save data done!, username='Alice', age=35
+    Step-2: Send email done!, email='alice@tl.com'
 """
 
 from tiny_listener import Event, Listener, Param

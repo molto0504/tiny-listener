@@ -4,13 +4,21 @@ Before run this example, you need to install amqtt first:
     $ pip install asyncio-mqtt
 
 See: https://molto0504.github.io/tiny-listener/usage-mqtt-client/
+
+:Example:
+
+    >>> tiny-listener mqtt_client:app
+    INFO: bathroom      26 ℃
+    INFO: living_room   18 ℃
+    INFO: bedroom       20 ℃
 """
+
 import asyncio
 import random
 
 from asyncio_mqtt import Client
 
-from tiny_listener import Event, Listener
+from tiny_listener import Event, Listener, Param
 
 SERVER_HOST = "test.mosquitto.org"
 
@@ -42,7 +50,6 @@ async def mock_iot_device(event: Event):
 
 
 @app.on_event("/iot/home/{room}/temperature")
-async def handle_mqtt_msg(event: Event):
-    room = event.params["room"]
+async def handle_mqtt_msg(event: Event, room: Param):
     temperature = event.data["payload"].decode()
     print("INFO: {:<13} {} ℃".format(room, temperature))

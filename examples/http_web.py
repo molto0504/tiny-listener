@@ -10,7 +10,7 @@ from asyncio import StreamReader, StreamWriter, start_server
 
 from httptools import HttpRequestParser
 
-from tiny_listener import Event, EventNotFound, Listener
+from tiny_listener import Event, EventNotFound, Listener, Param
 
 PORT = 8000
 
@@ -75,6 +75,5 @@ async def home():
 
 
 @app.on_event("GET:/user/{username}")
-async def hello(event: Event):
-    username = event.params["username"]
+async def hello(username: Param):
     return f"Hello, {username}!"
