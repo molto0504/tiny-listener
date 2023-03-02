@@ -28,3 +28,7 @@ class DuplicateListener(Exception):
 
 class ListenerNotFound(Exception):
     pass
+
+
+class PathParamsError(Exception):
+    pass

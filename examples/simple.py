@@ -6,7 +6,7 @@
     Send email done!, email='alice@tl.com'
 """
 
-from tiny_listener import Event, Listener
+from tiny_listener import Event, Listener, Param
 
 
 class App(Listener):
@@ -20,14 +20,12 @@ app = App()
 
 
 @app.on_event("step 1: save {username}'s data to database")
-async def step_1(event: Event):
-    username = event.params["username"]
+async def step_1(event: Event, username: Param):
     age = event.data["age"]
-    print(f"Save data done!, {username=}, {age=}")
+    print(f"Step-1: Save data done!, {username=}, {age=}")
 
 
 @app.on_event("step 2: send email to {email}")
-async def step_2(event: Event):
+async def step_2(event: Event, email: Param):
     await event.wait_event_done("step_1")
-    email = event.params["email"]
-    print(f"Send email done!, {email=}")
+    print(f"Step-2: Send email done!, {email=}")

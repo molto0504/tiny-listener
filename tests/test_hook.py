@@ -34,7 +34,7 @@ async def test_call_dep(caller, fake_event):
         return "data"
 
     dep = caller(get_data)
-    assert await dep(fake_event) == "data"
+    assert await dep(fake_event, {}) == "data"
 
 
 @pytest.mark.asyncio
@@ -49,7 +49,7 @@ async def test_run_hook_with_depends(caller, fake_event):
         return user.get("username")
 
     dep = caller(get_username)
-    assert await dep(fake_event) == "bob"
+    assert await dep(fake_event, {}) == "bob"
 
 
 @pytest.mark.asyncio
@@ -69,7 +69,7 @@ async def test_run_complex_hook(caller, fake_event):
         return data[username]
 
     dep = caller(get_user_data)
-    assert await dep(fake_event) == "bob's data"
+    assert await dep(fake_event, {}) == "bob's data"
 
 
 @pytest.mark.asyncio
@@ -93,7 +93,7 @@ async def test_signature(caller, fake_event):
         return dep_1.get("username")
 
     dep = caller(get_user_name)
-    assert await dep(fake_event) == "bob"
+    assert await dep(fake_event, {}) == "bob"
 
 
 @pytest.mark.asyncio
@@ -107,7 +107,7 @@ async def test_dep_with_cache(caller, fake_event):
         return dep_1.get("username")
 
     dep = caller(get_username)
-    assert await dep(fake_event) == "bob"
+    assert await dep(fake_event, {}) == "bob"
 
 
 @pytest.mark.asyncio
@@ -122,7 +122,7 @@ async def test_dep_without_cache(caller, fake_event):
         return dep_1.get("username")
 
     dep = caller(get_username)
-    assert await dep(fake_event) == "bob"
+    assert await dep(fake_event, {}) == "bob"
 
 
 def test_bad_callback():

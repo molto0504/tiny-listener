@@ -4,7 +4,7 @@ import threading
 from typing import Any, Callable, Dict, Generic, List, Tuple, Type, TypeVar, Union
 from uuid import uuid4
 
-from ._typing import CoroFunc
+from ._typing import CoroFunc, PathParams
 from .context import Context
 from .errors import (
     ContextAlreadyExists,
@@ -15,7 +15,7 @@ from .errors import (
     ListenerNotFound,
 )
 from .hook import Hook
-from .routing import Params, Route
+from .routing import Route
 from .utils import check_coro_func, is_main_thread
 
 CTXType = TypeVar("CTXType", bound=Context)
@@ -193,7 +193,7 @@ class Listener(Generic[CTXType]):
 
         return f
 
-    def match_route(self, path: str) -> Tuple[Route, Params]:
+    def match_route(self, path: str) -> Tuple[Route, PathParams]:
         """
         :raises: EventNotFound
         """
@@ -221,17 +221,17 @@ class Listener(Generic[CTXType]):
         async def _trigger() -> None:
             try:
                 for f in self.__middleware_before_event:
-                    await f(event)
-                await asyncio.wait_for(event(), timeout=timeout)
+                    await f(event, {})
+                await asyncio.wait_for(event(params), timeout=timeout)
                 for f in self.__middleware_after_event:
-                    await f(event)
+                    await f(event, {})
             except Exception as e:
                 event.error = e
                 handlers = [fn for kls, fn in self.__error_handlers if isinstance(e, kls)]
                 if not handlers:
                     raise e
                 else:
-                    [await handler(event) for handler in handlers]
+                    [await handler(event, {}) for handler in handlers]
             finally:
                 if event.auto_done:
                     event.done()

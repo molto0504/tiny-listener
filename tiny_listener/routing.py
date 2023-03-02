@@ -2,6 +2,7 @@ import re
 import uuid
 from typing import Any, Callable, Dict, NamedTuple, Pattern, Tuple, Union
 
+from ._typing import PathParams
 from .errors import RouteError
 from .hook import Hook
 
@@ -24,8 +25,6 @@ CONVERTOR_TYPES: Dict[str, Convertor] = {
 
 PARAM_REGEX = re.compile(r"{([a-zA-Z_]\w*)(:[a-zA-Z_]\w*)?}")
 
-Params = Dict[str, Any]
-
 
 class Route:
     """
@@ -45,12 +44,12 @@ class Route:
         self.opts: Dict[str, Any] = opts or {}
         self.hook = Hook(fn)
 
-    def match(self, name: str) -> Union[Params, None]:
+    def match(self, name: str) -> Union[PathParams, None]:
         match = self.path_regex.match(name)
         if match is None:
             return None
 
-        params: Params = match.groupdict() if match else {}
+        params: PathParams = match.groupdict() if match else {}
         for k, v in params.items():
             params[k] = self.convertors[k].convert(v)
         return params

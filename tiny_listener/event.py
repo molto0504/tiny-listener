@@ -2,6 +2,8 @@ import asyncio
 import weakref
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, List, TypeVar, Union
 
+from ._typing import PathParams
+
 if TYPE_CHECKING:
     from .context import Context  # noqa # pylint: disable=unused-import
     from .listener import Listener
@@ -79,11 +81,11 @@ class Event(Generic[CTXType]):
 
         return await asyncio.wait_for(_wait(), timeout=timeout)
 
-    async def __call__(self) -> Any:
+    async def __call__(self, params: Union[PathParams, None] = None) -> Any:
         """
         :raises: asyncio.TimeoutError
         """
-        self.__result = await self.route.hook(self)
+        self.__result = await self.route.hook(self, params or {})
         return self.__result
 
     def __repr__(self) -> str:

@@ -15,9 +15,9 @@ from .errors import (
     RouteError,
 )
 from .event import Event
-from .hook import Depends, Hook, HookFunc, depend
+from .hook import Depends, Hook, Param, depend
 from .listener import Listener, get_current_running_listener
-from .routing import Params, Route, compile_path
+from .routing import Route, compile_path
 from .utils import check_coro_func, import_from_string, is_main_thread
 
 __all__ = [
@@ -27,6 +27,7 @@ __all__ = [
     "ContextAlreadyExists",
     "ContextNotFound",
     "Context",
+    "Param",
     "DuplicateListener",
     "get_current_running_listener",
     "ListenerNotFound",
@@ -36,12 +37,10 @@ __all__ = [
     "Depends",
     "is_main_thread",
     "Hook",
-    "HookFunc",
     "ContextNotFound",
     "Listener",
     "EventNotFound",
     "EventAlreadyExists",
-    "Params",
     "Route",
     "RouteError",
     "compile_path",
