@@ -392,97 +392,110 @@
 <h1 id="tiny-web-framework">Tiny "Web Framework"<a class="headerlink" href="#tiny-web-framework" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p><strong><a href="https://github.com/MagicStack/httptools">httptools</a></strong> is a fast HTTP parser lib.</p>
+<p><strong><a href="https://github.com/python-hyper/h11">h11</a></strong> is a pure-Python HTTP/1.1 protocol library</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>This tiny "web framework" is just intended to show how tiny-listener works.</p>
-<p>If your really need a web framework for production environment,
-using <a href="https://fastapi.tiangolo.com/">FastAPI</a> / <a href="https://www.djangoproject.com/">Django</a> / <a href="https://flask.palletsprojects.com/">Flask</a> instead.</p>
+<p>This tiny "web framework" is very simple, just intended to show how tiny-listener works.</p>
+<p>Don't try to use it to implement a web service from scratch, it's not a good idea.</p>
+<p>If you need a web framework for production, please use <a href="https://fastapi.tiangolo.com/">FastAPI</a>, <a href="https://www.djangoproject.com/">Django</a>, or <a href="https://flask.palletsprojects.com/">Flask</a></p>
 </div>
-<p><strong>STEP 1,</strong> Install Tiny-listener and <a href="https://github.com/MagicStack/httptools">httptools</a>:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>tiny-listener<span class="w"> </span>httptools<span class="w"> </span>
+<p><strong>STEP 1,</strong> Install tiny-listener and <a href="https://github.com/python-hyper/h11">h11</a>:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>tiny-listener<span class="w"> </span>h11<span class="w"> </span>
 </code></pre></div>
 <p><strong>STEP 2,</strong> Create python file <code>http_web.py</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">asyncio</span> <span class="kn">import</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">StreamWriter</span><span class="p">,</span> <span class="n">start_server</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 
-<span class="kn">from</span> <span class="nn">httptools</span> <span class="kn">import</span> <span class="n">HttpRequestParser</span>
+<span class="kn">import</span> <span class="nn">h11</span>
 
-<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">EventNotFound</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">Param</span>
+<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="n">Event</span><span class="p">,</span> <span class="n">EventNotFound</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">Param</span>
 
 <span class="n">PORT</span> <span class="o">=</span> <span class="mi">8000</span>
 
 
-<span class="k">class</span> <span class="nc">Request</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parser</span> <span class="o">=</span> <span class="n">HttpRequestParser</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HTTPContext</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status_code</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="n">protocol</span><span class="p">:</span> <span class="n">H11</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">[</span><span class="s2">&quot;protocol&quot;</span><span class="p">]</span>
+        <span class="n">protocol</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">protocol</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">h11</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="n">status_code</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">[])))</span>
+        <span class="n">protocol</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">protocol</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">h11</span><span class="o">.</span><span class="n">Data</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)))</span>
+        <span class="n">protocol</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">protocol</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">h11</span><span class="o">.</span><span class="n">EndOfMessage</span><span class="p">()))</span>
+        <span class="n">protocol</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">start_next_cycle</span><span class="p">()</span>
+        <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">protocol</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s2">&quot;peername&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;INFO: </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s1"> - &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> HTTP/1.1&quot; </span><span class="si">{</span><span class="n">status_code</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">get_method</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">http_version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">get_http_version</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">on_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">on_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="nf">throw_500</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Internal Server Error&quot;</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">App</span><span class="p">(</span><span class="n">Listener</span><span class="p">):</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">writer</span><span class="p">:</span> <span class="n">StreamWriter</span><span class="p">):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">readuntil</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\r\n\r\n</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
-            <span class="n">req</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">trigger_event</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;writer&quot;</span><span class="p">:</span> <span class="n">writer</span><span class="p">,</span> <span class="s2">&quot;request&quot;</span><span class="p">:</span> <span class="n">req</span><span class="p">})</span>
-            <span class="k">except</span> <span class="n">EventNotFound</span><span class="p">:</span>
-                <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;HTTP/1.1 404</span><span class="se">\n\n</span><span class="s2">Page Not Found&quot;</span><span class="p">)</span>
-                <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">H11</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">listener</span><span class="p">:</span> <span class="n">Listener</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">h11</span><span class="o">.</span><span class="n">Connection</span><span class="p">(</span><span class="n">h11</span><span class="o">.</span><span class="n">SERVER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Transport</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listener</span> <span class="o">=</span> <span class="n">listener</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">listen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">await</span> <span class="n">start_server</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">PORT</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;INFO:     HTTP server running on on http://127.0.0.1:</span><span class="si">{</span><span class="n">PORT</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">connection_made</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="n">transport</span>
+
+    <span class="k">def</span> <span class="nf">data_received</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">receive_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handle_event</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">handle_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">:</span> <span class="n">h11</span><span class="o">.</span><span class="n">Request</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span><span class="n">new_ctx</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;protocol&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">method</span><span class="p">})</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">trigger_event</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">EventNotFound</span><span class="p">:</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">trigger_event</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">next_event</span><span class="p">()</span>
+            <span class="n">event_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">event_type</span> <span class="ow">is</span> <span class="n">h11</span><span class="o">.</span><span class="n">NEED_DATA</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">event_type</span> <span class="ow">is</span> <span class="n">h11</span><span class="o">.</span><span class="n">Request</span><span class="p">:</span>
+                <span class="n">request</span> <span class="o">=</span> <span class="n">event</span>
+            <span class="k">elif</span> <span class="n">event_type</span> <span class="ow">is</span> <span class="n">h11</span><span class="o">.</span><span class="n">EndOfMessage</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">App</span><span class="p">(</span><span class="n">Listener</span><span class="p">[</span><span class="n">HTTPContext</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">listen</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+        <span class="k">await</span> <span class="n">loop</span><span class="o">.</span><span class="n">create_server</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">H11</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">PORT</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;INFO: HTTP server running on on http://127.0.0.1:</span><span class="si">{</span><span class="n">PORT</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">App</span><span class="p">()</span>
-
-
-<span class="nd">@app</span><span class="o">.</span><span class="n">after_event</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">response</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="n">writer</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;writer&quot;</span><span class="p">]</span>
-    <span class="n">req</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;request&quot;</span><span class="p">]</span>
-    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;HTTP/1.1 200</span><span class="se">\n\n</span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
-    <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span>
-        <span class="s1">&#39;INFO:     </span><span class="si">{}</span><span class="s1">:</span><span class="si">{}</span><span class="s1"> - &quot;</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> HTTP/</span><span class="si">{}</span><span class="s1">&quot; 200 OK&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="o">*</span><span class="n">writer</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s2">&quot;peername&quot;</span><span class="p">),</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">http_version</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-
-
-<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;GET:/&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">home</span><span class="p">():</span>
-    <span class="k">return</span> <span class="s2">&quot;Welcome!&quot;</span>
+<span class="n">app</span><span class="o">.</span><span class="n">set_context_cls</span><span class="p">(</span><span class="n">HTTPContext</span><span class="p">)</span>
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;GET:/user/</span><span class="si">{username}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">username</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">!&quot;</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
+    <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">response</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">!&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;GET:/throw&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">throw</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">throw_500</span><span class="p">()</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">()</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">home</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">response</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Welcome!&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p><strong>STEP 3,</strong> Run your app:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>tiny-listener<span class="w"> </span>http_web:app
-$<span class="w"> </span>INFO:<span class="w">     </span>Tiny-listener<span class="w"> </span>HTTP<span class="w"> </span>server<span class="w"> </span>running<span class="w"> </span>on<span class="w"> </span>on<span class="w"> </span>localhost:8000
+$<span class="w"> </span>INFO:<span class="w"> </span>Tiny-listener<span class="w"> </span>HTTP<span class="w"> </span>server<span class="w"> </span>running<span class="w"> </span>on<span class="w"> </span>on<span class="w"> </span><span class="m">127</span>.0.0.1:8000
 </code></pre></div>
-<p><strong>STEP 4,</strong> Try this on your browser: <a href="http://127.0.0.1:8000/user/Bob">http://127.0.0.1:8000/user/Bob</a></p>
+<p><strong>STEP 4,</strong> Try this on your browser: <a href="http://127.0.0.1:8000/user/bob">http://127.0.0.1:8000/user/bob</a></p>
 <div class="highlight"><pre><span></span><code>...
-$<span class="w"> </span>INFO:<span class="w">     </span><span class="m">127</span>.0.0.1:52579<span class="w"> </span>-<span class="w"> </span><span class="s2">&quot;GET /user/Bob HTTP/1.1&quot;</span><span class="w"> </span><span class="m">200</span><span class="w"> </span>OK
+$<span class="w"> </span>INFO:<span class="w"> </span>::1:52579<span class="w"> </span>-<span class="w"> </span><span class="s2">&quot;GET /user/bob HTTP/1.1&quot;</span><span class="w"> </span><span class="m">200</span>
 </code></pre></div>
 
 
