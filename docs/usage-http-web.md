@@ -3,108 +3,122 @@
 
 !!! Info
 
-    **[httptools](https://github.com/MagicStack/httptools)** is a fast HTTP parser lib.
+    **[h11](https://github.com/python-hyper/h11)** is a pure-Python HTTP/1.1 protocol library
 
 
 !!! Note
 
-    This tiny "web framework" is just intended to show how tiny-listener works.
+    This tiny "web framework" is very simple, just intended to show how tiny-listener works.
 
-    If your really need a web framework for production environment,
-    using [FastAPI](https://fastapi.tiangolo.com/) / [Django](https://www.djangoproject.com/) / [Flask](https://flask.palletsprojects.com/) instead.
+    Don't try to use it to implement a web service from scratch, it's not a good idea.
 
-**STEP 1,** Install Tiny-listener and [httptools](https://github.com/MagicStack/httptools):
+    If you need a web framework for production, please use [FastAPI](https://fastapi.tiangolo.com/), [Django](https://www.djangoproject.com/), or [Flask](https://flask.palletsprojects.com/)
+
+**STEP 1,** Install tiny-listener and [h11](https://github.com/python-hyper/h11):
 
 ```shell
-$ pip install tiny-listener httptools 
+$ pip install tiny-listener h11 
 ```
 
 **STEP 2,** Create python file ``http_web.py``:
 
 ```python
-from asyncio import StreamReader, StreamWriter, start_server
+import asyncio
+from functools import partial
 
-from httptools import HttpRequestParser
+import h11
 
-from tiny_listener import Event, EventNotFound, Listener, Param
+from tiny_listener import Context, Event, EventNotFound, Listener, Param
 
 PORT = 8000
 
 
-class Request:
-    def __init__(self, data: bytes):
-        self.url = ""
-        self.headers = {}
-        self.parser = HttpRequestParser(self)
-        self.parser.feed_data(data)
+class HTTPContext(Context):
+    def response(self, status_code: int, data: bytes):
+        protocol: H11 = self.scope["protocol"]
+        protocol.transport.write(protocol.conn.send(h11.Response(status_code=status_code, headers=[])))
+        protocol.transport.write(protocol.conn.send(h11.Data(data=data)))
+        protocol.transport.write(protocol.conn.send(h11.EndOfMessage()))
+        protocol.conn.start_next_cycle()
+        host, port, *_ = protocol.transport.get_extra_info("peername")
+        print(f'INFO: {host}:{port} - "{self.scope["method"]} {self.scope["path"]} HTTP/1.1" {status_code}')
 
-    @property
-    def method(self) -> str:
-        return self.parser.get_method().upper().decode()
-
-    @property
-    def http_version(self) -> str:
-        return self.parser.get_http_version()
-
-    def on_url(self, url: bytes):
-        self.url = url.decode()
-
-    def on_header(self, name, value):
-        self.headers[name] = value
+    def throw_500(self):
+        self.response(500, b"Internal Server Error")
 
 
-class App(Listener):
-    async def handler(self, reader: StreamReader, writer: StreamWriter):
-        data = await reader.readuntil(b"\r\n\r\n")
-        if data:
-            req = Request(data)
-            try:
-                self.trigger_event(f"{req.method}:{req.url}", data={"writer": writer, "request": req})
-            except EventNotFound:
-                writer.write(b"HTTP/1.1 404\n\nPage Not Found")
-                writer.close()
+class H11(asyncio.Protocol):
+    def __init__(self, listener: Listener):
+        self.conn = h11.Connection(h11.SERVER)
+        self.transport: asyncio.Transport = None
+        self.listener = listener
 
-    async def listen(self):
-        await start_server(self.handler, port=PORT)
-        print(f"INFO:     HTTP server running on on http://127.0.0.1:{PORT}")
+    def connection_made(self, transport):
+        self.transport = transport
+
+    def data_received(self, data: bytes):
+        self.conn.receive_data(data)
+        self.handle_event()
+
+    def handle_request(self, req: h11.Request):
+        path = req.target.decode()
+        method = req.method.decode()
+        ctx = self.listener.new_ctx(scope={"protocol": self, "path": path, "method": method})
+        try:
+            ctx.trigger_event(f"{method}:{path}")
+        except EventNotFound:
+            ctx.trigger_event("/")
+
+    def handle_event(self):
+        request = None
+        while True:
+            event = self.conn.next_event()
+            event_type = type(event)
+            if event_type is h11.NEED_DATA:
+                break
+
+            if event_type is h11.Request:
+                request = event
+            elif event_type is h11.EndOfMessage:
+                self.handle_request(request)
+
+
+class App(Listener[HTTPContext]):
+    async def listen(self) -> None:
+        loop = asyncio.get_event_loop()
+        await loop.create_server(partial(H11, self), host="localhost", port=PORT)
+        print(f"INFO: HTTP server running on on http://127.0.0.1:{PORT}")
 
 
 app = App()
-
-
-@app.after_event
-async def response(event: Event):
-    writer = event.data["writer"]
-    req = event.data["request"]
-    writer.write(f"HTTP/1.1 200\n\n{event.result}".encode())
-    writer.close()
-    print(
-        'INFO:     {}:{} - "{} {} HTTP/{}" 200 OK'.format(
-            *writer.get_extra_info("peername"), req.method, req.url, req.http_version
-        )
-    )
-
-
-@app.on_event("GET:/")
-async def home():
-    return "Welcome!"
+app.set_context_cls(HTTPContext)
 
 
 @app.on_event("GET:/user/{username}")
-async def hello(username: Param):
-    return f"Hello, {username}!"
+async def hello(event: Event, username: Param):
+    event.ctx.response(200, f"Hello, {username}!".encode())
+
+
+@app.on_event("GET:/throw")
+async def throw(event: Event):
+    event.ctx.throw_500()
+
+
+@app.on_event()
+async def home(event: Event):
+    event.ctx.response(200, b"Welcome!")
 ```
 
 **STEP 3,** Run your app:
 
 ```shell
 $ tiny-listener http_web:app
-$ INFO:     Tiny-listener HTTP server running on on localhost:8000
+$ INFO: Tiny-listener HTTP server running on on 127.0.0.1:8000
 ```
 
-**STEP 4,** Try this on your browser: [http://127.0.0.1:8000/user/Bob](http://127.0.0.1:8000/user/Bob)
+**STEP 4,** Try this on your browser: [http://127.0.0.1:8000/user/bob](http://127.0.0.1:8000/user/bob)
 
 ```shell
 ...
-$ INFO:     127.0.0.1:52579 - "GET /user/Bob HTTP/1.1" 200 OK
+$ INFO: ::1:52579 - "GET /user/bob HTTP/1.1" 200
 ```
