@@ -68,7 +68,7 @@ class H11(asyncio.Protocol):
 
 
 class App(Listener[HTTPContext]):
-    async def listen(self) -> None:
+    async def listen(self):
         loop = asyncio.get_event_loop()
         await loop.create_server(partial(H11, self), host="localhost", port=PORT)
         print(f"INFO: HTTP server running on on http://127.0.0.1:{PORT}")
