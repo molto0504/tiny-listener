@@ -4,7 +4,7 @@ See: https://molto0504.github.io/tiny-listener/usage-tcp-chat-bot/
 
 from asyncio import StreamReader, StreamWriter, start_server
 
-from tiny_listener import Depends, Event, EventNotFound, Listener
+from tiny_listener import Data, Depends, EventNotFound, Listener
 
 ADDRESS = ("127.0.0.1", 12345)
 
@@ -29,8 +29,8 @@ class App(Listener):
 app = App()
 
 
-async def get_writer(event: Event):
-    return event.data["writer"]
+async def get_writer(writer: Data):
+    return writer
 
 
 @app.on_event("{_}?")

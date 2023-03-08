@@ -18,7 +18,7 @@ import asyncio
 
 import aio_pika
 
-from tiny_listener import Event, Listener, Param
+from tiny_listener import Data, Listener, Param
 
 
 class App(Listener):
@@ -47,14 +47,12 @@ async def shutdown():
 
 
 @app.on_event("/mock_producer")
-async def produce(event: Event):
-    channel = event.data["channel"]
+async def produce(channel: Data):
     for i in range(10):
         await channel.default_exchange.publish(aio_pika.Message(body=bytes(i), app_id=str(i)), routing_key="test_queue")
         await asyncio.sleep(1)
 
 
 @app.on_event("/app/{app_id}/consume")
-async def consume(event: Event, app_id: Param):
-    data = event.data["data"]
+async def consume(data: Data, app_id: Param):
     print(f"INFO: App[{app_id}] consume: {data}")

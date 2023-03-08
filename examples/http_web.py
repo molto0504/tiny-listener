@@ -12,7 +12,7 @@ from functools import partial
 
 import h11
 
-from tiny_listener import Context, Event, EventNotFound, Listener, Param
+from tiny_listener import Context, EventNotFound, Listener, Param
 
 PORT = 8000
 
@@ -29,6 +29,9 @@ class HTTPContext(Context):
 
     def throw_500(self):
         self.response(500, b"Internal Server Error")
+
+    def throw_404(self):
+        self.response(404, b"Not Found")
 
 
 class H11(asyncio.Protocol):
@@ -51,7 +54,7 @@ class H11(asyncio.Protocol):
         try:
             ctx.trigger_event(f"{method}:{path}")
         except EventNotFound:
-            ctx.trigger_event("/")
+            ctx.throw_404()
 
     def handle_event(self):
         request = None
@@ -79,15 +82,15 @@ app.set_context_cls(HTTPContext)
 
 
 @app.on_event("GET:/user/{username}")
-async def hello(event: Event, username: Param):
-    event.ctx.response(200, f"Hello, {username}!".encode())
+async def hello(ctx: HTTPContext, username: Param):
+    ctx.response(200, f"Hello, {username}!".encode())
 
 
 @app.on_event("GET:/throw")
-async def throw(event: Event):
-    event.ctx.throw_500()
+async def throw(ctx: HTTPContext):
+    ctx.throw_500()
 
 
-@app.on_event()
-async def home(event: Event):
-    event.ctx.response(200, b"Welcome!")
+@app.on_event("GET:/")
+async def home(ctx: HTTPContext):
+    ctx.response(200, b"Welcome!")
