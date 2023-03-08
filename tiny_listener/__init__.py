@@ -1,7 +1,7 @@
 """tiny-listener
 """
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 from .context import Context, Scope
 from .errors import (
