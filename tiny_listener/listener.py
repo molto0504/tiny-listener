@@ -245,6 +245,9 @@ class Listener(Generic[CTXType]):
         for fn in self._startup:
             await fn()
         await self.listen()
+        await self.wait_for_shutdown()
+
+    async def wait_for_shutdown(self) -> None:
         await self.__exiting.wait()
 
     def run(self) -> None:
