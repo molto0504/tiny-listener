@@ -44,7 +44,7 @@ class _Hook(metaclass=ABCMeta):
                     try:
                         actual = event.data[name]
                     except KeyError as e:
-                        raise EventDataError(f"Path param `{name}` is invalid, allowed: {params.keys()}") from e
+                        raise EventDataError(f"Event data `{name}` is invalid, allowed: {event.data.keys()}") from e
                 elif anno is Param:
                     try:
                         actual = params[name]
