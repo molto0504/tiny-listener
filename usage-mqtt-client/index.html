@@ -410,7 +410,7 @@
 
 <span class="kn">from</span> <span class="nn">asyncio_mqtt</span> <span class="kn">import</span> <span class="n">Client</span>
 
-<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">Param</span>
+<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Data</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">Param</span>
 
 <span class="n">SERVER_HOST</span> <span class="o">=</span> <span class="s2">&quot;test.mosquitto.org&quot;</span>
 
@@ -431,9 +431,8 @@
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/mock_iot_device&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">mock_iot_device</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">mock_iot_device</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">Data</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mock an IoT device that publishes temperature data&quot;&quot;&quot;</span>
-    <span class="n">client</span><span class="p">:</span> <span class="n">Client</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
         <span class="n">room</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">([</span><span class="s2">&quot;living_room&quot;</span><span class="p">,</span> <span class="s2">&quot;kitchen&quot;</span><span class="p">,</span> <span class="s2">&quot;bedroom&quot;</span><span class="p">,</span> <span class="s2">&quot;bathroom&quot;</span><span class="p">,</span> <span class="s2">&quot;balcony&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">temperature</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
@@ -442,8 +441,8 @@
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;/iot/home/</span><span class="si">{room}</span><span class="s2">/temperature&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">handle_mqtt_msg</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">room</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
-    <span class="n">temperature</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">handle_mqtt_msg</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="n">Data</span><span class="p">,</span> <span class="n">room</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
+    <span class="n">temperature</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;INFO: </span><span class="si">{:&lt;13}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> ℃&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">room</span><span class="p">,</span> <span class="n">temperature</span><span class="p">))</span>
 </code></pre></div>
 <p><strong>STEP 3,</strong> Run your app:</p>

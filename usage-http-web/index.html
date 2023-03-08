@@ -409,7 +409,7 @@
 
 <span class="kn">import</span> <span class="nn">h11</span>
 
-<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="n">Event</span><span class="p">,</span> <span class="n">EventNotFound</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">Param</span>
+<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="n">EventNotFound</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">Param</span>
 
 <span class="n">PORT</span> <span class="o">=</span> <span class="mi">8000</span>
 
@@ -426,6 +426,9 @@
 
     <span class="k">def</span> <span class="nf">throw_500</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">response</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Internal Server Error&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">throw_404</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response</span><span class="p">(</span><span class="mi">404</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Not Found&quot;</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">H11</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Protocol</span><span class="p">):</span>
@@ -448,7 +451,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">ctx</span><span class="o">.</span><span class="n">trigger_event</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">EventNotFound</span><span class="p">:</span>
-            <span class="n">ctx</span><span class="o">.</span><span class="n">trigger_event</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">throw_404</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">request</span> <span class="o">=</span> <span class="kc">None</span>
@@ -465,7 +468,7 @@
 
 
 <span class="k">class</span> <span class="nc">App</span><span class="p">(</span><span class="n">Listener</span><span class="p">[</span><span class="n">HTTPContext</span><span class="p">]):</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">listen</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">listen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
         <span class="k">await</span> <span class="n">loop</span><span class="o">.</span><span class="n">create_server</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">H11</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">PORT</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;INFO: HTTP server running on on http://127.0.0.1:</span><span class="si">{</span><span class="n">PORT</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -476,18 +479,18 @@
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;GET:/user/</span><span class="si">{username}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
-    <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">response</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">!&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">HTTPContext</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="n">Param</span><span class="p">):</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">response</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">!&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;GET:/throw&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">throw</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">throw_500</span><span class="p">()</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">throw</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">HTTPContext</span><span class="p">):</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">throw_500</span><span class="p">()</span>
 
 
-<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">()</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">home</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="n">event</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">response</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Welcome!&quot;</span><span class="p">)</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;GET:/&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">home</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">HTTPContext</span><span class="p">):</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">response</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Welcome!&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p><strong>STEP 3,</strong> Run your app:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>tiny-listener<span class="w"> </span>http_web:app
@@ -495,7 +498,7 @@ $<span class="w"> </span>INFO:<span class="w"> </span>Tiny-listener<span class="
 </code></pre></div>
 <p><strong>STEP 4,</strong> Try this on your browser: <a href="http://127.0.0.1:8000/user/bob">http://127.0.0.1:8000/user/bob</a></p>
 <div class="highlight"><pre><span></span><code>...
-$<span class="w"> </span>INFO:<span class="w"> </span>::1:52579<span class="w"> </span>-<span class="w"> </span><span class="s2">&quot;GET /user/bob HTTP/1.1&quot;</span><span class="w"> </span><span class="m">200</span>
+$<span class="w"> </span>INFO:<span class="w"> </span><span class="m">127</span>.0.0.1:52579<span class="w"> </span>-<span class="w"> </span><span class="s2">&quot;GET /user/bob HTTP/1.1&quot;</span><span class="w"> </span><span class="m">200</span>
 </code></pre></div>
 
 

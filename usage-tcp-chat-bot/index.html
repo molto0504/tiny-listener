@@ -396,7 +396,7 @@
 <p><strong>STEP 2,</strong> Create python file <code>tcp_chat_bot.py</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">asyncio</span> <span class="kn">import</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">StreamWriter</span><span class="p">,</span> <span class="n">start_server</span>
 
-<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Listener</span><span class="p">,</span> <span class="n">EventNotFound</span>
+<span class="kn">from</span> <span class="nn">tiny_listener</span> <span class="kn">import</span> <span class="n">Data</span><span class="p">,</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">EventNotFound</span><span class="p">,</span> <span class="n">Listener</span>
 
 <span class="n">ADDRESS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="mi">12345</span><span class="p">)</span>
 
@@ -421,17 +421,17 @@
 <span class="n">app</span> <span class="o">=</span> <span class="n">App</span><span class="p">()</span>
 
 
-<span class="k">async</span> <span class="k">def</span> <span class="nf">get_writer</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;writer&quot;</span><span class="p">]</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">get_writer</span><span class="p">(</span><span class="n">writer</span><span class="p">:</span> <span class="n">Data</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">writer</span>
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{_}</span><span class="s2">?&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">writer</span><span class="p">:</span> <span class="n">StreamWriter</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_writer</span><span class="p">)):</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">ask</span><span class="p">(</span><span class="n">writer</span><span class="p">:</span> <span class="n">StreamWriter</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_writer</span><span class="p">)):</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;I am confused, may be you should google it.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{_}</span><span class="s2">.&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">writer</span><span class="p">:</span> <span class="n">StreamWriter</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_writer</span><span class="p">)):</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">answer</span><span class="p">(</span><span class="n">writer</span><span class="p">:</span> <span class="n">StreamWriter</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_writer</span><span class="p">)):</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;Yes, it makes sense to me.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p><strong>STEP 3,</strong> Run your app:</p>
