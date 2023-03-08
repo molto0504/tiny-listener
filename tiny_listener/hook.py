@@ -5,7 +5,8 @@ from inspect import Parameter, isclass, signature
 from typing import Any, Final, Union
 
 from ._typing import CoroFunc, HookFunc, PathParams
-from .errors import PathParamsError
+from .context import Context
+from .errors import EventDataError, PathParamsError
 from .event import Event
 from .utils import check_coro_func
 
@@ -34,13 +35,22 @@ class _Hook(metaclass=ABCMeta):
                     else:
                         actual = await asyncio.wait_for(default(event, params), timeout=default.timeout)
                         ctx.cache[default] = actual
-                elif isclass(anno) and issubclass(anno, Event):
-                    actual = event
+                elif isclass(anno):
+                    if issubclass(anno, Event):
+                        actual = event
+                    if issubclass(anno, Context):
+                        actual = event.ctx
+                elif anno is Data:
+                    try:
+                        actual = event.data[name]
+                    except KeyError as e:
+                        raise EventDataError(f"Path param `{name}` is invalid, allowed: {params.keys()}") from e
                 elif anno is Param:
                     try:
                         actual = params[name]
                     except KeyError as e:
                         raise PathParamsError(f"Path param `{name}` is invalid, allowed: {params.keys()}") from e
+
                 if param.kind == Parameter.KEYWORD_ONLY:
                     kwargs[name] = actual
                 else:
@@ -78,3 +88,7 @@ def depend(fn: CoroFunc, use_cache: bool = True, timeout: Union[float, None] = N
 
 Param: Any = object()
 """use this to inject a path param"""
+
+
+Data: Any = object()
+"""use this to inject the data of the event"""

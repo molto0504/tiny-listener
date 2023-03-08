@@ -1,34 +1,42 @@
-class RouteError(Exception):
+class ListenerError(Exception):
     pass
 
 
-class EventAlreadyExists(Exception):
+class RouteError(ListenerError):
     pass
 
 
-class EventNotFound(Exception):
+class EventAlreadyExists(ListenerError):
     pass
 
 
-class EventAlreadyDone(Exception):
+class EventNotFound(ListenerError):
     pass
 
 
-class ContextNotFound(Exception):
+class EventAlreadyDone(ListenerError):
     pass
 
 
-class ContextAlreadyExists(Exception):
+class ContextNotFound(ListenerError):
     pass
 
 
-class DuplicateListener(Exception):
+class ContextAlreadyExists(ListenerError):
     pass
 
 
-class ListenerNotFound(Exception):
+class DuplicateListener(ListenerError):
     pass
 
 
-class PathParamsError(Exception):
+class ListenerNotFound(ListenerError):
+    pass
+
+
+class PathParamsError(ListenerError):
+    pass
+
+
+class EventDataError(ListenerError):
     pass
