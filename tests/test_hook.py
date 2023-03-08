@@ -2,16 +2,32 @@ from typing import Any, Dict
 
 import pytest
 
-from tiny_listener import Depends, Event, Listener, Param, PathParamsError, depend
+from tiny_listener import (
+    Context,
+    Data,
+    Depends,
+    Event,
+    EventDataError,
+    Listener,
+    Param,
+    PathParamsError,
+    depend,
+)
 
 
 @pytest.fixture
-def fake_event() -> Event:
+def fake_context() -> Context:
     class FakeContext:
         cache = {}
 
+    return FakeContext()  # noqa
+
+
+@pytest.fixture
+def fake_event(fake_context) -> Event:
     class FakeEvent:
-        ctx = FakeContext()
+        data = {}
+        ctx = fake_context
 
     return FakeEvent()  # noqa
 
@@ -39,13 +55,17 @@ async def test_call_dep(caller, fake_event):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("caller", [Depends, depend])
-async def test_run_hook_with_depends(caller, fake_event):
-    async def get_user(event: Event, username: Param):
+async def test_run_hook_with_depends(caller, fake_event, fake_context):
+    fake_event.data = {"age": 18}
+
+    async def get_user(event: Event, username: Param, age: Data, ctx: Context):
         assert event is fake_event
-        return {"username": username}
+        assert event.ctx is ctx is fake_context
+        return {"username": username, "age": age}
 
     async def get_username(event: Event, user: Dict = caller(get_user)):
         assert event is fake_event
+        assert user == {"username": "bob", "age": 18}
         return user.get("username")
 
     dep = caller(get_username)
@@ -145,7 +165,7 @@ def test_bad_callback():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("caller", [Depends, depend])
-async def test_param_not_found(caller, fake_event):
+async def test_param_or_data_not_found(caller, fake_event):
     class App(Listener):
         async def listen(self):
             ...
@@ -153,9 +173,16 @@ async def test_param_not_found(caller, fake_event):
     app = App()
 
     @app.on_event()
-    async def foo(username: Param):
-        return username
+    async def foo(event: Event, username: Param, age: Data):
+        assert event is fake_event
+        return {"username": username, "age": age}
 
     dep = caller(foo)
     with pytest.raises(PathParamsError):
-        await dep(fake_event, {})  # username is not found in path params
+        await dep(fake_event, {})  # path params not found
+
+    with pytest.raises(EventDataError):
+        await dep(fake_event, {"username": "bob"})  # event data not found
+
+    fake_event.data = {"age": 18}
+    assert await dep(fake_event, {"username": "bob"}) == {"username": "bob", "age": 18}  # ok
