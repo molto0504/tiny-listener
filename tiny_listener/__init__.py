@@ -12,6 +12,7 @@ from .errors import (
     EventAlreadyExists,
     EventNotFound,
     ListenerNotFound,
+    PathParamsError,
     RouteError,
 )
 from .event import Event
@@ -23,6 +24,7 @@ from .utils import check_coro_func, import_from_string, is_main_thread
 __all__ = [
     "__version__",
     "check_coro_func",
+    "PathParamsError",
     "depend",
     "ContextAlreadyExists",
     "ContextNotFound",

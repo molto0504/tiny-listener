@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import pytest
 
-from tiny_listener import Depends, Event, Listener, depend
+from tiny_listener import Depends, Event, Listener, Param, PathParamsError, depend
 
 
 @pytest.fixture
@@ -40,16 +40,16 @@ async def test_call_dep(caller, fake_event):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("caller", [Depends, depend])
 async def test_run_hook_with_depends(caller, fake_event):
-    async def get_user(event: Event):
+    async def get_user(event: Event, username: Param):
         assert event is fake_event
-        return {"username": "bob"}
+        return {"username": username}
 
     async def get_username(event: Event, user: Dict = caller(get_user)):
         assert event is fake_event
         return user.get("username")
 
     dep = caller(get_username)
-    assert await dep(fake_event, {}) == "bob"
+    assert await dep(fake_event, {"username": "bob"}) == "bob"
 
 
 @pytest.mark.asyncio
@@ -141,3 +141,21 @@ def test_bad_callback():
         @app.on_event()
         def bar():  # use normal function instead of async function
             ...
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("caller", [Depends, depend])
+async def test_param_not_found(caller, fake_event):
+    class App(Listener):
+        async def listen(self):
+            ...
+
+    app = App()
+
+    @app.on_event()
+    async def foo(username: Param):
+        return username
+
+    dep = caller(foo)
+    with pytest.raises(PathParamsError):
+        await dep(fake_event, {})  # username is not found in path params
