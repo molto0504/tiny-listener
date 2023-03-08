@@ -58,7 +58,7 @@ Tiny-listener may help you solve these problems:
 Create a file `example.py` with:
 
 ```python
-from tiny_listener import Event, Listener, Param
+from tiny_listener import Data, Event, Listener, Param
 
 
 class App(Listener):
@@ -72,8 +72,7 @@ app = App()
 
 
 @app.on_event("step 1: save {username}'s data to database")
-async def step_1(event: Event, username: Param):
-    age = event.data["age"]
+async def step_1(age: Data, username: Param):
     print(f"Step-1: Save data done!, {username=}, {age=}")
 
 
@@ -96,7 +95,7 @@ $ tiny-listener example:app
 * Create your own Listener and listen something(e.g. port, queue ...):
 
 ```python
-from tiny_listener import Event, Listener, Param
+from tiny_listener import Data, Event, Listener, Param
 
 
 class App(Listener):
@@ -114,8 +113,7 @@ app = App()
 
 
 @app.on_event("step 1: save {username}'s data to database")
-async def step_1(event: Event, username: Param):
-    age = event.data["age"]
+async def step_1(age: Data, username: Param):
     print(f"Step-1: Save data done!, {username=}, {age=}")
 
 
